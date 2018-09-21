@@ -1,0 +1,643 @@
+# light <type> <position x y z> <intensity r g b> (poitn light)
+light point 0 500 1000 1 1 1
+
+# domain 0
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 0.000000 0.000000
+
+# domain 1
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 0.000000 0.000000
+
+# domain 2
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 0.000000 0.000000
+
+# domain 3
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 0.000000 0.000000
+
+# domain 4
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 19.324713 0.000000
+
+# domain 5
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 19.324713 0.000000
+
+# domain 6
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 19.324713 0.000000
+
+# domain 7
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 19.324713 0.000000
+
+# domain 8
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 38.649426 0.000000
+
+# domain 9
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 38.649426 0.000000
+
+# domain 10
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 38.649426 0.000000
+
+# domain 11
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 38.649426 0.000000
+
+# domain 12
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 57.974139 0.000000
+
+# domain 13
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 57.974139 0.000000
+
+# domain 14
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 57.974139 0.000000
+
+# domain 15
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 57.974139 0.000000
+
+# domain 16
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 0.000000 20.000000
+
+# domain 17
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 0.000000 20.000000
+
+# domain 18
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 0.000000 20.000000
+
+# domain 19
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 0.000000 20.000000
+
+# domain 20
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 19.324713 20.000000
+
+# domain 21
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 19.324713 20.000000
+
+# domain 22
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 19.324713 20.000000
+
+# domain 23
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 19.324713 20.000000
+
+# domain 24
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 38.649426 20.000000
+
+# domain 25
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 38.649426 20.000000
+
+# domain 26
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 38.649426 20.000000
+
+# domain 27
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 38.649426 20.000000
+
+# domain 28
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 57.974139 20.000000
+
+# domain 29
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 57.974139 20.000000
+
+# domain 30
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 57.974139 20.000000
+
+# domain 31
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 57.974139 20.000000
+
+# domain 32
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 0.000000 40.000000
+
+# domain 33
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 0.000000 40.000000
+
+# domain 34
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 0.000000 40.000000
+
+# domain 35
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 0.000000 40.000000
+
+# domain 36
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 19.324713 40.000000
+
+# domain 37
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 19.324713 40.000000
+
+# domain 38
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 19.324713 40.000000
+
+# domain 39
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 19.324713 40.000000
+
+# domain 40
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 38.649426 40.000000
+
+# domain 41
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 38.649426 40.000000
+
+# domain 42
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 38.649426 40.000000
+
+# domain 43
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 38.649426 40.000000
+
+# domain 44
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 57.974139 40.000000
+
+# domain 45
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 57.974139 40.000000
+
+# domain 46
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 57.974139 40.000000
+
+# domain 47
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 57.974139 40.000000
+
+# domain 48
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 0.000000 60.000000
+
+# domain 49
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 0.000000 60.000000
+
+# domain 50
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 0.000000 60.000000
+
+# domain 51
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 0.000000 60.000000
+
+# domain 52
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 19.324713 60.000000
+
+# domain 53
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 19.324713 60.000000
+
+# domain 54
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 19.324713 60.000000
+
+# domain 55
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 19.324713 60.000000
+
+# domain 56
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 38.649426 60.000000
+
+# domain 57
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 38.649426 60.000000
+
+# domain 58
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 38.649426 60.000000
+
+# domain 59
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 38.649426 60.000000
+
+# domain 60
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 0.000000 57.974139 60.000000
+
+# domain 61
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 20.000000 57.974139 60.000000
+
+# domain 62
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 40.000000 57.974139 60.000000
+
+# domain 63
+domain
+file wavelet.ply
+mtl diffuse 1 1 1
+# mtl glass 80 100 200 1 1.33
+bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+face 5480
+vertex 2840
+translate 60.000000 57.974139 60.000000
+

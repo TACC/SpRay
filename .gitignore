@@ -1,0 +1,5 @@
+build/
+icet_build/
+benchmarks/run
+*.swp
+*.ppm
