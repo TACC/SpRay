@@ -29,6 +29,11 @@ set(spray_VERSION_MAJOR   1   CACHE STRING "Project major version number.")
 set(spray_VERSION_MINOR   0   CACHE STRING "Project minor version number.")
 set(spray_VERSION_PATCH   0   CACHE STRING "Project patch version number.")
 
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Select a build type." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
+endif()
+
 MESSAGE(STATUS "PROJECT_SOURCE_DIR: " ${PROJECT_SOURCE_DIR})
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
@@ -39,7 +44,7 @@ message(STATUS "HOST_NAME: " ${HOST_NAME})
 ########################################
 # isa
 ########################################
-set(SPRAY_ISA_TYPE "AVX2" CACHE STRING "Select ISA type.")
+set(SPRAY_ISA_TYPE "AVX2" CACHE STRING "Select an ISA type.")
 set_property(CACHE SPRAY_ISA_TYPE PROPERTY STRINGS AVX2)
 
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")

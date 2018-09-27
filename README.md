@@ -47,11 +47,11 @@ cd build
 ```
 If you are using Apple Clang on a Mac,
 ```bash
-cmake -DCMAKE_BUILD_TYPE=Release -DOpenMP_INSTALL_DIR=<path_to_libomp_install> -DEMBREE_INSTALL_DIR=<path_to_embree_install> -DCMAKE_INSTALL_PREFIX=<path_to_spray_install> ..
+cmake -DOpenMP_INSTALL_DIR=$(brew --prefix libomp) -DEMBREE_INSTALL_DIR=<path_to_embree_install> ..
 ```
 Otherwise,
 ```bash
-cmake -DCMAKE_BUILD_TYPE=Release -DEMBREE_INSTALL_DIR=<path_to_embree_install> -DCMAKE_INSTALL_PREFIX=<path_to_spray_install> ..
+cmake -DEMBREE_INSTALL_DIR=<path_to_embree_install> ..
 ```
 ```bash
 make
