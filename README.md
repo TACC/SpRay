@@ -20,37 +20,48 @@ Unless required by applicable law or agreed to in writing, software distributed 
  * An Intel Visualization Center of Excellence award through the IPCC program
 
 
-## Building Spray
+## Building Spray (Linux and Mac)
 
-Build and install Embree. We tested Spray with Embree v2.17.1.
+If you are using Apple Clang on a Mac, install `libomp`.
 ```bash
-git clone https://github.com/embree/embree.git
+brew install libomp
 ```
+Build and install [Embree][2]. We tested Spray with Embree v2.17.1.
+
 Check out Spray with all submodules.
 ```bash
 git clone https://github.com/TACC/SpRay.git
-git submodule init --update --recursive
+cd SpRay
+git submodule init
+git submodule update
 ```
 Or simply,
 ```bash
-git clone --recursive https://github.com/TACC/SpRay.git
-```
-
-Create a build directory and run cmake.
-```bash
+git clone --recurse-submodules https://github.com/TACC/SpRay.git
 cd SpRay
+```
+Create a build directory.
+```bash
 mkdir build
 cd build
-cmake -DEMBREE_INSTALL_DIR=<path_to_embree_install> -DCMAKE_INSTALL_PREFIX=<path_to_spray_install> ..
+```
+If you are using Apple Clang on a Mac,
+```bash
+cmake -DCMAKE_BUILD_TYPE=Release -DOpenMP_INSTALL_DIR=<path_to_libomp_install> -DEMBREE_INSTALL_DIR=<path_to_embree_install> -DCMAKE_INSTALL_PREFIX=<path_to_spray_install> ..
+```
+Otherwise,
+```bash
+cmake -DCMAKE_BUILD_TYPE=Release -DEMBREE_INSTALL_DIR=<path_to_embree_install> -DCMAKE_INSTALL_PREFIX=<path_to_spray_install> ..
+```
+```bash
 make
 ```
-
 If you wish to install Spray,
 ```bash
 make install
 ```
 
-## Running Spray
+## Running Spray (Linux and Mac)
 
 ### Rendering isosurfaces of 64 domains
 
@@ -63,7 +74,7 @@ source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64_film.sh
 display spray.ppm
 ```
 
-Notice that this bash script launches 4 MPI tasks using `mpirun -n 4`. You may have to modify the MPI command.
+Notice that this bash script launches 2 MPI tasks using `mpirun -n 2`. You may have to modify the MPI command as needed.
 
 For glfw mode,
 ```bash
@@ -71,7 +82,7 @@ source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64_glfw.sh
 ```
 Type the `q-key` to close the window.
 
-If you wish to use installed binaries, you'll have to modify the variable `SPRAY_BIN` in the bash scripts and set runtime search paths for the shared libraries used.
+If you wish to use installed binaries, you'll have to modify the variable `SPRAY_BIN` in the bash scripts and set runtime search paths, LD_LIBRARY_PATH or DYLD_LIBRARY_PATH, as needed.
 
 You should see the following as a result:
 
@@ -80,4 +91,5 @@ You should see the following as a result:
 
 
 [1]: https://www.apache.org/licenses/LICENSE-2.0
+[2]: https://github.com/embree/embree
 

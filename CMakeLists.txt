@@ -18,16 +18,16 @@
 #                                                                            #
 # ========================================================================== #
 
-project(spray)
 cmake_minimum_required(VERSION 3.5.1)
 
 ########################################
 # project info
 ########################################
-set(VERSION_MAJOR   1   CACHE STRING "Project major version number.")
-set(VERSION_MINOR   0   CACHE STRING "Project minor version number.")
-set(VERSION_PATCH   0   CACHE STRING "Project patch version number.")
-mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
+project(spray)
+
+set(spray_VERSION_MAJOR   1   CACHE STRING "Project major version number.")
+set(spray_VERSION_MINOR   0   CACHE STRING "Project minor version number.")
+set(spray_VERSION_PATCH   0   CACHE STRING "Project patch version number.")
 
 MESSAGE(STATUS "PROJECT_SOURCE_DIR: " ${PROJECT_SOURCE_DIR})
 

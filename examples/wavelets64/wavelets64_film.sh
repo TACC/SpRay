@@ -11,6 +11,6 @@ else
   MODEL=$WAVELET16_PATH/wavelets64.domain
   PLY_PATH=$EXAMPLE_PATH
   
-  mpirun -n 4 $SPRAY_BIN/spray_insitu --ply-path $PLY_PATH --nthreads 1 -w 512 -h 512 --frames 1 --mode film --cache-size -1 --partition insitu --camera 90.172180 84.141418 82.480225 30.000000 28.649426 30.000000 --pixel-samples 1 --ao-samples 1 --bounces 1 --num-partitions 8 --shading blinn --blinn 0.4 0.4 0.4 10 $MODEL
+  mpirun -n 2 $SPRAY_BIN/spray_insitu --ply-path $PLY_PATH --nthreads 1 -w 512 -h 512 --frames 1 --mode film --cache-size -1 --partition insitu --camera 90.172180 84.141418 82.480225 30.000000 28.649426 30.000000 --pixel-samples 1 --ao-samples 1 --bounces 1 --num-partitions 8 --shading blinn --blinn 0.4 0.4 0.4 10 $MODEL
 
 fi

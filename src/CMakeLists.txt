@@ -49,9 +49,17 @@ endif(SPRAY_FILTER_ON)
 ########################################
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
   add_definitions(-D__spray_using_clang_compiler__)
-  message(WARNING "Clang compiler detected. No OpenMP supported.")
 
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  find_package(OpenMP REQUIRED)
+
+  if (APPLE)
+    include_directories(${OpenMP_INCLUDE_DIR})
+    link_directories(${OpenMP_LIBRARY_DIR})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Xpreprocessor -fopenmp")
+  else (APPLE)
+    message(FATAL_ERROR "Clang not tested. Comment out this message at your discretion.")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fopenmp")
+  endif (APPLE)
 
 elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
   add_definitions(-D__spray_using_intel_compiler__ -D__spray_omp_enabled_compiler)
@@ -190,14 +198,13 @@ endif()
 # libraries
 ########################################
 set(DEP_LIBS glfw glog gtest_main gtest pbrt
-    ${OPENMP_LIBRARY}
+    ${OpenMP_LIBRARY}
     ${OPENGL_LIBRARIES}
     ${GLUT_LIBRARIES}
     ${TBB_LIBRARIES}
     ${EMBREE_LIBRARY}
     ${MPI_LIBRARIES}
-    ${ICET_LIBRARIES}
-)
+    ${ICET_LIBRARIES})
 
 ########################################
 # source files

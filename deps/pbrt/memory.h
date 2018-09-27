@@ -81,8 +81,8 @@ class
     for (auto &block : availableBlocks) FreeAligned(block.second);
   }
   void *Alloc(size_t nBytes) {
-  // Round up _nBytes_ to minimum machine alignment
-#if __GNUC__ == 4 && __GNUC_MINOR__ < 9
+// Round up _nBytes_ to minimum machine alignment
+#if !__clang__ && __GNUC__ == 4 && __GNUC_MINOR__ < 9
     // gcc bug: max_align_t wasn't in std:: until 4.9.0
     const int align = alignof(::max_align_t);
 #elif !defined(PBRT_HAVE_ALIGNOF)
@@ -154,7 +154,7 @@ class
   const size_t blockSize;
   size_t currentBlockPos = 0, currentAllocSize = 0;
   uint8_t *currentBlock = nullptr;
-  std::list<std::pair<size_t, uint8_t *>> usedBlocks, availableBlocks;
+  std::list<std::pair<size_t, uint8_t *> > usedBlocks, availableBlocks;
 };
 
 template <typename T, int logBlockSize>
