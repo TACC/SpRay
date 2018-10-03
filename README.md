@@ -17,7 +17,7 @@ IEEE Symposium on Large Data Analysis and Visualization 2018
 
 It also includes our implementations of the baseline algorithm described in the following paper:
 ```
-Exploring the Spectrum of Dynamic Scheduling Algorithms for Scalable Distributed-Memory Ray Tracing.
+Exploring the Spectrum of Dynamic Scheduling Algorithms for Scalable Distributed-Memory Ray Tracing
 Paul A. Navrátil, Hank Childs, Donald S. Fussell, Calvin Lin
 IEEE Transactions on Visualization and Computer Graphics 2013
 ```
@@ -118,7 +118,7 @@ As you run the bash scripts below, you'll be asked to choose an application from
 
 Notice that the scripts launch MPI tasks using the `mpirun` command and specify the number of OpenMP threads by setting the environment variable `OMP_NUM_THREADS`. You may have to modify such settings based on your system requirements.
 
-Additionally, if you wish to use installed binaries, you'll have to modify the variable `SPRAY_BIN` in the scripts and set runtime search paths, `LD_LIBRARY_PATH` or `DYLD_LIBRARY_PATH`, as needed.
+Additionally, if you wish to use installed binaries, you'll have to modify the variable `SPRAY_BIN_PATH` in the scripts and set runtime search paths, `LD_LIBRARY_PATH` or `DYLD_LIBRARY_PATH`, as needed.
 
 ### Rendering isosurfaces of 64 wavelet domains
 

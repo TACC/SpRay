@@ -22,7 +22,7 @@ then
   NUM_FRAMES="1"
 fi
 
-SPRAY_BIN=$SPRAY_HOME_PATH/build
+SPRAY_BIN_PATH=$SPRAY_HOME_PATH/build
 EXAMPLE_PATH=$SPRAY_HOME_PATH/examples
 WAVELET16_PATH=$SPRAY_HOME_PATH/examples/wavelets64
 MODEL=$WAVELET16_PATH/wavelets64.domain
@@ -36,22 +36,56 @@ echo "3. baseline_insitu"
 echo "4. baseline_ooc"
 
 read APP
+
 if [ $APP == "1" ]
 then
   NUM_MPI_TASKS=2
   NUM_THREADS=1 # threading not supported
-  COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN/spray_insitu --ply-path $PLY_PATH --nthreads 1 -w 512 -h 512 --frames $NUM_FRAMES --mode $MODE --cache-size -1 --partition insitu --camera 90.172180 84.141418 82.480225 30.000000 28.649426 30.000000 --pixel-samples 1 --ao-samples 1 --bounces 1 --num-partitions 8 --blinn 0.4 0.4 0.4 10 $MODEL"
-elif [ $APP == "4" ]
+  SPRAY_BIN=spray_insitu
+  PARTITION=insitu
+
+elif [ $APP == "2" ]
 then
   NUM_MPI_TASKS=2
   NUM_THREADS=2
-  COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN/baseline_ooc --ply-path $PLY_PATH --nthreads $NUM_THREADS -w 512 -h 512 --frames $NUM_FRAMES --mode $MODE --cache-size -1 --partition image --camera 90.172180 84.141418 82.480225 30.000000 28.649426 30.000000 --pixel-samples 1 --ao-samples 1 --bounces 1 --blinn 0.4 0.4 0.4 10 $MODEL"
+  SPRAY_BIN=spray_ooc
+  PARTITION=image
+
+elif [ $APP == "4" ]
+then
+  SPRAY_BIN=baseline_ooc
+  NUM_MPI_TASKS=2
+  NUM_THREADS=2
+  PARTITION=image
+
 else
   NUM_MPI_TASKS=1
   NUM_THREADS=1
   COMMAND=""
   echo "[error] invalid input"
 fi
+
+CACHE_SIZE=-1
+CAMERA="90.172180 84.141418 82.480225 30.000000 28.649426 30.000000"
+NUM_PIXEL_SAMPLES=1
+NUM_AO_SAMPLES=1
+NUM_BOUNCES=1
+BLINN_SPECULAR_SHININESS="0.4 0.4 0.4 10"
+
+COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN_PATH/$SPRAY_BIN \
+         --ply-path $PLY_PATH \
+         --nthreads $NUM_THREADS \
+         -w 512 -h 512 \
+         --frames $NUM_FRAMES \
+         --mode $MODE \
+         --cache-size $CACHE_SIZE \
+         --partition $PARTITION \
+         --camera $CAMERA \
+         --pixel-samples $NUM_PIXEL_SAMPLES \
+         --ao-samples $NUM_AO_SAMPLES \
+         --bounces $NUM_BOUNCES \
+         --blinn $BLINN_SPECULAR_SHININESS \
+         $MODEL"
 
 echo "NUM_MPI_TASKS=$NUM_MPI_TASKS"
 echo "OMP_NUM_THREADS=$NUM_THREADS"
