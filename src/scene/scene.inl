@@ -219,22 +219,10 @@ bool Scene<CacheT>::intersect(RTCScene rtc_scene, int cache_block,
 }
 
 template <class CacheT>
-bool Scene<CacheT>::intersect(const DRay& ray, RTCRayIntersection* isect) {
-  RTCRayUtil::makeRadianceRay(ray.org, ray.dir, isect);
-  rtcIntersect(scene_, (RTCRay&)(*isect));
-
-  if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    updateIntersection(isect);
-    return true;
-  }
-  return false;
-}
-
-template <class CacheT>
-bool Scene<CacheT>::intersect(RTCScene rtc_scene, const DRay& ray,
+bool Scene<CacheT>::intersect(const float org[3], const float dir[3],
                               RTCRayIntersection* isect) {
-  RTCRayUtil::makeRadianceRay(ray.org, ray.dir, isect);
-  rtcIntersect(rtc_scene, (RTCRay&)(*isect));
+  RTCRayUtil::makeRadianceRay(org, dir, isect);
+  rtcIntersect(scene_, (RTCRay&)(*isect));
 
   if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
     updateIntersection(isect);

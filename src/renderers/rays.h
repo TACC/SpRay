@@ -212,69 +212,7 @@ struct SPRAY_ALIGN(16) RTCRayIntersection {
   float Ns[3];
 };
 
-struct SPRAY_ALIGN(16) DRay {
-  // Ray geometry
- public:
-  float org[3];
-  int pixid;  //!< Sample ID of the image plane.
-
-  float dir[3];
-  int samid;
-
-  // Intersection results
- public:
-  float w[3];  //!< Radiance weight.
-  int depth;   //!< Bounce number starting from 0.
-  float t;
-  float u;          //!< Barycentric u coordinate of hit
-  float v;          //!< Barycentric v coordinate of hit
-  unsigned geomID;  //!< geometry ID
-  unsigned primID;
-  unsigned flag;
-  int domid;  // closest domain ID
-
-  int domain_pos;   // current domain position
-  float next_tdom;  // distance to next domain
-
-#ifdef SPRAY_GLOG_CHECK
-  friend std::ostream& operator<<(std::ostream& os, const DRay& r);
-#endif
-};
-
-struct SPRAY_ALIGN(16) DRayQItem {
-  int dummy;
-  DRay* ray;
-};
-
-typedef std::queue<DRay*> DRayQ;
-
 struct RTCRayUtil {
-  /////////////////////////////// RTCRayUtil //////////////////////////////////
-
-  inline static void makeEyeRay(const DRay& r, DomainList* domains,
-                                RTCRayExt* rout) {
-    rout->org[0] = r.org[0];
-    rout->org[1] = r.org[1];
-    rout->org[2] = r.org[2];
-
-    rout->dir[0] = r.dir[0];
-    rout->dir[1] = r.dir[1];
-    rout->dir[2] = r.dir[2];
-
-    // rout->tnear = 0.0f;
-    rout->tnear = SPRAY_RAY_EPSILON;
-    rout->tfar = SPRAY_FLOAT_INF;
-    // rout->instID = RTC_INVALID_GEOMETRY_ID;
-    rout->geomID = RTC_INVALID_GEOMETRY_ID;
-    rout->primID = RTC_INVALID_GEOMETRY_ID;
-    // rout->mask = 0xFFFFFFFF;
-    // rout->time = 0.0f;
-
-    rout->domains = domains;
-
-    domains->count = 0;
-  }
-
   /////////////////////////////// RTCRayUtil //////////////////////////////////
 
   inline static void makeRayForDomainIntersection(const float org[3],
@@ -383,30 +321,6 @@ struct RTCRayUtil {
     r->primID = RTC_INVALID_GEOMETRY_ID;
     r->mask = 0xFFFFFFFF;
     r->time = 0.0f;
-  }
-
-  /////////////////////////////// RTCRayUtil //////////////////////////////////
-
-  inline static void makeIntersection(const DRay& r,
-                                      RTCRayIntersection* isect) {
-    isect->org[0] = r.org[0];
-    isect->org[1] = r.org[1];
-    isect->org[2] = r.org[2];
-    // isect->samID = r.samid;
-    isect->dir[0] = r.dir[0];
-    isect->dir[1] = r.dir[1];
-    isect->dir[2] = r.dir[2];
-    // isect->depth = r.depth;
-    // // isect->tnear = 0.f;
-    // isect->tnear = SPRAY_RAY_EPSILON;
-    isect->tfar = r.t;
-    // isect->instID = RTC_INVALID_GEOMETRY_ID;
-    isect->u = r.u;
-    isect->v = r.v;
-    isect->geomID = r.geomID;
-    isect->primID = r.primID;
-    // isect->mask = 0xFFFFFFFF;
-    // isect->time = 0.0f;
   }
 
   /////////////////////////////// RTCRayUtil //////////////////////////////////

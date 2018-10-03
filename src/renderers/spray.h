@@ -27,12 +27,8 @@
 
 #define SPRAY_ALIGN(...) __attribute__((aligned(__VA_ARGS__)))
 
-#ifdef __spray_omp_enabled_compiler
 #define RANK_THREAD \
   "[rank " << mpi::rank() << "] [thread " << omp_get_thread_num() << "] "
-#else
-#define RANK_THREAD "[rank " << mpi::rank() << "] [thread 0] "
-#endif
 
 #define SPRAY_INT_MAX std::numeric_limits<int>::max()
 #define SPRAY_REAL_MIN std::numeric_limits<float>::min()

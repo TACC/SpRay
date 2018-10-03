@@ -20,10 +20,12 @@
 
 #include "glog/logging.h"
 
+#include "baseline/baseline_image_tracer.h"
+#include "baseline/baseline_schedulers.h"
+#include "baseline/baseline_shader_ao.h"
+#include "baseline/baseline_shader_pt.h"
 #include "caches/caches.h"
-#include "insitu/insitu_shader_ao.h"
-#include "insitu/insitu_shader_pt.h"
-#include "insitu/insitu_singlethread_tracer.h"
+#include "partition/data_partition.h"
 #include "renderers/config.h"
 #include "renderers/spray.h"
 #include "renderers/spray_renderer.h"
@@ -51,27 +53,47 @@ int main(int argc, char** argv) {
   spray::Config cfg;
   cfg.parse(argc, argv);
 
-  if (cfg.partition == spray::Config::INSITU) {
-    if (cfg.cache_size < 0) {
-      if (cfg.ao_mode) {
-        spray::SprayRenderer<spray::insitu::SingleThreadTracer<
-                                 spray::InfiniteCache,
-                                 spray::insitu::ShaderAo<spray::InfiniteCache>>,
-                             spray::InfiniteCache>
+  if (cfg.partition == spray::Config::IMAGE) {
+    if (cfg.ao_mode) {
+      if (cfg.cache_size < 0) {
+        spray::SprayRenderer<
+            spray::baseline::ImageTracer<
+                spray::InfiniteCache, spray::baseline::LoadAnyOnceImageSched,
+                spray::baseline::ShaderAo<spray::InfiniteCache>>,
+            spray::InfiniteCache>
             render;
         render.init(cfg);
         render.run();
       } else {
-        spray::SprayRenderer<spray::insitu::SingleThreadTracer<
-                                 spray::InfiniteCache,
-                                 spray::insitu::ShaderPt<spray::InfiniteCache>>,
-                             spray::InfiniteCache>
+        spray::SprayRenderer<
+            spray::baseline::ImageTracer<
+                spray::LruCache, spray::baseline::LoadAnyOnceImageSched,
+                spray::baseline::ShaderAo<spray::LruCache>>,
+            spray::LruCache>
             render;
         render.init(cfg);
         render.run();
       }
     } else {
-      LOG(FATAL) << "not allowed to set cache size in in-situ mode";
+      if (cfg.cache_size < 0) {
+        spray::SprayRenderer<
+            spray::baseline::ImageTracer<
+                spray::InfiniteCache, spray::baseline::LoadAnyOnceImageSched,
+                spray::baseline::ShaderPt<spray::InfiniteCache>>,
+            spray::InfiniteCache>
+            render;
+        render.init(cfg);
+        render.run();
+      } else {
+        spray::SprayRenderer<
+            spray::baseline::ImageTracer<
+                spray::LruCache, spray::baseline::LoadAnyOnceImageSched,
+                spray::baseline::ShaderPt<spray::LruCache>>,
+            spray::LruCache>
+            render;
+        render.init(cfg);
+        render.run();
+      }
     }
   } else {
     LOG(FATAL) << "unsupported partition " << cfg.partition;

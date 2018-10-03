@@ -155,7 +155,7 @@ class CosineHemisphereSampler {
     float sin_phi, cos_phi;
 #if defined(__APPLE__)
     __sincosf(phi, &sin_phi, &cos_phi);
-#elif defined(SPRAY_INTEL_COMPILER)
+#elif defined(SPRAY_USING_INTEL_COMPILER)
     sin_phi = sinf(phi);
     cos_phi = cosf(phi);
 #else

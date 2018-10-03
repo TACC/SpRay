@@ -29,7 +29,7 @@
 #include "glog/logging.h"
 #include "pbrt/memory.h"
 
-#include "renderers/tile.h"
+#include "partition/tile.h"
 #include "utils/profiler_util.h"
 
 namespace spray {

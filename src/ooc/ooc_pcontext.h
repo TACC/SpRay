@@ -40,8 +40,8 @@
 #include "ooc/ooc_ray.h"
 #include "ooc/ooc_tcontext.h"
 #include "partition/qvector.h"
+#include "partition/tile.h"
 #include "renderers/rays.h"
-#include "renderers/tile.h"
 #include "utils/profiler_util.h"
 #include "utils/scan.h"
 

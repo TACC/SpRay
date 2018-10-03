@@ -18,35 +18,82 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "renderers/tile.h"
+#pragma once
 
-#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <vector>
 
-#include "utils/util.h"
+#include "glog/logging.h"
+
+#include "partition/tile.h"
+#include "renderers/config.h"
 
 namespace spray {
+namespace baseline {
 
-std::ostream& operator<<(std::ostream& os, const Tile& t) {
-  os << "tile(" << t.x << "," << t.y << "," << t.w << "," << t.h << ")";
-  return os;
-}
+//! Uses entire image plane as a single, large tile
+class ImgSchedNop {
+ public:
+  void terminate() {}
+  void initialize(unsigned image_w, unsigned image_h) {
+    tile_.x = 0;
+    tile_.y = 0;
+    tile_.w = image_w;
+    tile_.h = image_h;
+  }
+  Tile schedule() { return tile_; }
+  Tile getLargestTile(unsigned image_w, unsigned image_h) { return tile_; }
+  Tile getLargestTile() { return tile_; }
 
-TileCount::TileCount(int image_w, int image_h, int granularity,
-                     int min_tile_size) {
-  // int granularity = getNumThreads() * g_mpi_comm.size;
+ private:
+  Tile tile_;
+};
 
-  tile_w = std::max(min_tile_size, image_w / granularity);
-  tile_h = std::max(min_tile_size, image_h / granularity);
+//! Assigns horizontal stripes to processes, i.e. one stripe per each process.
+class ImgSchedSingle {
+ public:
+  void terminate() {}
+  void initialize(unsigned image_w, unsigned image_h) {
+    done_ = false;
+    unsigned h = image_h / mpi::size();
 
-  int num_tiles_x = (image_w + tile_w - 1) / tile_w;
-  int num_tiles_y = (image_h + tile_h - 1) / tile_h;
-  num_tiles = num_tiles_x * num_tiles_y;
+    tile_.x = 0;
+    tile_.w = image_w;
+    tile_.h = 0;
 
-#ifndef NDEBUG
-  printf("[INFO] granularity: %d\n", granularity);
-  printf("[INFO] numer of tiles: %d (%d x %d tiles)\n", num_tiles, num_tiles_x,
-         num_tiles_y);
+    for (unsigned rank = 0; rank < mpi::size(); ++rank) {
+      if (rank == mpi::rank()) {
+        tile_.y = rank * h;
+
+        if (rank == mpi::size() - 1) {
+          tile_.h = image_h - tile_.y;
+        } else {
+          tile_.h = h;
+        }
+#ifdef SPRAY_GLOG_CHECK
+        CHECK(image_h >= tile_.y);
 #endif
-}
+      }
+    }
+#ifdef SPRAY_GLOG_CHECK
+    CHECK(tile_.getArea() > 0);
+#endif
+  }
+  bool isDone() const { return done_; }
+  void reset() { done_ = false; }
 
+  Tile schedule() {
+    done_ = true;
+    return tile_;
+  }
+
+  Tile getLargestTile() { return tile_; }
+
+ protected:
+  Tile tile_;
+  bool done_;
+};
+
+}  // namespace baseline
 }  // namespace spray

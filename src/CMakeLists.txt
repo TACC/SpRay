@@ -48,7 +48,7 @@ endif(SPRAY_FILTER_ON)
 # compiler
 ########################################
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-  add_definitions(-D__spray_using_clang_compiler__)
+  add_definitions(-DSPRAY_USING_CLANG_COMPILER)
 
   find_package(OpenMP REQUIRED)
 
@@ -62,13 +62,13 @@ if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
   endif (APPLE)
 
 elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-  add_definitions(-D__spray_using_intel_compiler__ -D__spray_omp_enabled_compiler)
+  add_definitions(-DSPRAY_USING_INTEL_COMPILER)
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -qopt-report=5 -qopenmp")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qopt-report=5 -qopenmp")
 
 elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-  add_definitions(-D__spray_using_gnu_compiler__ -D__spray_omp_enabled_compiler)
+  add_definitions(-DSPRAY_USING_GNU_COMPILER)
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -fopenmp")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
@@ -185,7 +185,6 @@ endif(SPRAY_TIMING)
 ########################################
 set(SPRAY_ISECT_MODE "PACKET1" CACHE STRING "Select mode for intersection tests.")
 set_property(CACHE SPRAY_ISECT_MODE PROPERTY STRINGS PACKET1)
-# set_property(CACHE SPRAY_ISECT_MODE PROPERTY STRINGS PACKET1 PACKET8 PACKET16)
 
 if (${SPRAY_ISECT_MODE} STREQUAL "PACKET1")
   add_definitions(-DSPRAY_ISECT_PACKET1)
@@ -232,17 +231,17 @@ set(SPRAY_SRC_LIST
 
     # partition
     partition/aabb.cc
+    partition/block_buffer.cc
     partition/domain.cc
     partition/ply_loader.cc
+    partition/tile.cc
     partition/trimesh_buffer.cc
     
     # renderers
     renderers/config.cc
-    renderers/rays.cc
+    # renderers/rays.cc
     renderers/spray.cc
-    renderers/tile.cc
     renderers/sampler.cc
-    # renderers/block_buffer.cc
     # renderers/visibility_buffer.cc
     # renderers/scheduler.cc
     # renderers/async_comm_shared.cc
@@ -261,9 +260,16 @@ set(SPRAY_SRC_LIST
     ooc/ooc_domain_stats.cc
     ooc/ooc_pcontext.cc
     ooc/ooc_tcontext.cc
+
+    # baseline
+    baseline/baseline_ray.cc
+    baseline/baseline_schedulers.cc
 )
 
 add_library(spray STATIC ${SPRAY_SRC_LIST})
+
+add_executable(baseline_ooc apps/baseline_ooc.cc)
+target_link_libraries(baseline_ooc spray ${DEP_LIBS})
 
 add_executable(spray_insitu apps/spray_insitu.cc)
 target_link_libraries(spray_insitu spray ${DEP_LIBS})
@@ -272,6 +278,7 @@ add_executable(spray_ooc apps/spray_ooc.cc)
 target_link_libraries(spray_ooc spray ${DEP_LIBS})
 
 # intallation
+install (TARGETS baseline_ooc DESTINATION bin)
 install (TARGETS spray_insitu DESTINATION bin)
 install (TARGETS spray_ooc DESTINATION bin)
 install (TARGETS spray DESTINATION lib)

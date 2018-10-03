@@ -161,8 +161,7 @@ class Scene {
   bool intersect(RTCScene rtc_scene, int cache_block, const glm::vec3& org,
                  const float dir[3], RTCRayIntersection* isect);
 
-  bool intersect(const DRay& ray, RTCRayIntersection* isect);
-  bool intersect(RTCScene rtc_scene, const DRay& ray,
+  bool intersect(const float org[3], const float dir[3],
                  RTCRayIntersection* isect);
 
   bool occluded(const glm::vec3& org, const glm::vec3& dir, RTCRay* ray);

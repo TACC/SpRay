@@ -18,23 +18,17 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "renderers/rays.h"
+#pragma once
 
-#include <iostream>
+#include "baseline/baseline_base_tracer.h"
 
 namespace spray {
+namespace baseline {
 
-#ifdef SPRAY_GLOG_CHECK
-std::ostream& operator<<(std::ostream& os, const DRay& r) {
-  os << "[org " << r.org[0] << " " << r.org[1] << " " << r.org[2] << "] [pixid "
-     << r.pixid << "][dir " << r.dir[0] << " " << r.dir[1] << " " << r.dir[2]
-     << "] [samid " << r.samid << "][depth " << r.depth << "][w " << r.w[0]
-     << " " << r.w[1] << " " << r.w[2] << "] [t" << r.t << "] [u" << r.u
-     << "] [v" << r.v << "][primID " << r.primID << "][flag" << r.flag
-     << "] [domid " << r.domid << "][domain_pos " << r.domain_pos
-     << "][next_tdom " << r.next_tdom << "]";
-  return os;
-}
-#endif
+template <typename CacheT, typename ScheduleT, typename ShaderT>
+class InsituTracer<CacheT, ScheduleT, spray::InsituPartition, ShaderT>
+    : public BaseTracer<CacheT, ScheduleT, spray::InsituPartition, ShaderT> {};
 
+}  // namespace baseline
 }  // namespace spray
+

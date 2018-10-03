@@ -20,92 +20,86 @@
 
 #pragma once
 
-#include <omp.h>
-#include <string.h>
-#include <algorithm>
-#include <cmath>
 #include <cstdint>
-#include <cstring>
-#include <numeric>
-#include <queue>
 #include <vector>
 
-#include "embree/random_sampler.h"
 #include "glog/logging.h"
 
-#include "display/image.h"
-#include "materials/reflection.h"
-#include "ooc/ooc_pcontext.h"
-#include "ooc/ooc_ray.h"
-#include "ooc/ooc_tcontext.h"
-#include "ooc/ooc_tiler.h"
-#include "partition/domain.h"
 #include "renderers/spray.h"
-#include "scene/camera.h"
-#include "scene/light.h"
-#include "scene/scene.h"
-#include "utils/profiler_util.h"
 
 namespace spray {
-namespace ooc {
 
-struct RayBuf {
-  RayBuf() { reset(); }
-  void reset() {
-    num = 0;
-    rays = nullptr;
+class InsituPartition;
+
+namespace baseline {
+
+class QStats;
+
+struct SPRAY_ALIGN(16) RayCount {
+  int id;
+  int64_t count;
+};
+
+class LoadAnyOnceSched {
+ public:
+  LoadAnyOnceSched();
+
+  void init(int ndomains, const InsituPartition& partition);
+
+  // returns true if done
+  void schedule(const QStats& stats);
+  bool getSchedule(int* id) const {
+    *id = id_;
+    return done_;
   }
-  std::size_t num;
-  Ray *rays;
+
+  const std::vector<RayCount>& getSchedule() const { return schedule_; }
+
+ protected:
+  void scheduleImage(const QStats& stats);
+  void scheduleMulti(const QStats& stats);
+
+ protected:
+  bool done_;
+  int id_;
+
+  // all processes' states (root proc only)
+  std::vector<int64_t> state_;
+
+  // per-process schedules (rank-to-domain ID mapping)
+  std::vector<RayCount> schedule_;
+
+  std::vector<RayCount> ray_counts_;
+
+  int ndomains_;
 };
 
-template <typename CacheT, typename ShaderT>
-class Tracer {
+class LoadAnyOnceInsituSched : public LoadAnyOnceSched {
  public:
-  void trace();
+  typedef LoadAnyOnceSched Base;
+  void init(int ndomains, const InsituPartition& partition) {
+    Base::init(ndomains, partition);
+    partition_ = &partition;
+  }
 
- public:
-  void init(const Config &cfg, const Camera &camera, Scene<CacheT> *scene,
-            HdrImage *image);
-
- private:
-  ShaderT shader_;
-  PContext pcontext_;
-  std::vector<TContext> tcontexts_;
+  void schedule(const QStats& stats);
 
  private:
-  void genSingleEyes(int image_w, float orgx, float orgy, float orgz, Tile tile,
-                     RayBuf *ray_buf);
-  void genMultiEyes(int image_w, float orgx, float orgy, float orgz, Tile tile,
-                    RayBuf *ray_buf);
+  void scheduleMulti(const QStats& stats);
 
-  void isectDomsRads(RayBuf buf, TContext *tc);
-  void isectPrimsRads(TContext *tc);
-
- private:
-  const spray::Camera *camera_;
-  std::vector<spray::Light *> lights_;  // copied lights
-  Scene<CacheT> *scene_;
-  spray::HdrImage *image_;
-
-  Tile image_tile_;
-  Tile mytile_;
-
- private:
-  int rank_;
-  int num_ranks_;
-  int num_domains_;
-  int num_pixel_samples_;
-  int num_bounces_;
-  int num_threads_;
-  int image_w_;
-  int image_h_;
+  const InsituPartition* partition_;
 };
 
-}  // namespace ooc
+class LoadAnyOnceImageSched : public LoadAnyOnceSched {
+ public:
+  typedef LoadAnyOnceSched Base;
+  void init(int ndomains, const InsituPartition& partition) {
+    Base::init(ndomains, partition);
+  }
+
+  void schedule(const QStats& stats) { scheduleImage(stats); }
+};
+
+}  // namespace baseline
 }  // namespace spray
-
-#define SPRAY_OOC_TRACER_INL
-#include "ooc/ooc_tracer.inl"
-#undef SPRAY_OOC_TRACER_INL
 

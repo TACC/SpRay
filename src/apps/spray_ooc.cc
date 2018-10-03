@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
       }
     }
   } else {
-    LOG(FATAL) << "unsupported parittion " << cfg.partition;
+    LOG(FATAL) << "unsupported partition " << cfg.partition;
   }
 
   MPI_Finalize();

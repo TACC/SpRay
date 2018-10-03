@@ -111,6 +111,12 @@ inline unsigned int getNumThreads() {
   return (concurrency == 0) ? DEFAULT_NUM_HARDWARE_THREADS : concurrency;
 }
 
+template <class T>
+std::size_t getNumOfItems(void* base, std::size_t bytes) {
+  uint8_t* end = ((uint8_t*)base) + bytes;
+  return ((T*)end - (T*)base);
+}
+
 }  // namespace util
 }  // namespace spray
 
