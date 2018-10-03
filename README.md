@@ -1,7 +1,5 @@
 # SpRay: a distributed-memory speculative ray tracer for out-of-core and in situ rendering
 
-## Copyright
-
 Copyright (c) 2017-2018 The University of Texas at Austin. All rights reserved.
 
 SpRay is licensed under the Apache License, Version 2.0 (the "License");
@@ -66,12 +64,11 @@ cd build
 If you are using Apple Clang on a Mac,
 ```bash
 cmake -DOpenMP_INSTALL_DIR=$(brew --prefix libomp) -DEMBREE_INSTALL_DIR=<path_to_embree_install> ..
+make
 ```
 Otherwise,
 ```bash
 cmake -DEMBREE_INSTALL_DIR=<path_to_embree_install> ..
-```
-```bash
 make
 ```
 If you wish to install Spray,
@@ -87,7 +84,7 @@ Notice that the scripts launch MPI tasks using the `mpirun` command and specify 
 
 Additionally, if you wish to use installed binaries, you'll have to modify the variable `SPRAY_BIN` in the scripts and set runtime search paths, `LD_LIBRARY_PATH` or `DYLD_LIBRARY_PATH`, as needed.
 
-### Rendering isosurfaces of 64 domains
+### Rendering isosurfaces of 64 wavelet domains
 
 Set a path to the project home.
 
