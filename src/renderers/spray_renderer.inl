@@ -77,10 +77,10 @@ void SprayRenderer<TracerT, CacheT>::init(const Config &cfg) {
   msgcmd_.camera_cmd = CAM_NOP;
 
   // glfw
-  if (cfg.view_mode != VIEW_MODE_FILM && mpi::rank() == 0) {
-    Glfw<WbvhEmbree, CacheT>::initialize(cfg, Comm::isRootProcess(),
-                                         cfg.image_w, cfg.image_h, &camera_,
-                                         &msgcmd_, &scene_);
+  if (cfg.view_mode != VIEW_MODE_FILM) {
+    Glfw<WbvhEmbree, CacheT>::initialize(cfg, mpi::isRootProcess(), cfg.image_w,
+                                         cfg.image_h, &camera_, &msgcmd_,
+                                         &scene_);
   }
 
 #ifdef SPRAY_GLOG_CHECK
@@ -96,7 +96,13 @@ void SprayRenderer<TracerT, CacheT>::run() {
   if (msgcmd_.view_mode == VIEW_MODE_FILM) {
     renderFilm();
   } else if (msgcmd_.view_mode == VIEW_MODE_GLFW) {
-    renderGlfw();
+    if (mpi::isSingleProcess()) {
+      renderGlfwSingleTask();
+    } else if (mpi::isRootProcess()) {
+      renderGlfwRootTask();
+    } else {
+      renderGlfwChildTask();
+    }
   } else {
     msgcmd_.view_mode = VIEW_MODE_TERMINATE;
     glfwTerminate();
@@ -105,7 +111,7 @@ void SprayRenderer<TracerT, CacheT>::run() {
 }
 
 template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::renderGlfw() {
+void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTask() {
 #ifdef SPRAY_TIMING
   tReset();
   tStartMPI(TIMER_TOTAL);
@@ -118,30 +124,18 @@ void SprayRenderer<TracerT, CacheT>::renderGlfw() {
 
   CHECK_EQ(msgcmd_.view_mode, VIEW_MODE_GLFW);
 
-  bool cluster = (mpi::size() > 1);
-  bool root = (mpi::rank() == 0);
-
-  if (root) {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  }
-
   int64_t nframes = 0;
 
-  while (nframes < cfg_nframes ||
-         (cfg_nframes < 0 && msgcmd_.view_mode == VIEW_MODE_GLFW)) {
+  while (nframes < cfg_nframes || (cfg_nframes < 0 && !msgcmd_.done)) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     tracer_.trace();
 
-    if (cluster) {
-      image_.composite();
-    }
+    glDrawPixels(image_w, image_h, GL_RGBA, GL_FLOAT, image_buf);
+    Glfw<WbvhEmbree, CacheT>::swapBuffers();
+    glfwPollEvents();
+    Glfw<WbvhEmbree, CacheT>::cmdHandler();
 
-    if (root) {
-      glDrawPixels(image_w, image_h, GL_RGBA, GL_FLOAT, image_buf);
-      Glfw<WbvhEmbree, CacheT>::swapBuffers();
-      glfwPollEvents();
-      Glfw<WbvhEmbree, CacheT>::cmdHandler();
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    }
     ++nframes;
   }
 
@@ -154,6 +148,89 @@ void SprayRenderer<TracerT, CacheT>::renderGlfw() {
 #ifdef SPRAY_TIMING
   tPrint(cfg_nframes);
 #endif
+}
+
+template <class TracerT, class CacheT>
+void SprayRenderer<TracerT, CacheT>::renderGlfwRootTask() {
+#ifdef SPRAY_TIMING
+  tReset();
+  tStartMPI(TIMER_TOTAL);
+#endif
+
+  int64_t cfg_nframes = cfg_->nframes;
+  int image_w = image_.w;
+  int image_h = image_.h;
+  glm::vec4 *image_buf = image_.buf;
+
+  CHECK_EQ(msgcmd_.view_mode, VIEW_MODE_GLFW);
+
+  int64_t nframes = 0;
+
+  while (nframes < cfg_nframes || (cfg_nframes < 0 && !msgcmd_.done)) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    image_.clear();
+    tracer_.trace();
+    image_.composite();
+
+    glDrawPixels(image_w, image_h, GL_RGBA, GL_FLOAT, image_buf);
+
+    Glfw<WbvhEmbree, CacheT>::swapBuffers();
+    glfwPollEvents();
+
+    // send command
+    MPI_Bcast((void *)&msgcmd_, sizeof(MessageCommand), MPI_UNSIGNED_CHAR, 0,
+              MPI_COMM_WORLD);
+
+    // handle command
+    Glfw<WbvhEmbree, CacheT>::cmdHandler();
+
+    ++nframes;
+  }
+
+#ifdef SPRAY_TIMING
+  tStop(TIMER_TOTAL);
+#endif
+
+  glfwTerminate();
+  msgcmd_.view_mode = VIEW_MODE_TERMINATE;
+
+#ifdef SPRAY_TIMING
+  tPrint(cfg_nframes);
+#endif
+}
+
+template <class TracerT, class CacheT>
+void SprayRenderer<TracerT, CacheT>::renderGlfwChildTask() {
+#ifdef SPRAY_TIMING
+  tReset();
+  tStartMPI(TIMER_TOTAL);
+#endif
+
+  int64_t cfg_nframes = cfg_->nframes;
+  int64_t nframes = 0;
+
+  while (nframes < cfg_nframes || (cfg_nframes < 0 && !msgcmd_.done)) {
+    image_.clear();
+    tracer_.trace();
+    image_.composite();
+
+    // recv command
+    MPI_Bcast((void *)&msgcmd_, sizeof(MessageCommand), MPI_UNSIGNED_CHAR, 0,
+              MPI_COMM_WORLD);
+
+    // handle command
+    Glfw<WbvhEmbree, CacheT>::cmdHandler();
+
+    ++nframes;
+  }
+
+#ifdef SPRAY_TIMING
+  tStop(TIMER_TOTAL);
+  tPrint(cfg_nframes);
+#endif
+
+  msgcmd_.view_mode = VIEW_MODE_TERMINATE;
 }
 
 template <class TracerT, class CacheT>

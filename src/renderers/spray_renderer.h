@@ -35,6 +35,7 @@
 #include "renderers/spray.h"
 #include "scene/camera.h"
 #include "scene/scene.h"
+#include "utils/comm.h"
 #include "utils/profiler.h"
 #include "utils/profiler_util.h"
 #include "utils/timer.h"
@@ -51,7 +52,9 @@ class SprayRenderer {
 
  private:
   void renderFilm();
-  void renderGlfw();
+  void renderGlfwSingleTask();
+  void renderGlfwRootTask();
+  void renderGlfwChildTask();
 
  private:
   const Config* cfg_;

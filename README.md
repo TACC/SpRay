@@ -131,7 +131,7 @@ export SPRAY_HOME_PATH=<path_to_spray_home>
 For film mode,
 
 ```bash
-source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64_film.sh
+source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64.sh film
 Type a number from the application list.
 display spray.ppm
 ```
@@ -139,7 +139,7 @@ display spray.ppm
 For glfw mode,
 
 ```bash
-source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64_glfw.sh
+source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64.sh glfw
 Type a number from the application list.
 Type the q-key to close the window.
 ```
