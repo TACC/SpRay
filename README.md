@@ -70,7 +70,7 @@ If you wish to install Spray,
 make install
 ```
 
-## Building Spray (Linux and Mac)
+## Building Spray (macOS)
 
 Install an OpenMP library. We show an example of installing `libomp` using `Homebrew`.
 
@@ -112,7 +112,7 @@ If you wish to install Spray,
 make install
 ```
 
-## Running Spray (Linux and Mac)
+## Running Spray (Linux and macOS)
 
 As you run the bash scripts below, you'll be asked to choose an application from a list of applications. Those starting with `base` are an implementation of the baseline algorithm; those starting with `spray` are an implementation using the speculative technique.
 
