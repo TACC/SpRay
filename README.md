@@ -72,11 +72,11 @@ make install
 
 ## Running Spray (Linux and Mac)
 
+As you run the bash scripts below, you'll be asked to choose an application from a list of applications. Those starting with `base` are an implementation of the baseline algorithm; those starting with `spray` are an implementation using the speculative technique.
+
+Notice that the scripts launch MPI tasks using the `mpirun` command and specify the number of OpenMP threads by setting the environment variable `OMP_NUM_THREADS`. You may have to modify such settings based on your system requirements.
+
 ### Rendering isosurfaces of 64 domains
-
-As you run the scripts below, you'll see a list of applications to choose from. Those starting with `base` are an implementation of the baseline algorithm and those starting with `spray` are an implementation using the speculative technique.
-
-Notice that the scripts launch MPI tasks and OpenMP threads using the `mpirun` command. Based on your system requirements, you may have to modify the settings such as the MPI command, the number of MPI tasks, and the number of OpenMP threads.
 
 Set a path to the project home.
 
