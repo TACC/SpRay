@@ -36,15 +36,12 @@ https://hyungman.bitbucket.io/projects/spray/
 * National Science Foundation grant ACI-1339863
 * An Intel Visualization Center of Excellence award through the IPCC program
 
-## Building Spray (Linux and Mac)
+## Building Spray (Linux)
 
-If you are using Apple Clang on a Mac, install `libomp`.
-```bash
-brew install libomp
-```
 Build and install [Embree][2]. We tested Spray with Embree v2.17.1.
 
 Check out Spray with all submodules.
+
 ```bash
 git clone https://github.com/TACC/SpRay.git
 cd SpRay
@@ -52,26 +49,65 @@ git submodule init
 git submodule update
 ```
 Or simply,
+
 ```bash
 git clone --recurse-submodules https://github.com/TACC/SpRay.git
 cd SpRay
 ```
-Create a build directory.
+
+Create a directory and build.
+
 ```bash
 mkdir build
 cd build
-```
-If you are using Apple Clang on a Mac,
-```bash
-cmake -DOpenMP_INSTALL_DIR=$(brew --prefix libomp) -DEMBREE_INSTALL_DIR=<path_to_embree_install> ..
-make
-```
-Otherwise,
-```bash
 cmake -DEMBREE_INSTALL_DIR=<path_to_embree_install> ..
 make
 ```
+
 If you wish to install Spray,
+
+```bash
+make install
+```
+
+## Building Spray (Linux and Mac)
+
+Install an OpenMP library. We show an example of installing `libomp` using `Homebrew`.
+
+```bash
+brew install libomp
+
+```
+
+Build and install [Embree][2]. We tested Spray with Embree v2.17.1.
+
+Check out Spray with all submodules.
+
+```bash
+git clone https://github.com/TACC/SpRay.git
+cd SpRay
+git submodule init
+git submodule update
+```
+
+Or simply,
+
+```bash
+git clone --recurse-submodules https://github.com/TACC/SpRay.git
+cd SpRay
+```
+
+Create a directory and build.
+
+```bash
+mkdir build
+cd build
+cmake -DOpenMP_INSTALL_DIR=$(brew --prefix libomp) -DEMBREE_INSTALL_DIR=<path_to_embree_install> ..
+make
+```
+
+If you wish to install Spray,
+
 ```bash
 make install
 ```
