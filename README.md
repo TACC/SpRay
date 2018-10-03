@@ -29,6 +29,15 @@ You can find our paper and slides on [the project page][4].
 https://hyungman.bitbucket.io/projects/spray/
 ```
 
+## Contributors
+* Hyungman Park, ECE and TACC, UT Austin (Developer)
+* Paul Navratil, TACC, UT Austin (Advisor)
+* Donald Fussell, CS, UT Austin (Advisor)
+
+## Acknowledgments
+* National Science Foundation grant ACI-1339863
+* An Intel Visualization Center of Excellence award through the IPCC program
+
 ## Building Spray (Linux and Mac)
 
 If you are using Apple Clang on a Mac, install `libomp`.
@@ -76,6 +85,8 @@ As you run the bash scripts below, you'll be asked to choose an application from
 
 Notice that the scripts launch MPI tasks using the `mpirun` command and specify the number of OpenMP threads by setting the environment variable `OMP_NUM_THREADS`. You may have to modify such settings based on your system requirements.
 
+Additionally, if you wish to use installed binaries, you'll have to modify the variable `SPRAY_BIN` in the scripts and set runtime search paths, `LD_LIBRARY_PATH` or `DYLD_LIBRARY_PATH`, as needed.
+
 ### Rendering isosurfaces of 64 domains
 
 Set a path to the project home.
@@ -88,7 +99,7 @@ For film mode,
 
 ```bash
 source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64_film.sh
-Type a number from the list.
+Type a number from the application list.
 display spray.ppm
 ```
 
@@ -96,27 +107,13 @@ For glfw mode,
 
 ```bash
 source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64_glfw.sh
-Type a number from the list.
+Type a number from the application list.
+Type the q-key to close the window.
 ```
-
-Type the `q-key` to close the window.
-
-If you wish to use installed binaries, you'll have to modify the variable `SPRAY_BIN` in the bash scripts and set runtime search paths, LD_LIBRARY_PATH or DYLD_LIBRARY_PATH, as needed.
 
 You should see the following as a result:
 
 ![wavelets.jpg](images/wavelets64.jpg)
-
-
-## Contributors
-
-  * Hyungman Park, ECE and TACC, UT Austin (Developer)
-  * Paul Navratil, TACC, UT Austin (Advisor)
-  * Donald Fussell, CS, UT Austin (Advisor)
-
-## Acknowledgments
- * National Science Foundation grant ACI-1339863
- * An Intel Visualization Center of Excellence award through the IPCC program
 
 
 [1]: https://www.apache.org/licenses/LICENSE-2.0
