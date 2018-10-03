@@ -13,15 +13,20 @@ Unless required by applicable law or agreed to in writing, software distributed 
 This repository contains the source code of the speculative ray scheduling technique described in the following paper:
 ```
 SpRay: Speculative Ray Scheduling for Large Data Visualization
-Hyungman Park, Donald Fussell, and Paul Navrátil
-Large Data Analysis and Visualization 2018
+Hyungman Park, Donald Fussell, Paul Navrátil
+IEEE Symposium on Large Data Analysis and Visualization 2018
 ```
 
 It also includes our implementations of the baseline algorithm described in the following paper:
 ```
 Exploring the Spectrum of Dynamic Scheduling Algorithms for Scalable Distributed-Memory Ray Tracing.
-Paul A. Navratil, Hank Childs, Donald S. Fussell, Calvin Lin
+Paul A. Navrátil, Hank Childs, Donald S. Fussell, Calvin Lin
 IEEE Transactions on Visualization and Computer Graphics 2013
+```
+
+You can find our paper and slides on [the project page][4].
+```
+https://hyungman.bitbucket.io/projects/spray/
 ```
 
 ## Building Spray (Linux and Mac)
@@ -69,22 +74,31 @@ make install
 
 ### Rendering isosurfaces of 64 domains
 
+As you run the scripts below, you'll see a list of applications to choose from. Those starting with `base` are an implementation of the baseline algorithm and those starting with `spray` are an implementation using the speculative technique.
+
+Notice that the scripts launch MPI tasks and OpenMP threads using the `mpirun` command. Based on your system requirements, you may have to modify the settings such as the MPI command, the number of MPI tasks, and the number of OpenMP threads.
+
+Set a path to the project home.
+
 ```bash
 export SPRAY_HOME_PATH=<path_to_spray_home>
 ```
+
 For film mode,
+
 ```bash
 source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64_film.sh
+Type a number from the list.
 display spray.ppm
 ```
-As you run the script, you'll see a list of applications to choose from. Those starting with `base_` are an implementation of our baseline algorithm in [the paper][3].
-
-Notice that this bash script launches 2 MPI tasks using `mpirun -n 2`. You may have to modify the MPI command as needed.
 
 For glfw mode,
+
 ```bash
 source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64_glfw.sh
+Type a number from the list.
 ```
+
 Type the `q-key` to close the window.
 
 If you wish to use installed binaries, you'll have to modify the variable `SPRAY_BIN` in the bash scripts and set runtime search paths, LD_LIBRARY_PATH or DYLD_LIBRARY_PATH, as needed.
@@ -108,4 +122,5 @@ You should see the following as a result:
 [1]: https://www.apache.org/licenses/LICENSE-2.0
 [2]: https://github.com/embree/embree
 [3]: https://www.cs.utexas.edu/~lin/papers/tvcg13.pdf
+[4]: https://hyungman.bitbucket.io/projects/spray/
 
