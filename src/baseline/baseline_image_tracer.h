@@ -20,15 +20,15 @@
 
 #pragma once
 
-#include "baseline/baseline_base_tracer.h"
+#include "baseline/baseline_insitu_tracer.h"
 
 namespace spray {
 namespace baseline {
 
 template <typename CacheT, typename ScheduleT, typename ShaderT>
-class ImageTracer : public BaseTracer<CacheT, ScheduleT, ImagePartition, ShaderT> {
+class ImageTracer : public InsituTracer<CacheT, ScheduleT, ShaderT> {
  public:
-  typedef BaseTracer<CacheT, ScheduleT, ImagePartition, ShaderT> Base;
+  typedef InsituTracer<CacheT, ScheduleT, ShaderT> Base;
   void trace();
 
  private:

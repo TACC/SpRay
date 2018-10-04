@@ -38,9 +38,6 @@
 
 namespace spray {
 
-struct ImagePartition {};
-struct HybridPartition {};
-
 class InsituPartition {
  public:
   struct MortonCode {

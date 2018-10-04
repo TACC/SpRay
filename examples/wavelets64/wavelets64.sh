@@ -8,7 +8,7 @@ fi
 
 MODE=$1
 
-if [ $MODE != "film" ] && [ $MODE != "glfw" ] 
+if [ "$MODE" != "film" ] && [ "$MODE" != "glfw" ] 
 then
   echo "[error] invalid mode: $MODE"
   echo "[syntax] wavelets64.sh MODE"
@@ -50,6 +50,13 @@ then
   NUM_THREADS=2
   SPRAY_BIN=spray_ooc
   PARTITION=image
+
+elif [ $APP == "3" ]
+then
+  NUM_MPI_TASKS=2
+  NUM_THREADS=2
+  SPRAY_BIN=baseline_insitu
+  PARTITION=insitu
 
 elif [ $APP == "4" ]
 then

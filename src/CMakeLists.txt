@@ -271,6 +271,9 @@ add_library(spray STATIC ${SPRAY_SRC_LIST})
 add_executable(baseline_ooc apps/baseline_ooc.cc)
 target_link_libraries(baseline_ooc spray ${DEP_LIBS})
 
+add_executable(baseline_insitu apps/baseline_insitu.cc)
+target_link_libraries(baseline_insitu spray ${DEP_LIBS})
+
 add_executable(spray_insitu apps/spray_insitu.cc)
 target_link_libraries(spray_insitu spray ${DEP_LIBS})
 
