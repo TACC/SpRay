@@ -428,47 +428,8 @@ void Comm<QItemT, MessageT, OutgoingCopierT, IncomingCopierT>::setup() {
                 << " send_rbuf " << send_rbuf_->size<QItemT>(rank)
                 << " send_sbuf " << send_sbuf_->size<QItemT>(rank);
 #endif
-
       num_items2send +=
           (send_rbuf_->size<QItemT>(rank) + send_sbuf_->size<QItemT>(rank));
-
-#ifdef SPRAY_GLOG_CHECK
-      int nblocks = send_rbuf_->getNumBlocks(rank);
-      for (int i = 0; i < nblocks; ++i) {
-        const MemBlock& blk = send_rbuf_->getBlock(rank, i);
-        if (blk.size) {
-          CHECK_NOTNULL(blk.buf);
-          check_bytes += convertBytesQItemToMessage<QItemT, MessageT>(blk);
-
-          QItemT* buf = (QItemT*)blk.buf;
-          std::size_t num = MemBlock::getSize<QItemT>(blk);
-          for (std::size_t n = 0; n < num; ++n) {
-            QItemT& data = buf[n];
-            CHECK_EQ(DRayUtil::getShadow(*(data.ray)), 0x00000000)
-                << *(data.ray);
-            CHECK_GE(data.ray->domid, 0)
-                << "[id " << id << "][[dest_rank" << rank << "]" << *(data.ray);
-          }
-        }
-      }
-      nblocks = send_sbuf_->getNumBlocks(rank);
-      for (int i = 0; i < nblocks; ++i) {
-        const MemBlock& shadow_blk = send_sbuf_->getBlock(rank, i);
-        if (shadow_blk.size) {
-          CHECK_NOTNULL(shadow_blk.buf);
-          check_bytes +=
-              convertBytesQItemToMessage<QItemT, MessageT>(shadow_blk);
-
-          QItemT* buf = (QItemT*)shadow_blk.buf;
-          std::size_t num = MemBlock::getSize<QItemT>(shadow_blk);
-          for (std::size_t n = 0; n < num; ++n) {
-            QItemT& data = buf[n];
-            CHECK_EQ(DRayUtil::getShadow(*(data.ray)), 0x00000001)
-                << *(data.ray);
-          }
-        }
-      }
-#endif
     }
   }
 

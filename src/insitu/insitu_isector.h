@@ -42,6 +42,32 @@ class Isector {
   RTCRayExt eray_;
 
  public:
+  // used for parallel ray queuing
+  template <typename CacheT>
+  void intersect(int ndomains, Scene<CacheT>* scene, Ray* ray,
+                 spray::QVector<Ray*>* qs) {
+    RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
+                                             &eray_);
+
+    // ray-domain intersection tests
+    scene->intersectDomains(eray_);
+
+    // place ray in hit domains
+    if (domains_.count) {
+      // sort hit domains
+      RTCRayUtil::sortDomains(domains_, hits_);
+
+      // place the ray (
+      for (int d = 0; d < domains_.count; ++d) {
+        int id = hits_[d].id;
+#ifdef SPRAY_GLOG_CHECK
+        CHECK_LT(id, ndomains);
+#endif
+        qs->push(id, ray);
+      }
+    }
+  }
+
   template <typename CacheT>
   void intersect(int ndomains, Scene<CacheT>* scene, RayBuf ray_buf,
                  spray::QVector<Ray*>* qs) {

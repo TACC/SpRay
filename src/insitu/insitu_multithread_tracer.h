@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <string.h>
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -28,6 +27,7 @@
 #include <numeric>
 #include <queue>
 #include <vector>
+#include <string.h>
 
 #include "embree/random_sampler.h"
 #include "glog/logging.h"
@@ -36,6 +36,7 @@
 #include "insitu/insitu_comm.h"
 #include "insitu/insitu_isector.h"
 #include "insitu/insitu_ray.h"
+#include "insitu/insitu_tcontext.h"
 #include "insitu/insitu_tiler.h"
 #include "insitu/insitu_util.h"
 #include "insitu/insitu_vbuf.h"
@@ -45,17 +46,21 @@
 #include "partition/data_partition.h"
 #include "partition/domain.h"
 #include "partition/qvector.h"
+#include "partition/tile.h"
+#include "renderers/config.h"
 #include "renderers/spray.h"
 #include "scene/camera.h"
 #include "scene/light.h"
 #include "scene/scene.h"
+#include "utils/comm.h"
 #include "utils/profiler_util.h"
+#include "utils/scan.h"
 
 namespace spray {
 namespace insitu {
 
 template <typename CacheT, typename ShaderT>
-class SingleThreadTracer {
+class MultiThreadTracer {
  public:
   void trace();
 
@@ -64,6 +69,10 @@ class SingleThreadTracer {
             HdrImage *image);
 
  private:
+  typedef TContext<CacheT, ShaderT> TContextType;
+
+  std::vector<TContextType> tcontexts_;
+
   ShaderT shader_;
   Tiler tiler_;
   Comm comm_;
@@ -79,73 +88,39 @@ class SingleThreadTracer {
   void genMultiEyes(int image_w, float orgx, float orgy, float orgz,
                     int base_tile_y, Tile tile, RayBuf *ray_buf);
 
-  void sendRays();
-  void send(bool shadow, int domain_id, int dest, std::queue<Ray *> *q);
-  void procLocalQs();
-  void procRecvQs();
-  void procRads(int id, Ray *rays, int64_t count);
-  void procShads(int id, Ray *rays, int64_t count);
+  void sendRays(int tid, TContextType *tcontext);
+  void send(bool shadow, int tid, int domain_id, int dest, std::size_t num_rays,
+            TContextType *tcontext);
+  void procLocalQs(int tid, int ray_depth, TContextType *tcontext);
+  void procRecvQs(int ray_depth, TContextType *tcontext);
+  void procRecvRads(int ray_depth, int id, Ray *rays, int64_t count,
+                    TContextType *tcontext);
+  void procRecvShads(int id, Ray *rays, int64_t count, TContextType *tcontext);
 
-  void procRad(int id, Ray *ray);
-  void procShad(int id, Ray *ray);
+  void procCachedRq(int ray_depth, TContextType *tcontext);
 
-  void filterRq2(int id);
-  void filterSq2(int id);
-  void procFrq2();
-  void procFsq2();
-  void procCachedRq();
-  void procRetireQ();
-
-  void populateRadWorkStats();
-  void populateWorkStats();
+  void populateRadWorkStats(TContextType *tcontext);
+  void populateWorkStats(TContextType *tcontext);
 
  private:
   const spray::Camera *camera_;
   const spray::InsituPartition *partition_;
-  std::vector<spray::Light *> lights_;
+  std::vector<spray::Light *> lights_;  // copied lights
   Scene<CacheT> *scene_;
   spray::HdrImage *image_;
-  Isector isector_;
-
-  spray::QVector<Ray *> rqs_;
-  spray::QVector<Ray *> sqs_;
 
   std::queue<msg_word_t *> recv_rq_;
   std::queue<msg_word_t *> recv_sq_;
 
-  std::queue<Ray *> rq2_;
-  std::queue<Ray *> sq2_;
+  WorkStats work_stats_;  // number of blocks to process
 
-  struct IsectInfo {
-    int domain_id;
-    spray::RTCRayIntersection *isect;
-    Ray *ray;
-  };
-
-  struct OcclInfo {
-    int domain_id;
-    Ray *ray;
-  };
-
-  std::queue<IsectInfo> cached_rq_;
-
-  std::queue<IsectInfo> frq2_;
-  std::queue<OcclInfo> fsq2_;
-
-  std::queue<Ray *> retire_q_;
-
-  WorkStats work_stats_;
-
-  spray::MemoryArena *mem_in_;
-  spray::MemoryArena *mem_out_;
-  spray::MemoryArena mem_0_;
-  spray::MemoryArena mem_1_;
+  spray::ThreadStatus thread_status_;
+  spray::InclusiveScan<std::size_t> scan_;
+  WorkSendMsg<Ray, MsgHeader> *send_work_;
 
  private:
   Tile mytile_;
   Tile image_tile_;
-
-  int ray_depth_;
 
  private:
   int rank_;
@@ -162,7 +137,7 @@ class SingleThreadTracer {
 }  // namespace insitu
 }  // namespace spray
 
-#define SPRAY_INSITU_SINGLE_THRAED_TRACER_INL
-#include "insitu/insitu_singlethread_tracer.inl"
-#undef SPRAY_INSITU_SINGLE_THRAED_TRACER_INL
+#define SPRAY_INSITU_MULTI_THREAD_TRACER_INL
+#include "insitu/insitu_multithread_tracer.inl"
+#undef SPRAY_INSITU_MULTI_THREAD_TRACER_INL
 

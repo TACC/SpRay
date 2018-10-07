@@ -8,7 +8,7 @@ fi
 
 MODE=$1
 
-if [ "$MODE" != "film" ] && [ "$MODE" != "glfw" ] 
+if [ "$MODE" != "film" ] && [ "$MODE" != "glfw" ]
 then
   echo "[error] invalid mode: $MODE"
   echo "[syntax] wavelets64.sh MODE"
@@ -30,46 +30,55 @@ PLY_PATH=$EXAMPLE_PATH
 MPI_BIN="mpirun -n"
 
 echo "Choose an application (1-4):"
-echo "1. spray_insitu"
-echo "2. spray_ooc"
-echo "3. baseline_insitu"
-echo "4. baseline_ooc"
+echo "1. spray_singlethread_insitu"
+echo "2. spray_multithread_insitu"
+echo "3. spray_ooc"
+echo "4. baseline_insitu"
+echo "5. baseline_ooc"
 
 read APP
 
-if [ $APP == "1" ]
+if [ $APP == "1" ] # spray_singlethread_insitu
 then
   NUM_MPI_TASKS=2
   NUM_THREADS=1 # threading not supported
-  SPRAY_BIN=spray_insitu
+  SPRAY_BIN=spray_singlethread_insitu
   PARTITION=insitu
 
-elif [ $APP == "2" ]
+elif [ $APP == "2" ] # spray_multithread_insitu
+then
+  NUM_MPI_TASKS=2
+  NUM_THREADS=1
+  SPRAY_BIN=spray_multithread_insitu
+  PARTITION=insitu
+
+elif [ $APP == "3" ] # spray_ooc
 then
   NUM_MPI_TASKS=2
   NUM_THREADS=2
   SPRAY_BIN=spray_ooc
   PARTITION=image
 
-elif [ $APP == "3" ]
+elif [ $APP == "4" ] # baseline_insitu
 then
   NUM_MPI_TASKS=2
   NUM_THREADS=2
   SPRAY_BIN=baseline_insitu
   PARTITION=insitu
 
-elif [ $APP == "4" ]
+elif [ $APP == "5" ] # baseline_ooc
 then
   SPRAY_BIN=baseline_ooc
   NUM_MPI_TASKS=2
   NUM_THREADS=2
   PARTITION=image
 
-else
+else # undefined
   NUM_MPI_TASKS=1
   NUM_THREADS=1
   COMMAND=""
   echo "[error] invalid input"
+  return
 fi
 
 CACHE_SIZE=-1

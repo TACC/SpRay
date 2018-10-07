@@ -156,6 +156,8 @@ class VBuf {
     return tbuf_out_[samid];
   }
 
+  bool equalToTbufOut(int samid, float t) { return (tbuf_out_[samid] == t); }
+
   bool updateTBufOutT(float t_new, Ray* ray) const {
     auto& t_old = tbuf_out_[ray->samid];
     if (t_new < t_old) {

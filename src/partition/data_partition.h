@@ -94,12 +94,12 @@ class InsituPartition {
 
       // morton codes
 #ifdef SPRAY_GLOG_CHECK
-      CHECK_LT(c.x, 1.0f);
-      CHECK_LT(c.y, 1.0f);
-      CHECK_LT(c.z, 1.0f);
-      CHECK_GT(c.x, 0.0f);
-      CHECK_GT(c.y, 0.0f);
-      CHECK_GT(c.z, 0.0f);
+      CHECK_LE(c.x, 1.0f);
+      CHECK_LE(c.y, 1.0f);
+      CHECK_LE(c.z, 1.0f);
+      CHECK_GE(c.x, 0.0f);
+      CHECK_GE(c.y, 0.0f);
+      CHECK_GE(c.z, 0.0f);
       CHECK_LT(domains[i].id, ndomains_);
 #endif
 

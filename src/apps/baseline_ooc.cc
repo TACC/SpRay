@@ -29,6 +29,7 @@
 #include "renderers/config.h"
 #include "renderers/spray.h"
 #include "renderers/spray_renderer.h"
+#include "utils/comm.h"
 
 int main(int argc, char** argv) {
   int required = MPI_THREAD_FUNNELED;
@@ -46,8 +47,8 @@ int main(int argc, char** argv) {
   CHECK_EQ(provided, required) << "MPI_THREAD_FUNNELED not available.";
 
 #ifdef SPRAY_GLOG_CHECK
-  LOG(INFO) << "rank " << mpi::worldRank()
-            << " (world size: " << mpi::worldSize() << ")";
+  LOG(INFO) << "rank " << spray::mpi::worldRank()
+            << " (world size: " << spray::mpi::worldSize() << ")";
 #endif
 
   spray::Config cfg;

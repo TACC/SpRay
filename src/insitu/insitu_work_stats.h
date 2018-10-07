@@ -32,6 +32,25 @@
 namespace spray {
 namespace insitu {
 
+class ThreadWorkStats {
+ public:
+  void resize(int nranks) { reduce_buf_.resize(nranks, 0); }
+
+  void reset() {
+    for (auto& r : reduce_buf_) r = 0;
+  }
+
+  void addNumDomains(int dest_rank, int num_blocks) {
+    reduce_buf_[dest_rank] += num_blocks;
+  }
+
+  std::size_t getReduceBufSize() const { return reduce_buf_.size(); }
+  int getReduceBuf(std::size_t i) const { return reduce_buf_[i]; }
+
+ private:
+  std::vector<int> reduce_buf_;  // per-rank
+};
+
 class WorkStats {
  private:
   struct ScatterEntry {
@@ -74,6 +93,17 @@ class WorkStats {
  public:
   void addNumDomains(int dest_rank, int num_blocks) {
     reduce_buf_[dest_rank] += num_blocks;
+  }
+
+ public:
+  void merge(const ThreadWorkStats& stats) {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_GT(reduce_buf_.size(), 0);
+    CHECK_EQ(reduce_buf_.size(), stats.getReduceBufSize());
+#endif
+    for (std::size_t i = 0; i < reduce_buf_.size(); ++i) {
+      reduce_buf_[i] += stats.getReduceBuf(i);
+    }
   }
 };
 

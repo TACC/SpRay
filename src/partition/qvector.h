@@ -46,13 +46,8 @@ class QVector {
     }
     return true;
   }
-  uint64_t size() const {
-    uint64_t s = 0;
-    for (const auto& q : qs_) {
-      s += q.size();
-    }
-    return s;
-  }
+
+  std::size_t size() const { return qs_.size(); }
 
   bool empty(int i) const { return qs_[i].empty(); }
   void pop(int i) { return qs_[i].pop(); }

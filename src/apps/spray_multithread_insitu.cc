@@ -20,12 +20,10 @@
 
 #include "glog/logging.h"
 
-#include "baseline/baseline_insitu_tracer.h"
-#include "baseline/baseline_schedulers.h"
-#include "baseline/baseline_shader_ao.h"
-#include "baseline/baseline_shader_pt.h"
 #include "caches/caches.h"
-#include "partition/data_partition.h"
+#include "insitu/insitu_multithread_tracer.h"
+#include "insitu/insitu_shader_ao.h"
+#include "insitu/insitu_shader_pt.h"
 #include "renderers/config.h"
 #include "renderers/spray.h"
 #include "renderers/spray_renderer.h"
@@ -55,32 +53,26 @@ int main(int argc, char** argv) {
   cfg.parse(argc, argv);
 
   if (cfg.partition == spray::Config::INSITU) {
-    if (cfg.ao_mode) {
-      if (cfg.cache_size < 0) {
-        spray::SprayRenderer<
-            spray::baseline::InsituTracer<
-                spray::InfiniteCache, spray::baseline::LoadAnyOnceInsituSched,
-                spray::baseline::ShaderAo<spray::InfiniteCache>>,
-            spray::InfiniteCache>
+    if (cfg.cache_size < 0) {
+      if (cfg.ao_mode) {
+        spray::SprayRenderer<spray::insitu::MultiThreadTracer<
+                                 spray::InfiniteCache,
+                                 spray::insitu::ShaderAo<spray::InfiniteCache>>,
+                             spray::InfiniteCache>
             render;
         render.init(cfg);
         render.run();
       } else {
-        LOG(FATAL) << "not allowed to set cache size in in-situ mode";
+        spray::SprayRenderer<spray::insitu::MultiThreadTracer<
+                                 spray::InfiniteCache,
+                                 spray::insitu::ShaderPt<spray::InfiniteCache>>,
+                             spray::InfiniteCache>
+            render;
+        render.init(cfg);
+        render.run();
       }
     } else {
-      if (cfg.cache_size < 0) {
-        spray::SprayRenderer<
-            spray::baseline::InsituTracer<
-                spray::InfiniteCache, spray::baseline::LoadAnyOnceInsituSched,
-                spray::baseline::ShaderPt<spray::InfiniteCache>>,
-            spray::InfiniteCache>
-            render;
-        render.init(cfg);
-        render.run();
-      } else {
-        LOG(FATAL) << "not allowed to set cache size in in-situ mode";
-      }
+      LOG(FATAL) << "not allowed to set cache size in in-situ mode";
     }
   } else {
     LOG(FATAL) << "unsupported partition " << cfg.partition;
