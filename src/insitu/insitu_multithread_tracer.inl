@@ -213,13 +213,14 @@ void MultiThreadTracer<CacheT, ShaderT>::populateRadWorkStats(
     TContextType *tcontext) {
   tcontext->populateRadWorkStats();
 #pragma omp barrier
-#pragma omp single
+#pragma omp master
   {
     work_stats_.reset();
     for (const auto &t : tcontexts_) {
       work_stats_.merge(t.getWorkStats());
     }
   }
+#pragma omp barrier
 }
 
 template <typename CacheT, typename ShaderT>
@@ -227,13 +228,14 @@ void MultiThreadTracer<CacheT, ShaderT>::populateWorkStats(
     TContextType *tcontext) {
   tcontext->populateWorkStats(rank_);
 #pragma omp barrier
-#pragma omp single
+#pragma omp master
   {
     work_stats_.reset();
     for (const auto &t : tcontexts_) {
       work_stats_.merge(t.getWorkStats());
     }
   }
+#pragma omp barrier
 }
 
 template <typename CacheT, typename ShaderT>
@@ -245,8 +247,9 @@ void MultiThreadTracer<CacheT, ShaderT>::sendRays(int tid,
       auto num_rads = tcontext->getRqSize(id);
       scan_.set(tid, num_rads);
 #pragma omp barrier
-#pragma omp single
+#pragma omp master
       scan_.scan();
+#pragma omp barrier
 
       if (scan_.sum()) {
         send(false, tid, id, dest, num_rads, tcontext);
@@ -326,6 +329,7 @@ void MultiThreadTracer<CacheT, ShaderT>::procLocalQs(int tid, int ray_depth,
       }
       tcontext->genRays(id, ray_depth);
     }
+#pragma omp barrier
   }
 }
 
@@ -489,6 +493,7 @@ void MultiThreadTracer<CacheT, ShaderT>::trace() {
         break;
       }
 
+      CHECK_LT(ray_depth, nbounces + 1);
 #pragma omp barrier
 
       // send rays (transfer WorkSendMsg's to the comm q)
@@ -512,10 +517,10 @@ void MultiThreadTracer<CacheT, ShaderT>::trace() {
       procLocalQs(tid, ray_depth, tcontext);
 #pragma omp barrier
 
-      procRecvQs(ray_depth, tcontext);
-#pragma omp barrier
+//       procRecvQs(ray_depth, tcontext);
+// #pragma omp barrier
 
-#pragma omp single
+#pragma omp master
       {
         if (ray_depth < nbounces && nranks > 1) {
           vbuf_.compositeTBuf();
@@ -535,6 +540,7 @@ void MultiThreadTracer<CacheT, ShaderT>::trace() {
         vbuf_.resetTBufIn();
         vbuf_.swapTBufs();
       }
+#pragma omp barrier
 
       // refer to tbuf input for correctness
       tcontext->processRays2();

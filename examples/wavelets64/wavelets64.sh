@@ -48,7 +48,7 @@ then
 elif [ $APP == "2" ] # spray_multithread_insitu
 then
   NUM_MPI_TASKS=1
-  NUM_THREADS=1
+  NUM_THREADS=2
   SPRAY_BIN=spray_multithread_insitu
   PARTITION=insitu
 
