@@ -228,14 +228,13 @@ void MultiThreadTracer<CacheT, ShaderT>::populateWorkStats(
     TContextType *tcontext) {
   tcontext->populateWorkStats(rank_);
 #pragma omp barrier
-#pragma omp master
+#pragma omp single
   {
     work_stats_.reset();
     for (const auto &t : tcontexts_) {
       work_stats_.merge(t.getWorkStats());
     }
   }
-#pragma omp barrier
 }
 
 template <typename CacheT, typename ShaderT>
@@ -247,9 +246,8 @@ void MultiThreadTracer<CacheT, ShaderT>::sendRays(int tid,
       auto num_rads = tcontext->getRqSize(id);
       scan_.set(tid, num_rads);
 #pragma omp barrier
-#pragma omp master
+#pragma omp single
       scan_.scan();
-#pragma omp barrier
 
       if (scan_.sum()) {
         send(false, tid, id, dest, num_rads, tcontext);
@@ -493,8 +491,10 @@ void MultiThreadTracer<CacheT, ShaderT>::trace() {
         break;
       }
 
+#ifdef SPRAY_GLOG_CHECK
       CHECK_LT(ray_depth, nbounces + 1);
 #pragma omp barrier
+#endif
 
       // send rays (transfer WorkSendMsg's to the comm q)
       if (nranks > 1) {
@@ -517,8 +517,10 @@ void MultiThreadTracer<CacheT, ShaderT>::trace() {
       procLocalQs(tid, ray_depth, tcontext);
 #pragma omp barrier
 
-//       procRecvQs(ray_depth, tcontext);
-// #pragma omp barrier
+      if (nranks > 1) {
+        procRecvQs(ray_depth, tcontext);
+#pragma omp barrier
+      }
 
 #pragma omp master
       {
