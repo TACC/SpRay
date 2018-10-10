@@ -96,7 +96,7 @@ void SingleThreadTracer<CacheT, ShaderT>::init(const Config &cfg,
 
   rqs_.resize(ndomains);
   sqs_.resize(ndomains);
-  work_stats_.resize();
+  work_stats_.resize(nranks, cfg.nthreads, ndomains);
 
   mem_in_ = &mem_0_;
   mem_out_ = &mem_1_;

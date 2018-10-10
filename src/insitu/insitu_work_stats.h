@@ -25,31 +25,15 @@
 #include <iostream>
 #include <vector>
 
-#include "partition/data_partition.h"
+#include "insitu/insitu_tcontext.h"
 #include "renderers/spray.h"
 #include "utils/comm.h"
 
 namespace spray {
+
+class InsituPartition;
+
 namespace insitu {
-
-class ThreadWorkStats {
- public:
-  void resize(int nranks) { reduce_buf_.resize(nranks, 0); }
-
-  void reset() {
-    for (auto& r : reduce_buf_) r = 0;
-  }
-
-  void addNumDomains(int dest_rank, int num_blocks) {
-    reduce_buf_[dest_rank] += num_blocks;
-  }
-
-  std::size_t getReduceBufSize() const { return reduce_buf_.size(); }
-  int getReduceBuf(std::size_t i) const { return reduce_buf_[i]; }
-
- private:
-  std::vector<int> reduce_buf_;  // per-rank
-};
 
 class WorkStats {
  private:
@@ -58,16 +42,22 @@ class WorkStats {
     int rank_num_blocks_to_proc;
   };
 
-  // organizatin
-  //   number of blocks to recv for each rank
+  // number of blocks to recv for each rank
   std::vector<int> reduce_buf_;            // per-rank
+  std::vector<int> block_counters_;        // per-domain
   std::vector<ScatterEntry> scatter_buf_;  // per-rank
 
  public:
-  void resize() {
-    int num_ranks = mpi::size();
-    reduce_buf_.resize(num_ranks, 0);
-    scatter_buf_.resize(num_ranks);
+  WorkStats() : ndomains_(0), num_blocks_to_recv_(0) {}
+
+  void resize(int nranks, int nthreads, int ndomains) {
+    reduce_buf_.resize(nranks, 0);
+    scatter_buf_.resize(nranks);
+
+    ndomains_ = ndomains;
+    if (nthreads > 1) {
+      block_counters_.resize(ndomains + 1, 0);  // +1 for cached block
+    }
   }
 
   void reset() {
@@ -76,6 +66,12 @@ class WorkStats {
   }
 
  private:
+  void resetBlockCounters() {
+    for (auto& r : block_counters_) r = 0;
+  }
+
+ private:
+  int ndomains_;
   int num_blocks_to_recv_;
 
  public:
@@ -91,21 +87,73 @@ class WorkStats {
   }
 
  public:
+  template <typename TContextT>
+  void reduceRadianceThreadWorkStats(int this_rank,
+                                     const spray::InsituPartition* partition,
+                                     std::vector<TContextT>& tcontexts);
+
+  template <typename TContextT>
+  void reduceThreadWorkStats(int this_rank,
+                             const spray::InsituPartition* partition,
+                             std::vector<TContextT>& tcontexts);
+
   void addNumDomains(int dest_rank, int num_blocks) {
     reduce_buf_[dest_rank] += num_blocks;
   }
 
- public:
-  void merge(const ThreadWorkStats& stats) {
-#ifdef SPRAY_GLOG_CHECK
-    CHECK_GT(reduce_buf_.size(), 0);
-    CHECK_EQ(reduce_buf_.size(), stats.getReduceBufSize());
-#endif
-    for (std::size_t i = 0; i < reduce_buf_.size(); ++i) {
-      reduce_buf_[i] += stats.getReduceBuf(i);
+ private:
+  void reduceRayBlocks(std::queue<int>* blockIds);
+  void updateReduceBuffer(const spray::InsituPartition* partition);
+};
+
+template <typename TContextT>
+void WorkStats::reduceRadianceThreadWorkStats(
+    int this_rank, const spray::InsituPartition* partition,
+    std::vector<TContextT>& tcontexts) {
+  reset();
+
+  // radiance blocks
+  resetBlockCounters();
+
+  for (auto& t : tcontexts) {
+    reduceRayBlocks(t.getRadianceBlockIds());
+  }
+
+  updateReduceBuffer(partition);
+}
+
+template <typename TContextT>
+void WorkStats::reduceThreadWorkStats(int this_rank,
+                                      const spray::InsituPartition* partition,
+                                      std::vector<TContextT>& tcontexts) {
+  reset();
+
+  // radiance blocks
+  resetBlockCounters();
+
+  for (auto& t : tcontexts) {
+    reduceRayBlocks(t.getRadianceBlockIds());
+  }
+
+  updateReduceBuffer(partition);
+
+  // shadow blocks
+  resetBlockCounters();
+
+  for (auto& t : tcontexts) {
+    reduceRayBlocks(t.getShadowBlockIds());
+  }
+
+  updateReduceBuffer(partition);
+
+  // cached blocks
+  for (auto& t : tcontexts) {
+    if (t.hasCachedBlock()) {
+      addNumDomains(this_rank, 1);
+      break;
     }
   }
-};
+}
 
 }  // namespace insitu
 }  // namespace spray

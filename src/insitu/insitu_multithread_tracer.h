@@ -112,6 +112,8 @@ class MultiThreadTracer {
   std::queue<msg_word_t *> recv_rq_;
   std::queue<msg_word_t *> recv_sq_;
 
+  msg_word_t *recv_message_;
+
   WorkStats work_stats_;  // number of blocks to process
 
   spray::ThreadStatus thread_status_;

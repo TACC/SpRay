@@ -99,7 +99,7 @@ void MultiThreadTracer<CacheT, ShaderT>::init(const Config &cfg,
       (int64_t)mytile_.w * mytile_.h * cfg.pixel_samples;
   CHECK_LT(total_num_samples, INT_MAX);
 
-  work_stats_.resize();
+  work_stats_.resize(nranks, cfg.nthreads, ndomains);
 
   vbuf_.resize(image_tile_, cfg.pixel_samples, total_num_light_samples);
 
@@ -213,27 +213,22 @@ void MultiThreadTracer<CacheT, ShaderT>::populateRadWorkStats(
     TContextType *tcontext) {
   tcontext->populateRadWorkStats();
 #pragma omp barrier
-#pragma omp master
+#pragma omp single
   {
-    work_stats_.reset();
-    for (const auto &t : tcontexts_) {
-      work_stats_.merge(t.getWorkStats());
-    }
+    work_stats_.reduceRadianceThreadWorkStats<TContextType>(rank_, partition_,
+                                                            tcontexts_);
   }
-#pragma omp barrier
 }
 
 template <typename CacheT, typename ShaderT>
 void MultiThreadTracer<CacheT, ShaderT>::populateWorkStats(
     TContextType *tcontext) {
-  tcontext->populateWorkStats(rank_);
+  tcontext->populateWorkStats();
 #pragma omp barrier
 #pragma omp single
   {
-    work_stats_.reset();
-    for (const auto &t : tcontexts_) {
-      work_stats_.merge(t.getWorkStats());
-    }
+    work_stats_.reduceThreadWorkStats<TContextType>(rank_, partition_,
+                                                    tcontexts_);
   }
 }
 
@@ -247,7 +242,7 @@ void MultiThreadTracer<CacheT, ShaderT>::sendRays(int tid,
       scan_.set(tid, num_rads);
 #pragma omp barrier
 #pragma omp single
-      scan_.scan();
+      { scan_.scan(); }
 
       if (scan_.sum()) {
         send(false, tid, id, dest, num_rads, tcontext);
@@ -260,7 +255,7 @@ void MultiThreadTracer<CacheT, ShaderT>::sendRays(int tid,
 
 #pragma omp barrier
 #pragma omp single
-      scan_.scan();
+      { scan_.scan(); }
 
       if (scan_.sum()) {
         send(true, tid, id, dest, num_shads, tcontext);
@@ -283,6 +278,7 @@ void MultiThreadTracer<CacheT, ShaderT>::send(bool shadow, int tid,
     int tag = shadow ? WORK_SEND_SHADS : WORK_SEND_RADS;
     send_work_ = new WorkSendMsg<Ray, MsgHeader>(tag, hout, dest);
   }
+
 #pragma omp barrier
 
   Ray *dest_rays = send_work_->getPayload();
@@ -291,8 +287,9 @@ void MultiThreadTracer<CacheT, ShaderT>::send(bool shadow, int tid,
   tcontext->sendRays(shadow, domain_id, &dest_rays[target]);
 
 #pragma omp barrier
+
 #pragma omp master
-  comm_.pushSendQ(send_work_);
+  { comm_.pushSendQ(send_work_); }
 }
 
 template <typename CacheT, typename ShaderT>
@@ -337,27 +334,51 @@ void MultiThreadTracer<CacheT, ShaderT>::procRecvQs(int ray_depth,
   MsgHeader *header;
   Ray *payload;
 
-  while (!recv_rq_.empty()) {
-    auto *msg = recv_rq_.front();
-    WorkRecvMsg<Ray, MsgHeader>::decode(msg, &header, &payload);
+  while (1) {
+#pragma omp single
+    {
+      if (!recv_rq_.empty()) {
+        recv_message_ = recv_rq_.front();
+        recv_rq_.pop();
+      } else {
+        recv_message_ = nullptr;
+      }
+    }
+
+    if (recv_message_ == nullptr) {
+      break;
+    }
+
+    WorkRecvMsg<Ray, MsgHeader>::decode(recv_message_, &header, &payload);
     CHECK_NOTNULL(payload);
+
     procRecvRads(ray_depth, header->domain_id, payload, header->payload_count,
                  tcontext);
 #pragma omp barrier
-#pragma omp single
-    recv_rq_.pop();
   }
 
 #pragma omp barrier
 
-  while (!recv_sq_.empty()) {
-    auto *msg = recv_sq_.front();
-    WorkRecvMsg<Ray, MsgHeader>::decode(msg, &header, &payload);
+  while (1) {
+#pragma omp single
+    {
+      if (!recv_sq_.empty()) {
+        recv_message_ = recv_sq_.front();
+        recv_sq_.pop();
+      } else {
+        recv_message_ = nullptr;
+      }
+    }
+
+    if (recv_message_ == nullptr) {
+      break;
+    }
+
+    WorkRecvMsg<Ray, MsgHeader>::decode(recv_message_, &header, &payload);
     CHECK_NOTNULL(payload);
+
     procRecvShads(header->domain_id, payload, header->payload_count, tcontext);
 #pragma omp barrier
-#pragma omp single
-    recv_sq_.pop();
   }
 }
 
@@ -378,7 +399,7 @@ void MultiThreadTracer<CacheT, ShaderT>::procRecvRads(int ray_depth, int id,
                                                       Ray *rays, int64_t count,
                                                       TContextType *tcontext) {
 #pragma omp single
-  scene_->load(id, &sinfo_);
+  { scene_->load(id, &sinfo_); }
 
   tcontext->setSceneInfo(sinfo_);
 
@@ -403,7 +424,7 @@ void MultiThreadTracer<CacheT, ShaderT>::procRecvShads(int id, Ray *rays,
                                                        int64_t count,
                                                        TContextType *tcontext) {
 #pragma omp single
-  scene_->load(id, &sinfo_);
+  { scene_->load(id, &sinfo_); }
 
   tcontext->setSceneInfo(sinfo_);
 
@@ -502,6 +523,8 @@ void MultiThreadTracer<CacheT, ShaderT>::trace() {
         CHECK(comm_.emptySendQ());
 #endif
         sendRays(tid, tcontext);
+
+#pragma omp barrier
 #pragma omp master
         {
           comm_.waitForSend();

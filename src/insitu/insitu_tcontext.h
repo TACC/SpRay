@@ -36,6 +36,28 @@ class InsituPartition;
 
 namespace insitu {
 
+class ThreadWorkStats {
+ public:
+  void registerRadianceRayBlock(int id) { radiance_block_ids_.push(id); }
+  void registerCachedRayBlock(bool hasCachedBlock) {
+    has_cached_block_ = hasCachedBlock;
+  }
+  void registerShadowRayBlock(int id) { shadow_block_ids_.push(id); }
+
+  std::queue<int>* getRadianceBlockIds() { return &radiance_block_ids_; }
+  std::queue<int>* getShadowBlockIds() { return &shadow_block_ids_; }
+  bool hasCachedBlock() const { return has_cached_block_; }
+
+  bool empty() const {
+    return (radiance_block_ids_.empty() && shadow_block_ids_.empty());
+  }
+
+ private:
+  std::queue<int> radiance_block_ids_;
+  std::queue<int> shadow_block_ids_;
+  bool has_cached_block_;
+};
+
 template <typename CacheT, typename ShaderT>
 class TContext {
  public:
@@ -90,8 +112,14 @@ class TContext {
 
  public:
   void populateRadWorkStats();
-  void populateWorkStats(int rank);
-  const ThreadWorkStats& getWorkStats() const { return work_stats_; }
+  void populateWorkStats();
+  std::queue<int>* getRadianceBlockIds() {
+    return work_stats_.getRadianceBlockIds();
+  }
+  std::queue<int>* getShadowBlockIds() {
+    return work_stats_.getShadowBlockIds();
+  }
+  bool hasCachedBlock() const { return work_stats_.hasCachedBlock(); }
 
  private:
   ThreadWorkStats work_stats_;  // number of domain blocks to process

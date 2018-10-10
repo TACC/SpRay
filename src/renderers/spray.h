@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <omp.h>
 #include <limits>
 
 #include "glog/logging.h"

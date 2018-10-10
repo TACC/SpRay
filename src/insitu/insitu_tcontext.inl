@@ -38,41 +38,69 @@ void TContext<CacheT, ShaderT>::init(const Config& cfg, int ndomains,
 
   rqs_.resize(ndomains);
   sqs_.resize(ndomains);
-  work_stats_.resize(mpi::size());
 
   shader_.init(cfg, scene);
 }
 
 template <typename CacheT, typename ShaderT>
 void TContext<CacheT, ShaderT>::populateRadWorkStats() {
-  work_stats_.reset();
+#ifdef SPRAY_GLOG_CHECK
+  CHECK(work_stats_.empty());
+#endif
   for (int id = 0; id < num_domains_; ++id) {
-    int dest = partition_->rank(id);
     if (!rqs_.empty(id)) {
-      work_stats_.addNumDomains(dest, 1);
+      work_stats_.registerRadianceRayBlock(id);
     }
   }
 }
 
 template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::populateWorkStats(int rank) {
-  work_stats_.reset();
-
-  int n = 0;
-  n += (!cached_rq_.empty());
-
-  work_stats_.addNumDomains(rank, n);
-
+void TContext<CacheT, ShaderT>::populateWorkStats() {
+#ifdef SPRAY_GLOG_CHECK
+  CHECK(work_stats_.empty());
+#endif
   for (int id = 0; id < num_domains_; ++id) {
-    int dest = partition_->rank(id);
-    n = 0;
-    n += (!rqs_.empty(id));
-    n += (!sqs_.empty(id));
-    if (n) {
-      work_stats_.addNumDomains(dest, n);
+    if (!rqs_.empty(id)) {
+      work_stats_.registerRadianceRayBlock(id);
+    }
+    if (!sqs_.empty(id)) {
+      work_stats_.registerShadowRayBlock(id);
     }
   }
+  bool has_cached_block = !cached_rq_.empty();
+  work_stats_.registerCachedRayBlock(has_cached_block);
 }
+
+// template <typename CacheT, typename ShaderT>
+// void TContext<CacheT, ShaderT>::populateRadWorkStats() {
+//   work_stats_.reset();
+//   for (int id = 0; id < num_domains_; ++id) {
+//     int dest = partition_->rank(id);
+//     if (!rqs_.empty(id)) {
+//       work_stats_.addNumDomains(dest, 1);
+//     }
+//   }
+// }
+
+// template <typename CacheT, typename ShaderT>
+// void TContext<CacheT, ShaderT>::populateWorkStats(int rank) {
+//   work_stats_.reset();
+// 
+//   int n = 0;
+//   n += (!cached_rq_.empty());
+// 
+//   work_stats_.addNumDomains(rank, n);
+// 
+//   for (int id = 0; id < num_domains_; ++id) {
+//     int dest = partition_->rank(id);
+//     n = 0;
+//     n += (!rqs_.empty(id));
+//     n += (!sqs_.empty(id));
+//     if (n) {
+//       work_stats_.addNumDomains(dest, n);
+//     }
+//   }
+// }
 
 template <typename CacheT, typename ShaderT>
 void TContext<CacheT, ShaderT>::processRays(int id, SceneInfo& sinfo) {
