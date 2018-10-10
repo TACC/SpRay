@@ -310,10 +310,6 @@ std::size_t Comm<QItemT, MessageT, OutgoingCopierT, IncomingCopierT>::send(
 template <class QItemT, class MessageT, class OutgoingCopierT,
           class IncomingCopierT>
 void Comm<QItemT, MessageT, OutgoingCopierT, IncomingCopierT>::setup() {
-#ifdef SPRAY_GLOG_CHECK
-  std::size_t check_bytes = 0;
-#endif
-
   // evaluate num of items to send/recv, allocate/set memory block for ray
   // queuing
   std::size_t num_items2recv = 0;
@@ -452,10 +448,6 @@ void Comm<QItemT, MessageT, OutgoingCopierT, IncomingCopierT>::setup() {
 
     CHECK_NOTNULL(outgoing_msgbuf_.base);
 
-#ifdef SPRAY_GLOG_CHECK
-    std::size_t bytes2send = num_items2send * sizeof(MessageT);
-    CHECK_EQ(check_bytes, bytes2send);
-#endif
   } else {
     outgoing_msgbuf_.reset();
   }
