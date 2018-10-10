@@ -31,44 +31,9 @@ namespace spray {
 namespace insitu {
 
 enum WorkType {
-  WORK_NULL,
-  WORK_TILE,
-  WORK_GEN_EYES,
-  WORK_MAKE_TILE,
-  WORK_RADS,
-  WORK_SHADS,
-  WORK_COMPOSITE_TBUF,
-  WORK_COMPOSITE_OBUF,
-  WORK_COMPOSITE_TBUF_DONE,
-  WORK_COMPOSITE_OBUF_DONE,
-  WORK_RAD,
-  WORK_SHADOW,
-  WORK_DONE,
-  WORK_GATHER_STATS,
-  WORK_GATHER_STATS_DONE,
-  WORK_RQST_TILE,
-  WORK_SEND_DONE_TO_ROOT,
-  WORK_SEND_PIXELS,
-  WORK_UPDATE_IMAGE,
-  WORK_UPDATE_IMAGE_DONE,
-  WORK_PROC_DOMAIN_SHADS,
-  WORK_PROC_TILE_RADS,
-  WORK_PROC_DOMAIN_RADS,
-  WORK_PREP_SEND_EYES,
-  WORK_PREP_SEND_TILE_RADS,
-  WORK_PREP_SEND_DOMAIN_SHADS,
-  WORK_PREP_SEND_DOMAIN_RADS,
-  WORK_PREP_SEND_PENDING_RADS,
-  WORK_SEND_EYES,
   WORK_SEND_SHADS,
   WORK_SEND_RADS,
-  WORK_SEND_PENDING_RADS,
-  WORK_SEND_ISECT,
-  WORK_SEND_OCCL,
-  WORK_SEND_COLOR,
-  //
   MSG_TERMINATE,
-  MSG_REGISTER_DONE
 };
 
 class VBuf;
@@ -90,55 +55,6 @@ class Work {
   void* msg;
   int count;
   int dest;
-};
-
-struct WorkTile : public Work {
-  WorkTile(const Tile& tile) : Work(WORK_TILE), tile(tile) {}
-  virtual ~WorkTile() {}
-  Tile tile;
-};
-
-struct WorkDone : public Work {
-  WorkDone() : Work(WORK_DONE) {}
-  virtual ~WorkDone() {}
-};
-
-struct WorkGatherStatsDone : public Work {
-  WorkGatherStatsDone() : Work(WORK_GATHER_STATS_DONE) {}
-  virtual ~WorkGatherStatsDone() {}
-};
-
-class Stats;
-
-struct WorkGatherStats : public Work {
-  WorkGatherStats(Stats* s) : Work(WORK_GATHER_STATS), stats(s) {}
-  virtual ~WorkGatherStats() {}
-
-  Stats* stats;
-};
-
-struct WorkCompositeTBuf : public Work {
-  WorkCompositeTBuf(VBuf* v) : Work(WORK_COMPOSITE_TBUF), vbuf(v) {}
-  virtual ~WorkCompositeTBuf() {}
-
-  int tile_id;
-  VBuf* vbuf;
-};
-
-struct WorkCompositeOBuf : public Work {
-  WorkCompositeOBuf(VBuf* v) : Work(WORK_COMPOSITE_OBUF), vbuf(v) {}
-  virtual ~WorkCompositeOBuf() {}
-  VBuf* vbuf;
-};
-
-struct WorkCompositeTBufDone : public Work {
-  WorkCompositeTBufDone() : Work(WORK_COMPOSITE_TBUF_DONE) {}
-  virtual ~WorkCompositeTBufDone() {}
-};
-
-struct WorkCompositeOBufDone : public Work {
-  WorkCompositeOBufDone() : Work(WORK_COMPOSITE_OBUF_DONE) {}
-  virtual ~WorkCompositeOBufDone() {}
 };
 
 template <typename PayloadT, typename HeaderT>
