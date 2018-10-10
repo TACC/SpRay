@@ -30,26 +30,26 @@ PLY_PATH=$EXAMPLE_PATH
 MPI_BIN="mpirun -n"
 
 echo "Choose an application (1-4):"
-echo "1. spray_singlethread_insitu"
-echo "2. spray_multithread_insitu"
+echo "1. spray_insitu_singlethread"
+echo "2. spray_insitu_multithread"
 echo "3. spray_ooc"
 echo "4. baseline_insitu"
 echo "5. baseline_ooc"
 
 read APP
 
-if [ $APP == "1" ] # spray_singlethread_insitu
+if [ $APP == "1" ] # spray_insitu_singlethread
 then
   NUM_MPI_TASKS=2
   NUM_THREADS=1 # threading not supported
-  SPRAY_BIN=spray_singlethread_insitu
+  SPRAY_BIN=spray_insitu_singlethread
   PARTITION=insitu
 
-elif [ $APP == "2" ] # spray_multithread_insitu
+elif [ $APP == "2" ] # spray_insitu_multithread
 then
   NUM_MPI_TASKS=2
   NUM_THREADS=2
-  SPRAY_BIN=spray_multithread_insitu
+  SPRAY_BIN=spray_insitu_multithread
   PARTITION=insitu
 
 elif [ $APP == "3" ] # spray_ooc

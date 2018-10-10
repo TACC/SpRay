@@ -274,19 +274,19 @@ target_link_libraries(baseline_ooc spray ${DEP_LIBS})
 add_executable(baseline_insitu apps/baseline_insitu.cc)
 target_link_libraries(baseline_insitu spray ${DEP_LIBS})
 
-add_executable(spray_singlethread_insitu apps/spray_singlethread_insitu.cc)
-target_link_libraries(spray_singlethread_insitu spray ${DEP_LIBS})
+add_executable(spray_insitu_singlethread apps/spray_insitu_singlethread.cc)
+target_link_libraries(spray_insitu_singlethread spray ${DEP_LIBS})
 
-add_executable(spray_multithread_insitu apps/spray_multithread_insitu.cc)
-target_link_libraries(spray_multithread_insitu spray ${DEP_LIBS})
+add_executable(spray_insitu_multithread apps/spray_insitu_multithread.cc)
+target_link_libraries(spray_insitu_multithread spray ${DEP_LIBS})
 
 add_executable(spray_ooc apps/spray_ooc.cc)
 target_link_libraries(spray_ooc spray ${DEP_LIBS})
 
 # intallation
 install (TARGETS baseline_ooc DESTINATION bin)
-install (TARGETS spray_singlethread_insitu DESTINATION bin)
-install (TARGETS spray_multithread_insitu DESTINATION bin)
+install (TARGETS spray_insitu_singlethread DESTINATION bin)
+install (TARGETS spray_insitu_multithread DESTINATION bin)
 install (TARGETS spray_ooc DESTINATION bin)
 install (TARGETS spray DESTINATION lib)
 
