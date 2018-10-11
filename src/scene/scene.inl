@@ -496,21 +496,23 @@ void Scene<CacheT>::drawDomains() {
   glEnable(GL_DEPTH_TEST);
 
   glPolygonOffset(1.0, 1.0);
-  // glEnable(GL_POLYGON_OFFSET_FILL);
-  // glDisable(GL_POLYGON_OFFSET_FILL);
 
   glDepthMask(GL_FALSE);
 
-  // glm::vec4 color(0, 1, 1, .5);
   glm::vec4 color(0.3f, 0.3f, 0.3f, 0.5f);
   glm::vec4 select(0.0f, 1.0f, 1.0f, .5f);
 
   for (std::size_t i = 0; i < domains_.size(); ++i) {
     const Domain& d = domains_[i];
+    if (i != glfw_domain_idx_) {
+      d.world_aabb.draw(color);
+    }
+  }
+
+  for (std::size_t i = 0; i < domains_.size(); ++i) {
+    const Domain& d = domains_[i];
     if (i == glfw_domain_idx_) {
       d.world_aabb.draw(select);
-    } else {
-      d.world_aabb.draw(color);
     }
   }
 
@@ -526,12 +528,9 @@ void Scene<CacheT>::drawPartitions() {
   glEnable(GL_DEPTH_TEST);
 
   glPolygonOffset(1.0, 1.0);
-  // glEnable(GL_POLYGON_OFFSET_FILL);
-  // glDisable(GL_POLYGON_OFFSET_FILL);
 
   glDepthMask(GL_FALSE);
 
-  // glm::vec4 color(0, 1, 1, .5);
   glm::vec4 color(0.3f, 0.3f, 0.3f, 0.5f);
   glm::vec4 select(0.0f, 1.0f, 1.0f, .5f);
 
@@ -540,10 +539,14 @@ void Scene<CacheT>::drawPartitions() {
 
   for (std::size_t i = 0; i < domains_.size(); ++i) {
     const Domain& d = domains_[i];
+    if (domain_to_partition[d.id] != partition_num_) {
+      d.world_aabb.draw(color);
+    }
+  }
+  for (std::size_t i = 0; i < domains_.size(); ++i) {
+    const Domain& d = domains_[i];
     if (domain_to_partition[d.id] == partition_num_) {
       d.world_aabb.draw(select);
-    } else {
-      d.world_aabb.draw(color);
     }
   }
 

@@ -55,6 +55,7 @@ class SprayRenderer {
   void renderGlfwSingleTask();
   void renderGlfwRootTask();
   void renderGlfwChildTask();
+  void renderGlfwDomainBounds(int view_mode);
 
  private:
   const Config* cfg_;

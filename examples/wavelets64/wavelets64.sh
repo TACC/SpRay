@@ -22,6 +22,8 @@ then
   NUM_FRAMES="1"
 fi
 
+NUM_PARTITIONS=1
+
 SPRAY_BIN_PATH=$SPRAY_HOME_PATH/build
 EXAMPLE_PATH=$SPRAY_HOME_PATH/examples
 WAVELET16_PATH=$SPRAY_HOME_PATH/examples/wavelets64
@@ -35,6 +37,8 @@ echo "2. spray_insitu_multithread"
 echo "3. spray_ooc"
 echo "4. baseline_insitu"
 echo "5. baseline_ooc"
+echo "6. visualize domain bounds based on domain IDs"
+echo "7. visualize domain bounds based on partition IDs"
 
 read APP
 
@@ -73,6 +77,23 @@ then
   NUM_THREADS=2
   PARTITION=image
 
+elif [ $APP == "6" ] # visualize domain bounds based on domain IDs
+then
+  SPRAY_BIN=spray_insitu_singlethread # any will work
+  NUM_MPI_TASKS=1
+  NUM_THREADS=1
+  PARTITION=insitu
+  MODE=domain
+
+elif [ $APP == "7" ] # visualize domain bounds based on partition IDs
+then
+  SPRAY_BIN=spray_insitu_singlethread # any will work
+  NUM_MPI_TASKS=1
+  NUM_THREADS=1
+  PARTITION=insitu
+  MODE=partition
+  NUM_PARTITIONS=2
+
 else # undefined
   NUM_MPI_TASKS=1
   NUM_THREADS=1
@@ -101,6 +122,7 @@ COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN_PATH/$SPRAY_BIN \
          --ao-samples $NUM_AO_SAMPLES \
          --bounces $NUM_BOUNCES \
          --blinn $BLINN_SPECULAR_SHININESS \
+         --num-partitions $NUM_PARTITIONS \
          $MODEL"
 
 echo "NUM_MPI_TASKS=$NUM_MPI_TASKS"

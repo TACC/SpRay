@@ -216,7 +216,7 @@ void Config::parse(int argc, char** argv) {
         }
       } break;
 
-      case 325: {
+      case 325: { // --num-partitions
         num_partitions = atoi(optarg);
       } break;
 

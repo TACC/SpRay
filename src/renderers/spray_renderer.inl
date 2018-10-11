@@ -103,6 +103,9 @@ void SprayRenderer<TracerT, CacheT>::run() {
     } else {
       renderGlfwChildTask();
     }
+  } else if (msgcmd_.view_mode == VIEW_MODE_DOMAIN ||
+             msgcmd_.view_mode == VIEW_MODE_PARTITION) {
+    renderGlfwDomainBounds(msgcmd_.view_mode);
   } else {
     msgcmd_.view_mode = VIEW_MODE_TERMINATE;
     glfwTerminate();
@@ -265,6 +268,41 @@ void SprayRenderer<TracerT, CacheT>::renderFilm() {
 #ifdef SPRAY_TIMING
   tPrint(cfg_nframes);
 #endif
+}
+
+template <class TracerT, class CacheT>
+void SprayRenderer<TracerT, CacheT>::renderGlfwDomainBounds(int view_mode) {
+  CHECK_EQ(mpi::size(), 1);
+
+  while (msgcmd_.view_mode == VIEW_MODE_DOMAIN ||
+         msgcmd_.view_mode == VIEW_MODE_PARTITION) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glm::mat4 proj =
+        glm::perspective(camera_.getVfov(), camera_.getAspectRatio(),
+                         camera_.getZnear(), camera_.getZfar());
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf(glm::value_ptr(proj));
+
+    glm::mat4 lookat = glm::lookAt(camera_.getPosition(), camera_.getCenter(),
+                                   camera_.getUp());
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf(glm::value_ptr(lookat));
+
+    if (view_mode == VIEW_MODE_PARTITION) {
+      scene_.drawPartitions();
+    } else {
+      scene_.drawDomains();
+    }
+
+    Glfw<WbvhEmbree, CacheT>::swapBuffers();
+    glfwPollEvents();
+    Glfw<WbvhEmbree, CacheT>::cmdHandler();
+  }
+
+  glfwTerminate();
 }
 
 }  // namespace spray
