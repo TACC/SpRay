@@ -509,6 +509,7 @@ void Scene<CacheT>::drawDomains() {
     }
   }
 
+  glLineWidth(2.0);
   for (std::size_t i = 0; i < domains_.size(); ++i) {
     const Domain& d = domains_[i];
     if (i == glfw_domain_idx_) {
@@ -543,6 +544,7 @@ void Scene<CacheT>::drawPartitions() {
       d.world_aabb.draw(color);
     }
   }
+  glLineWidth(2.0);
   for (std::size_t i = 0; i < domains_.size(); ++i) {
     const Domain& d = domains_[i];
     if (domain_to_partition[d.id] == partition_num_) {
