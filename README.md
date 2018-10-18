@@ -38,7 +38,7 @@ https://hyungman.bitbucket.io/projects/spray/
 
 ## Building Spray (Linux)
 
-Build and install [Embree][2]. We tested Spray with Embree v2.17.1.
+Build and install [Embree][2]. Make sure your Embree installation has the `lib` directory. We tested Spray with Embree v2.17.1.
 
 Check out Spray with all submodules.
 
@@ -79,7 +79,7 @@ brew install libomp
 
 ```
 
-Build and install [Embree][2]. We tested Spray with Embree v2.17.1.
+Build and install [Embree][2]. Make sure your Embree installation has the `lib` directory. We tested Spray with Embree v2.17.1.
 
 Check out Spray with all submodules.
 
