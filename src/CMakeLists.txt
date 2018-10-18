@@ -200,7 +200,6 @@ set(DEP_LIBS glfw glog gtest_main gtest pbrt
     ${OpenMP_LIBRARY}
     ${OPENGL_LIBRARIES}
     ${GLUT_LIBRARIES}
-    ${TBB_LIBRARIES}
     ${EMBREE_LIBRARY}
     ${MPI_LIBRARIES}
     ${ICET_LIBRARIES})
