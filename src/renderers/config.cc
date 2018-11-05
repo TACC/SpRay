@@ -273,7 +273,7 @@ void Config::parse(int argc, char** argv) {
   model_descriptor_filename = filename;
 
   std::string ext = util::getFileExtension(filename);
-  CHECK_EQ(ext, std::string("domain"));
+  CHECK_EQ(ext, std::string("spray"));
 }
 
 }  // namespace spray
