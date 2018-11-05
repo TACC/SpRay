@@ -282,10 +282,15 @@ target_link_libraries(spray_insitu_multithread spray ${DEP_LIBS})
 add_executable(spray_ooc apps/spray_ooc.cc)
 target_link_libraries(spray_ooc spray ${DEP_LIBS})
 
+# ply info reader
+add_executable(ply_header_reader apps/ply_header_reader.cc)
+target_link_libraries(ply_header_reader spray ${DEP_LIBS})
+
 # intallation
 install (TARGETS baseline_ooc DESTINATION bin)
 install (TARGETS spray_insitu_singlethread DESTINATION bin)
 install (TARGETS spray_insitu_multithread DESTINATION bin)
 install (TARGETS spray_ooc DESTINATION bin)
+install (TARGETS ply_header_reader DESTINATION bin)
 install (TARGETS spray DESTINATION lib)
 
