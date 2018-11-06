@@ -260,7 +260,7 @@ inline void parseLight(const std::vector<std::string>& tokens,
     spray::Light* light = new spray::PointLight(position, radiance);
     lights.push_back(light);
 
-  } else if (tokens[1] == "hemi") {
+  } else if (tokens[1] == "diffuse") {
     CHECK(tokens.size() == 5);
     glm::vec3 position, radiance;
 
@@ -268,7 +268,7 @@ inline void parseLight(const std::vector<std::string>& tokens,
     radiance[1] = atof(tokens[3].c_str());
     radiance[2] = atof(tokens[4].c_str());
 
-    spray::Light* light = new spray::HemisphereLight(radiance);
+    spray::Light* light = new spray::DiffuseHemisphereLight(radiance);
     lights.push_back(light);
 
   } else {

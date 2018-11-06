@@ -64,11 +64,11 @@ class PointLight : public Light {
   glm::vec3 radiance_;
 };
 
-class HemisphereLight : public Light {
+class DiffuseHemisphereLight : public Light {
  public:
-  HemisphereLight(const glm::vec3& radiance) : radiance_(radiance) {}
+  DiffuseHemisphereLight(const glm::vec3& radiance) : radiance_(radiance) {}
 
-  virtual ~HemisphereLight() {}
+  virtual ~DiffuseHemisphereLight() {}
 
   bool isAreaLight() const override { return true; }
 

@@ -1,0 +1,22 @@
+light point -20 20 20 .2 .2 .2 
+light diffuse .1 .1 .1 
+
+######################
+# 0
+domain
+file /home/reyes/work/render/spray2/examples/wavelet/wavelet1.ply
+vertex 958
+face 1748
+bound 0 -10 -10 6.612539768218994 10 10
+mtl diffuse 1 1 1
+######################
+# 1
+domain
+file /home/reyes/work/render/spray2/examples/wavelet/wavelet0.ply
+vertex 909
+face 1684
+bound -6.036099910736084 -10 -10 0 10 10
+mtl diffuse 1 1 1
+######################
+# total vertices 1867
+# total faces 3432

@@ -26,9 +26,8 @@ NUM_PARTITIONS=1
 
 SPRAY_BIN_PATH=$SPRAY_HOME_PATH/build
 EXAMPLE_PATH=$SPRAY_HOME_PATH/examples
-WAVELET64_PATH=$SPRAY_HOME_PATH/examples/wavelets64
-SCENE=$WAVELET64_PATH/wavelets64.spray
-PLY_PATH=$EXAMPLE_PATH
+WAVELET_PATH=$SPRAY_HOME_PATH/examples/wavelet
+SCENE=$WAVELET_PATH/wavelet.spray
 MPI_BIN="mpirun -n"
 
 echo "Choose an application (1-4):"
@@ -103,14 +102,40 @@ else # undefined
 fi
 
 CACHE_SIZE=-1
-CAMERA="90.172180 84.141418 82.480225 30.000000 28.649426 30.000000"
-NUM_PIXEL_SAMPLES=1
-NUM_AO_SAMPLES=1
-NUM_BOUNCES=1
+CAMERA="-5 10 15 0 0 0"
 BLINN_SPECULAR_SHININESS="0.4 0.4 0.4 10"
 
+echo "Choose shader type (1 or 2):"
+echo "1. ambient occlusion"
+echo "2. path tracing"
+
+read SHADER
+
+if [ $SHADER == "1" ] # ambient occlusion
+then
+  NUM_PIXEL_SAMPLES=1
+  NUM_AO_SAMPLES=4
+  NUM_BOUNCES=1
+  SHADER_TYPE="ambient occlusion"
+
+elif [ $SHADER == "2" ] # path tracing
+then
+  NUM_PIXEL_SAMPLES=2
+  NUM_AO_SAMPLES=2 # number of samples of diffuse light sources
+  NUM_BOUNCES=2
+  SHADER_TYPE="path tracing"
+
+else # undefined
+  echo "[error] invalid shader input"
+  return
+fi
+
+echo shader type: $SHADER_TYPE
+echo number of pixel samples: $NUM_PIXEL_SAMPLES
+echo number of bounces: $NUM_PIXEL_SAMPLES
+echo number of light samples: $NUM_AO_SAMPLES
+
 COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN_PATH/$SPRAY_BIN \
-         --ply-path $PLY_PATH \
          --nthreads $NUM_THREADS \
          -w 512 -h 512 \
          --frames $NUM_FRAMES \
