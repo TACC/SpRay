@@ -90,6 +90,9 @@ class Config {
   int shading;
   float shininess;
   glm::vec3 ks;
+
+  enum DevMode { DEVMODE_NORMAL, DEVMODE_DEV };
+  int dev_mode;
 };
 
 }  // namespace spray

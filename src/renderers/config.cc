@@ -69,6 +69,8 @@ Config::Config() {
   nthreads = 1;
 
   shading = SPRAY_SHADING_LAMBERT;
+
+  dev_mode = DEVMODE_NORMAL;
 }
 
 void Config::printUsage(char** argv) {
@@ -99,6 +101,7 @@ void Config::printUsage(char** argv) {
   printf("  --nthreads <number of threads (1)>\n");
   printf("  --shading <lambert | blinn>\n");
   printf("  --blinn ks_r ks_g ks_b shininess\n");
+  printf("  --dev-mode <normal | dev (normal)>\n");
 }
 
 void Config::parse(int argc, char** argv) {
@@ -126,6 +129,7 @@ void Config::parse(int argc, char** argv) {
       {"num-tiles", required_argument, 0, 406},
       {"min-tile-size", required_argument, 0, 407},
       {"ply-path", required_argument, 0, 408},
+      {"dev-mode", required_argument, 0, 1000},
       {0, 0, 0, 0}};
 
   int option_index = 0;
@@ -259,6 +263,11 @@ void Config::parse(int argc, char** argv) {
       case 408: {  // --ply-path
         ply_path = optarg;
       } break;
+
+      case 1000: {  // --dev-mode
+        dev_mode = atoi(optarg);
+      } break;
+
 
       default:
         printUsage(argv);
