@@ -86,8 +86,6 @@ void Config::printUsage(char** argv) {
       "  --num-partitions <number of partitions>, effective in partition view "
       "mode\n");
   printf("  --partition <image | hybrid | insitu>\n");
-  printf("  --warmup-cache\n");
-  printf("  --warmup-cache-mode <all | roundrobin>\n");
   printf("  --cache-size <max. number of domains>\n");
   printf("  --width, -w <image_width>\n");
   printf("  --height, -h <image_height>\n");
@@ -101,7 +99,7 @@ void Config::printUsage(char** argv) {
   printf("  --nthreads <number of threads (1)>\n");
   printf("  --shading <lambert | blinn>\n");
   printf("  --blinn ks_r ks_g ks_b shininess\n");
-  printf("  --dev-mode <normal | dev (normal)>\n");
+  printf("  --dev-mode\n");
 }
 
 void Config::parse(int argc, char** argv) {
@@ -129,7 +127,7 @@ void Config::parse(int argc, char** argv) {
       {"num-tiles", required_argument, 0, 406},
       {"min-tile-size", required_argument, 0, 407},
       {"ply-path", required_argument, 0, 408},
-      {"dev-mode", required_argument, 0, 1000},
+      {"dev-mode", no_argument, 0, 1000},
       {0, 0, 0, 0}};
 
   int option_index = 0;
@@ -265,7 +263,7 @@ void Config::parse(int argc, char** argv) {
       } break;
 
       case 1000: {  // --dev-mode
-        dev_mode = atoi(optarg);
+        dev_mode = DEVMODE_DEV;
       } break;
 
 

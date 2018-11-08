@@ -51,6 +51,8 @@ class SprayRenderer {
   void run();
 
  private:
+  void run_normal();
+  void run_dev();
   void renderFilm();
   void renderGlfwSingleTask();
   void renderGlfwRootTask();

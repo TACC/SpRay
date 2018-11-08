@@ -91,6 +91,15 @@ void SprayRenderer<TracerT, CacheT>::init(const Config &cfg) {
 
 template <class TracerT, class CacheT>
 void SprayRenderer<TracerT, CacheT>::run() {
+  if (cfg_->dev_mode == Config::DEVMODE_NORMAL) {
+    run_normal();
+  } else {
+    run_dev();
+  }
+}
+
+template <class TracerT, class CacheT>
+void SprayRenderer<TracerT, CacheT>::run_normal() {
   CHECK(cfg_) << "failed to run. not configured.";
 
   if (msgcmd_.view_mode == VIEW_MODE_FILM) {
@@ -111,6 +120,10 @@ void SprayRenderer<TracerT, CacheT>::run() {
     glfwTerminate();
     LOG(FATAL) << "unsupported mode " << msgcmd_.view_mode;
   }
+}
+
+template <class TracerT, class CacheT>
+void SprayRenderer<TracerT, CacheT>::run_dev() {
 }
 
 template <class TracerT, class CacheT>
