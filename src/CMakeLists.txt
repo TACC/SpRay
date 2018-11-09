@@ -204,6 +204,8 @@ set(DEP_LIBS glfw glog gtest_main gtest pbrt
     ${MPI_LIBRARIES}
     ${ICET_LIBRARIES})
 
+set(PLY_HEADER_READER_LIBS glog gtest_main gtest ${OPENGL_LIBRARIES})
+
 ########################################
 # source files
 ########################################
@@ -284,7 +286,7 @@ target_link_libraries(spray_ooc spray ${DEP_LIBS})
 
 # ply info reader
 add_executable(ply_header_reader apps/ply_header_reader.cc)
-target_link_libraries(ply_header_reader spray ${DEP_LIBS})
+target_link_libraries(ply_header_reader spray ${PLY_HEADER_READER_LIBS})
 
 # intallation
 install (TARGETS baseline_ooc DESTINATION bin)

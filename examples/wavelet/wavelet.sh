@@ -28,6 +28,7 @@ SPRAY_BIN_PATH=$SPRAY_HOME_PATH/build
 EXAMPLE_PATH=$SPRAY_HOME_PATH/examples
 WAVELET_PATH=$SPRAY_HOME_PATH/examples/wavelet
 SCENE=$WAVELET_PATH/wavelet.spray
+PLY_PATH=$WAVELET_PATH
 MPI_BIN="mpirun -n"
 
 echo "Choose an application (1-4):"
@@ -111,12 +112,14 @@ echo "2. path tracing"
 
 read SHADER
 
+AO_MODE=""
 if [ $SHADER == "1" ] # ambient occlusion
 then
   NUM_PIXEL_SAMPLES=1
   NUM_AO_SAMPLES=4
   NUM_BOUNCES=1
   SHADER_TYPE="ambient occlusion"
+  AO_MODE="--ao-mode"
 
 elif [ $SHADER == "2" ] # path tracing
 then
@@ -136,6 +139,7 @@ echo number of bounces: $NUM_PIXEL_SAMPLES
 echo number of light samples: $NUM_AO_SAMPLES
 
 COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN_PATH/$SPRAY_BIN \
+         --ply-path $PLY_PATH \
          --nthreads $NUM_THREADS \
          -w 512 -h 512 \
          --frames $NUM_FRAMES \
@@ -145,6 +149,7 @@ COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN_PATH/$SPRAY_BIN \
          --camera $CAMERA \
          --pixel-samples $NUM_PIXEL_SAMPLES \
          --ao-samples $NUM_AO_SAMPLES \
+         $AO_MODE \
          --bounces $NUM_BOUNCES \
          --blinn $BLINN_SPECULAR_SHININESS \
          --num-partitions $NUM_PARTITIONS \

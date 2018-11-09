@@ -152,7 +152,7 @@ You should see the following as a result:
 
 We now explain how to create a scene file and render the scene using a simple example with two domains of isosurfaces.
 
-If you wish to skip sections 2.1 and 2.2, copy the example scene file and go to section 2.3. 
+If you wish to skip sections 2.1 and 2.2, copy the example scene file and go to section [2.3](#render_two_wavelets). 
 
 ```bash
 export SPRAY_HOME_PATH=<path_to_spray_home>
@@ -161,9 +161,9 @@ cp $SPRAY_HOME_PATH/examples/wavelet/wavelet_example.spray $SPRAY_HOME_PATH/exam
 
 #### 2.1 Generating a scene file using ply files
 
-Given ply files each associated with a domain, we can generate a scene file using the `ply_header_reader` tool and the `plyfiles_to_scene.py` script. `ply_header_reader` quickly parses only the header portion of a ply file to extract geometry information. `plyfiles_to_scene.py` takes all the ply files within a directory set by the user, and for each ply file, it uses the `ply_header_reader` tool to generate a domain section of the scene file.
+Given ply files each associated with a domain, you can generate a scene file using the `ply_header_reader` tool and the `plyfiles_to_scene.py` script. `ply_header_reader` quickly parses only the header portion of a ply file to extract geometry information. `plyfiles_to_scene.py` takes all the ply files within a directory set by the user, and for each ply file, it uses the `ply_header_reader` tool to generate a domain section of the scene file.
 
-The following is how we can generate `wavelet.spray` for the two ply files, `wavelet0.ply` and `wavelet1.ply`, located in `$SPRAY_HOME_PATH/examples/wavelet`.
+The following is how you can generate `wavelet.spray` for the two ply files, `wavelet0.ply` and `wavelet1.ply`, located in `$SPRAY_HOME_PATH/examples/wavelet`.
 
 First, set environmental variables, if you have not done so.
 ```bash
@@ -181,11 +181,13 @@ python plyfiles_to_scene.py \
 --out $SPRAY_HOME_PATH/examples/wavelet/wavelet.spray
 ```
 
+If absolute paths are desired for ply files, you can simply append the `--abspath` option to the command line above.
+
 #### 2.2 Adding light sources to a scene file
 
-With a scene file in place, we must manually add light sources somewhere in the scene file.
+With a scene file in place, you should manually add light sources somewhere in the scene file. If only ambient occlusion is used, no light sources are required so you may skip this step.
 
-Spray currently supports two kinds of light sources: a point light source and a diffuse area light source. Depending on the light type, we can add a light source using one of the following two lines.
+Spray currently supports two kinds of light sources: a point light source and a diffuse area light source. Depending on the light type, you can add a light source using one of the following two lines.
 
 ```
 light point <position x y z> <intensity r g b>
@@ -199,11 +201,11 @@ light point -20 20 20 .2 .2 .2
 light diffuse .1 .1 .1
 ```
 
-The `diffuse` identifier defines a diffuse area light source that emits radiance uniformly over the hemisphere around the surface normal at each hit point on a surface. We can set the number of samples using the command line option `--ao-samples`.
+The `diffuse` identifier defines a diffuse area light source that emits radiance uniformly over the hemisphere around the surface normal at each hit point on a surface. You can set the number of samples using the command line option `--ao-samples`.
 
-#### 2.3 Rendering the scene of two wavelet domains
+#### 2.3 Rendering the scene of two wavelet domains<a name="render_two_wavelets"></a>
 
-After adding light sources to the scene file, we can render the scene similarly as we did for 64 wavelet domains. But this time, the render time may increase due to using multiple samples. Refer to the `wavelet.sh` script below for rendering configurations.
+After adding light sources to the scene file, you can render the scene similarly as you did for 64 wavelet domains. But this time, the render time may increase due to using multiple samples. Refer to the `wavelet.sh` script below for rendering configurations.
 
 Set a path to the project home, if you have not done so.
 
@@ -238,8 +240,7 @@ You should get something similar to the left image shown below. Noise in the ima
 
 The file extension for a scene file is spray. The scene file describes light sources in the scene and the surfaces in each domain.
 
-Here is the scene file we used to render two isosurfaces. It has two light sources and two domains.
-
+Here is a scene file you may have used to render the two isosurfaces. It has two light sources and two domains.
 ```
 # filename: wavelet.spray
 
@@ -283,7 +284,7 @@ The following describes the meaning of each identifier in the scene file. The `#
 
 #### 2.5 Ply file format in Spray
 
-Spray currently supports only ply files for surface data. As you can see in the  header section of a ply file shown below, Spray maintains coordinates and color values for each vertex of a triangle.
+Spray currently supports only ply files for surface data. As we can see in the  header section of a ply file shown below, Spray maintains coordinates and color values for each vertex of a triangle.
 
 ```
 ply

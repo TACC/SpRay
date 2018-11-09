@@ -29,6 +29,7 @@ parser = argparse.ArgumentParser(description='Domains maker')
 parser.add_argument('--indir', nargs='+', required=True, help='a list of directories containing ply files')
 parser.add_argument('--loader', nargs=1, required=True, help='executable for ply loader')
 parser.add_argument('--out', nargs=1, default=['scene.domain'], help='output file')
+parser.add_argument('--abspath', action='store_true', help='use absoulte path for ply files')
 
 
 # parser.add_argument('--scale', nargs=3, type=float, help='scaling factor (x,y,z)')
@@ -49,6 +50,7 @@ print("[python] listing ply files")
 
 ply_dirs = args.indir
 plyfiles=[]
+plyfiles_abspath=[]
 
 for ply_dir in ply_dirs:
   filenames = os.listdir(ply_dir)
@@ -90,7 +92,11 @@ for ply in plyfiles:
     f.write("# " + str(n) + "\n")
     f.write("domain\n")
     for line in lines:
-      f.write(line)
+      if (not args.abspath) and ("file" in line):
+        filename_only = os.path.basename(line.split()[1])
+        f.write("file " + filename_only + "\n")
+      else:
+        f.write(line)
       if "face" in line:
         num_faces += int(line.split()[1])
       if "vertex" in line:
@@ -103,3 +109,5 @@ with open(outfile, "a") as f:
   f.write("######################\n")
   f.write("# total vertices " + str(num_vertices) + "\n")
   f.write("# total faces " + str(num_faces) + "\n")
+
+print("[info] generated a scene file in " + outfile)
