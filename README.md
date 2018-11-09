@@ -236,7 +236,7 @@ You should get something similar to the left image shown below. Noise in the ima
 ![wavelet.jpg](images/wavelet.jpg)
 ![wavelet_partitions.jpg](images/wavelet_partitions.jpg)
 
-#### Example of A scene file
+#### Example of a scene file
 
 The file extension for a scene file is spray. The scene file describes light sources in the scene and the surfaces in each domain.
 
