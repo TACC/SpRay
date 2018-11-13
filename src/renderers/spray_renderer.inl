@@ -124,6 +124,17 @@ void SprayRenderer<TracerT, CacheT>::run_normal() {
 
 template <class TracerT, class CacheT>
 void SprayRenderer<TracerT, CacheT>::run_dev() {
+  if (msgcmd_.view_mode == VIEW_MODE_FILM) {
+    // do nothing
+  } else if (msgcmd_.view_mode == VIEW_MODE_GLFW) {
+    if (mpi::isRootProcess()) {
+      glfwTerminate();
+    }
+  } else {
+    msgcmd_.view_mode = VIEW_MODE_TERMINATE;
+    glfwTerminate();
+    LOG(FATAL) << "unsupported mode " << msgcmd_.view_mode;
+  }
 }
 
 template <class TracerT, class CacheT>

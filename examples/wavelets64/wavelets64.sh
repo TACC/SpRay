@@ -7,6 +7,7 @@ then
 fi
 
 MODE=$1
+DEV=$2
 
 if [ "$MODE" != "film" ] && [ "$MODE" != "glfw" ]
 then
@@ -14,6 +15,12 @@ then
   echo "[syntax] wavelets64.sh MODE"
   echo "         MODE = {film, glfw}"
   return
+fi
+
+DEV_MODE="--dev-mode"
+if [ "$DEV" != "dev" ]
+then
+  DEV_MODE=""
 fi
 
 NUM_FRAMES="-1"
@@ -115,6 +122,7 @@ COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN_PATH/$SPRAY_BIN \
          -w 512 -h 512 \
          --frames $NUM_FRAMES \
          --mode $MODE \
+         $DEV_MODE \
          --cache-size $CACHE_SIZE \
          --partition $PARTITION \
          --camera $CAMERA \
