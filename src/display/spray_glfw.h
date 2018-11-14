@@ -55,6 +55,8 @@ class Glfw {
   static void keyCallback(GLFWwindow* window, int key, int scancode, int action,
                           int mods);
 
+  static void closeCallback(GLFWwindow* window);
+
   static void scrollCallback(GLFWwindow* window, double xoffset,
                              double yoffset);
 

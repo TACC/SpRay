@@ -82,6 +82,7 @@ void Glfw<WbvhT, CacheT>::initialize(const Config& cfg, bool is_root_process,
   glfwSwapInterval(1);
 
   glfwSetKeyCallback(glfw_window_, keyCallback);
+  glfwSetWindowCloseCallback(glfw_window_, closeCallback);
   glfwSetScrollCallback(glfw_window_, scrollCallback);
   glfwSetMouseButtonCallback(glfw_window_, mouseButtonCallback);
   glfwSetCursorPosCallback(glfw_window_, cursorPosCallback);
@@ -112,6 +113,12 @@ void Glfw<WbvhT, CacheT>::cmdHandler() {
                            cfg_->camera_up);
   }
   msgcmd_->camera_cmd = CAM_NOP;
+}
+
+template <class WbvhT, class CacheT>
+void Glfw<WbvhT, CacheT>::closeCallback(GLFWwindow* window) {
+  msgcmd_->view_mode = VIEW_MODE_TERMINATE;
+  msgcmd_->done = 1;
 }
 
 template <class WbvhT, class CacheT>
