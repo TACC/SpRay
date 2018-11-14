@@ -77,7 +77,8 @@ void SprayRenderer<TracerT, CacheT>::init(const Config &cfg) {
   msgcmd_.camera_cmd = CAM_NOP;
 
   // glfw
-  if (cfg.view_mode != VIEW_MODE_FILM) {
+  if (cfg.dev_mode == Config::DEVMODE_NORMAL &&
+      cfg.view_mode != VIEW_MODE_FILM) {
     Glfw<WbvhEmbree, CacheT>::initialize(cfg, mpi::isRootProcess(), cfg.image_w,
                                          cfg.image_h, &camera_, &msgcmd_,
                                          &scene_);
@@ -127,6 +128,9 @@ void SprayRenderer<TracerT, CacheT>::run_dev() {
   if (msgcmd_.view_mode == VIEW_MODE_FILM) {
     // do nothing
   } else if (msgcmd_.view_mode == VIEW_MODE_GLFW) {
+    if (mpi::isSingleProcess()) {
+      renderGlfwSingleTaskThreading();
+    }
     if (mpi::isRootProcess()) {
       glfwTerminate();
     }
@@ -174,6 +178,64 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTask() {
 
 #ifdef SPRAY_TIMING
   tPrint(cfg_nframes);
+#endif
+}
+
+template <class TracerT, class CacheT>
+void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTaskThreading() {
+#ifdef SPRAY_TIMING
+  tReset();
+  tStartMPI(TIMER_TOTAL);
+#endif
+
+#pragma omp parallel
+  {
+    int64_t cfg_nframes = cfg_->nframes;
+    int image_w = image_.w;
+    int image_h = image_.h;
+    glm::vec4 *image_buf = image_.buf;
+
+    CHECK_EQ(msgcmd_.view_mode, VIEW_MODE_GLFW);
+
+    int tid = omp_get_thread_num();
+#pragma omp master
+    {
+      std::cout << omp_get_num_threads() << std::endl;
+      Glfw<WbvhEmbree, CacheT>::initialize(*cfg_, mpi::isRootProcess(), image_w,
+                                           image_h, &camera_, &msgcmd_,
+                                           &scene_);
+    }
+#pragma omp barrier
+
+    int64_t nframes = 0;
+
+    while (nframes < cfg_nframes || (cfg_nframes < 0 && !msgcmd_.done)) {
+#pragma omp master
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#pragma omp barrier
+
+      // tracer_.trace();
+
+#pragma omp master
+      {
+        glDrawPixels(image_w, image_h, GL_RGBA, GL_FLOAT, image_buf);
+        Glfw<WbvhEmbree, CacheT>::swapBuffers();
+        glfwPollEvents();
+        Glfw<WbvhEmbree, CacheT>::cmdHandler();
+      }
+      ++nframes;
+#pragma omp barrier
+    }
+  }  // omp parallel
+
+#ifdef SPRAY_TIMING
+  tStop(TIMER_TOTAL);
+#endif
+
+  glfwTerminate();
+
+#ifdef SPRAY_TIMING
+  tPrint(cfg_->nframes);
 #endif
 }
 

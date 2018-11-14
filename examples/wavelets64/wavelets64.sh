@@ -122,7 +122,6 @@ COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN_PATH/$SPRAY_BIN \
          -w 512 -h 512 \
          --frames $NUM_FRAMES \
          --mode $MODE \
-         $DEV_MODE \
          --cache-size $CACHE_SIZE \
          --partition $PARTITION \
          --camera $CAMERA \
@@ -131,6 +130,7 @@ COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN_PATH/$SPRAY_BIN \
          --bounces $NUM_BOUNCES \
          --blinn $BLINN_SPECULAR_SHININESS \
          --num-partitions $NUM_PARTITIONS \
+         $DEV_MODE \
          $SCENE"
 
 echo "NUM_MPI_TASKS=$NUM_MPI_TASKS"

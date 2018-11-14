@@ -55,6 +55,7 @@ class SprayRenderer {
   void run_dev();
   void renderFilm();
   void renderGlfwSingleTask();
+  void renderGlfwSingleTaskThreading();
   void renderGlfwRootTask();
   void renderGlfwChildTask();
   void renderGlfwDomainBounds(int view_mode);
