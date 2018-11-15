@@ -126,8 +126,7 @@ void SprayRenderer<TracerT, CacheT>::run_normal() {
 template <class TracerT, class CacheT>
 void SprayRenderer<TracerT, CacheT>::run_dev() {
   if (msgcmd_.view_mode == VIEW_MODE_FILM) {
-    // do nothing
-    LOG(FATAL) << "unsupported view mode";
+    renderFilmInOmpParallel();
   } else if (msgcmd_.view_mode == VIEW_MODE_GLFW) {
     if (mpi::isSingleProcess()) {
       renderGlfwSingleTaskInOmpParallel();
@@ -221,9 +220,8 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTaskInOmpParallel() {
 #pragma omp master
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #pragma omp barrier
-
       tracer_.traceInOmpParallel();
-
+#pragma omp barrier
 #pragma omp master
       {
         glDrawPixels(image_w, image_h, GL_RGBA, GL_FLOAT, image_buf);
@@ -348,6 +346,49 @@ void SprayRenderer<TracerT, CacheT>::renderFilm() {
       image_.composite();
     }
   }
+
+#ifdef SPRAY_TIMING
+  tStop(TIMER_TOTAL);
+#endif
+
+  bool root = (mpi::rank() == 0);
+
+  if (!cluster || root) {
+    image_.writePpm(cfg_->output_filename.c_str());
+  }
+
+#ifdef SPRAY_TIMING
+  tPrint(cfg_nframes);
+#endif
+}
+
+template <class TracerT, class CacheT>
+void SprayRenderer<TracerT, CacheT>::renderFilmInOmpParallel() {
+#if defined(SPRAY_TIMING)
+  tReset();
+  tStartMPI(TIMER_TOTAL);
+#endif
+
+  bool cluster = (mpi::size() > 1);
+  int64_t cfg_nframes = cfg_->nframes;
+
+#pragma omp parallel firstprivate(cluster, cfg_nframes)
+  {
+    for (int64_t i = 0; i < cfg_nframes; ++i) {
+#pragma omp master
+      image_.clear();
+#pragma omp barrier
+      tracer_.traceInOmpParallel();
+#pragma omp barrier
+#pragma omp master
+      {
+        if (cluster) {
+          image_.composite();
+        }
+      }
+#pragma omp barrier
+    }
+  }  // omp parallel
 
 #ifdef SPRAY_TIMING
   tStop(TIMER_TOTAL);

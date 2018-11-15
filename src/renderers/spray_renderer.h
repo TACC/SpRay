@@ -54,6 +54,7 @@ class SprayRenderer {
   void run_normal();
   void run_dev();
   void renderFilm();
+  void renderFilmInOmpParallel();
   void renderGlfwSingleTask();
   void renderGlfwSingleTaskInOmpParallel();
   void renderGlfwRootTask();
