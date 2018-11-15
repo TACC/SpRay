@@ -130,7 +130,7 @@ void SprayRenderer<TracerT, CacheT>::run_dev() {
     LOG(FATAL) << "unsupported view mode";
   } else if (msgcmd_.view_mode == VIEW_MODE_GLFW) {
     if (mpi::isSingleProcess()) {
-      renderGlfwSingleTaskThreading();
+      renderGlfwSingleTaskInOmpParallel();
     }
     if (mpi::isRootProcess()) {
       glfwTerminate();
@@ -190,7 +190,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTask() {
 }
 
 template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTaskThreading() {
+void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTaskInOmpParallel() {
 #ifdef SPRAY_TIMING
   tReset();
   tStartMPI(TIMER_TOTAL);
