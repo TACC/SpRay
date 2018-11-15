@@ -232,6 +232,47 @@ void Tracer<CacheT, ShaderT>::trace() {
   }
 }
 
+template <typename CacheT, typename ShaderT>
+void Tracer<CacheT, ShaderT>::traceInOmpParallel() {
+#pragma omp single
+  image_->clear();
+
+  TContext *tcontext = &tcontexts_[omp_get_thread_num()];
+  tcontext->resetMems();
+
+#pragma omp single
+  {
+    pcontext_.reset(mytile_);
+
+    shared_eyes_.num =
+        (std::size_t)(mytile_.w * mytile_.h) * num_pixel_samples_;
+#ifdef SPRAY_GLOG_CHECK
+    CHECK(shared_eyes_.num);
+#endif
+    if (shared_eyes_.num) {
+      shared_eyes_.rays = tcontext->allocMemIn<Ray>(shared_eyes_.num);
+    }
+  }
+
+  if (shared_eyes_.num) {
+    glm::vec3 cam_pos = camera_->getPosition();
+    if (num_pixel_samples_ > 1) {
+      genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2], mytile_,
+                   &shared_eyes_);
+
+    } else {
+      genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2], mytile_,
+                    &shared_eyes_);
+    }
+
+#pragma omp barrier
+    isectDomsRads(shared_eyes_, tcontext);
+#pragma omp barrier
+  }
+
+  pcontext_.isectPrims<CacheT, ShaderT>(scene_, shader_, tcontext);
+}
+
 }  // namespace ooc
 }  // namespace spray
 

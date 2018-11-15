@@ -74,6 +74,9 @@ class InsituTracer {
             HdrImage *image);
 
   void trace();
+  void traceInOmpParallel() {
+    std::cout << "[warning] tracing in omp parallel region unsupported\n";
+  }
 
   void terminate() { img_sched_.terminate(); }
 

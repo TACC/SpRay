@@ -127,6 +127,7 @@ template <class TracerT, class CacheT>
 void SprayRenderer<TracerT, CacheT>::run_dev() {
   if (msgcmd_.view_mode == VIEW_MODE_FILM) {
     // do nothing
+    LOG(FATAL) << "unsupported view mode";
   } else if (msgcmd_.view_mode == VIEW_MODE_GLFW) {
     if (mpi::isSingleProcess()) {
       renderGlfwSingleTaskThreading();
@@ -134,6 +135,13 @@ void SprayRenderer<TracerT, CacheT>::run_dev() {
     if (mpi::isRootProcess()) {
       glfwTerminate();
     }
+    if (!mpi::isSingleProcess()) {
+      LOG(FATAL) << "single process only allowed in dev mode";
+    }
+  } else if (msgcmd_.view_mode == VIEW_MODE_DOMAIN ||
+             msgcmd_.view_mode == VIEW_MODE_PARTITION) {
+    LOG(FATAL) << "unsupported view mode";
+    renderGlfwDomainBounds(msgcmd_.view_mode);
   } else {
     msgcmd_.view_mode = VIEW_MODE_TERMINATE;
     glfwTerminate();
@@ -214,7 +222,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTaskThreading() {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #pragma omp barrier
 
-      // tracer_.trace();
+      tracer_.traceInOmpParallel();
 
 #pragma omp master
       {

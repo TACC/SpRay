@@ -63,6 +63,7 @@ template <typename CacheT, typename ShaderT>
 class Tracer {
  public:
   void trace();
+  void traceInOmpParallel();
 
  public:
   void init(const Config &cfg, const Camera &camera, Scene<CacheT> *scene,
@@ -90,6 +91,7 @@ class Tracer {
 
   Tile image_tile_;
   Tile mytile_;
+  RayBuf shared_eyes_;
 
  private:
   int rank_;
