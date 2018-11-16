@@ -189,8 +189,6 @@ void Tracer<CacheT, ShaderT>::isectDomsRads(RayBuf buf, TContext *tc) {
 
 template <typename CacheT, typename ShaderT>
 void Tracer<CacheT, ShaderT>::trace() {
-  image_->clear();
-
   RayBuf shared_eyes;
 
 #pragma omp parallel
@@ -234,9 +232,6 @@ void Tracer<CacheT, ShaderT>::trace() {
 
 template <typename CacheT, typename ShaderT>
 void Tracer<CacheT, ShaderT>::traceInOmpParallel() {
-#pragma omp single
-  image_->clear();
-
   TContext *tcontext = &tcontexts_[omp_get_thread_num()];
   tcontext->resetMems();
 

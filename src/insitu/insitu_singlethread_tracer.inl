@@ -479,7 +479,6 @@ void SingleThreadTracer<CacheT, ShaderT>::procRetireQ() {
 
 template <typename CacheT, typename ShaderT>
 void SingleThreadTracer<CacheT, ShaderT>::trace() {
-  image_->clear();
   vbuf_.resetTBufOut();
   vbuf_.resetOBuf();
 

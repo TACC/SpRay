@@ -444,7 +444,6 @@ void MultiThreadTracer<CacheT, ShaderT>::procRecvShads(int id, Ray *rays,
 
 template <typename CacheT, typename ShaderT>
 void MultiThreadTracer<CacheT, ShaderT>::trace() {
-  image_->clear();
   vbuf_.resetTBufOut();
   vbuf_.resetOBuf();
 

@@ -94,8 +94,6 @@ void InsituTracer<CacheT, ScheduleT, ShaderT>::initCommon(const Config &cfg,
 
 template <typename CacheT, typename ScheduleT, typename ShaderT>
 void InsituTracer<CacheT, ScheduleT, ShaderT>::trace() {
-  image_->clear();
-
   Tile tile = img_sched_.schedule();
 
   DRay *eyeray_buf = nullptr;

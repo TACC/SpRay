@@ -166,6 +166,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTask() {
 
   while (nframes < cfg_nframes || (cfg_nframes < 0 && !msgcmd_.done)) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    image_.clear();
 
     tracer_.trace();
 
@@ -218,7 +219,10 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTaskInOmpParallel() {
 
     while (nframes < cfg_nframes || (cfg_nframes < 0 && !msgcmd_.done)) {
 #pragma omp master
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        image_.clear();
+      }
 #pragma omp barrier
       tracer_.traceInOmpParallel();
 #pragma omp barrier
