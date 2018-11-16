@@ -129,13 +129,11 @@ void SprayRenderer<TracerT, CacheT>::run_dev() {
     renderFilmInOmpParallel();
   } else if (msgcmd_.view_mode == VIEW_MODE_GLFW) {
     if (mpi::isSingleProcess()) {
-      renderGlfwSingleTaskInOmpParallel();
-    }
-    if (mpi::isRootProcess()) {
-      glfwTerminate();
-    }
-    if (!mpi::isSingleProcess()) {
-      LOG(FATAL) << "single process only allowed in dev mode";
+      renderGlfwSingleTaskInOmp();
+    } else if (mpi::isRootProcess()) {
+      renderGlfwRootTaskInOmp();
+    } else {
+      renderGlfwChildTaskInOmp();
     }
   } else if (msgcmd_.view_mode == VIEW_MODE_DOMAIN ||
              msgcmd_.view_mode == VIEW_MODE_PARTITION) {
@@ -190,7 +188,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTask() {
 }
 
 template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTaskInOmpParallel() {
+void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTaskInOmp() {
 #ifdef SPRAY_TIMING
   tReset();
   tStartMPI(TIMER_TOTAL);
@@ -205,10 +203,8 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTaskInOmpParallel() {
 
     CHECK_EQ(msgcmd_.view_mode, VIEW_MODE_GLFW);
 
-    int tid = omp_get_thread_num();
 #pragma omp master
     {
-      std::cout << omp_get_num_threads() << std::endl;
       Glfw<WbvhEmbree, CacheT>::initialize(*cfg_, mpi::isRootProcess(), image_w,
                                            image_h, &camera_, &msgcmd_,
                                            &scene_);
@@ -224,7 +220,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTaskInOmpParallel() {
         image_.clear();
       }
 #pragma omp barrier
-      tracer_.traceInOmpParallel();
+      tracer_.traceInOmp();
 #pragma omp barrier
 #pragma omp master
       {
@@ -300,6 +296,74 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwRootTask() {
 }
 
 template <class TracerT, class CacheT>
+void SprayRenderer<TracerT, CacheT>::renderGlfwRootTaskInOmp() {
+#ifdef SPRAY_TIMING
+  tReset();
+  tStartMPI(TIMER_TOTAL);
+#endif
+
+#pragma omp parallel
+  {
+    int64_t cfg_nframes = cfg_->nframes;
+    int image_w = image_.w;
+    int image_h = image_.h;
+    glm::vec4 *image_buf = image_.buf;
+
+    CHECK_EQ(msgcmd_.view_mode, VIEW_MODE_GLFW);
+
+#pragma omp master
+    {
+      Glfw<WbvhEmbree, CacheT>::initialize(*cfg_, mpi::isRootProcess(), image_w,
+                                           image_h, &camera_, &msgcmd_,
+                                           &scene_);
+    }
+#pragma omp barrier
+
+    int64_t nframes = 0;
+
+    while (nframes < cfg_nframes || (cfg_nframes < 0 && !msgcmd_.done)) {
+#pragma omp master
+      {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        image_.clear();
+      }
+#pragma omp barrier
+      tracer_.trace();
+#pragma omp barrier
+#pragma omp master
+      {
+        image_.composite();
+
+        glDrawPixels(image_w, image_h, GL_RGBA, GL_FLOAT, image_buf);
+
+        Glfw<WbvhEmbree, CacheT>::swapBuffers();
+        glfwPollEvents();
+
+        // send command
+        MPI_Bcast((void *)&msgcmd_, sizeof(MessageCommand), MPI_UNSIGNED_CHAR,
+                  0, MPI_COMM_WORLD);
+
+        // handle command
+        Glfw<WbvhEmbree, CacheT>::cmdHandler();
+      }
+      ++nframes;
+#pragma omp barrier
+    }
+  }  // omp parallel
+
+#ifdef SPRAY_TIMING
+  tStop(TIMER_TOTAL);
+#endif
+
+  glfwTerminate();
+  msgcmd_.view_mode = VIEW_MODE_TERMINATE;
+
+#ifdef SPRAY_TIMING
+  tPrint(cfg_->nframes);
+#endif
+}
+
+template <class TracerT, class CacheT>
 void SprayRenderer<TracerT, CacheT>::renderGlfwChildTask() {
 #ifdef SPRAY_TIMING
   tReset();
@@ -327,6 +391,57 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwChildTask() {
 #ifdef SPRAY_TIMING
   tStop(TIMER_TOTAL);
   tPrint(cfg_nframes);
+#endif
+
+  msgcmd_.view_mode = VIEW_MODE_TERMINATE;
+}
+
+template <class TracerT, class CacheT>
+void SprayRenderer<TracerT, CacheT>::renderGlfwChildTaskInOmp() {
+#ifdef SPRAY_TIMING
+  tReset();
+  tStartMPI(TIMER_TOTAL);
+#endif
+
+#pragma omp parallel
+  {
+    int64_t cfg_nframes = cfg_->nframes;
+    int64_t nframes = 0;
+
+#pragma omp master
+    {
+      Glfw<WbvhEmbree, CacheT>::initialize(*cfg_, mpi::isRootProcess(),
+                                           cfg_->image_w, cfg_->image_h,
+                                           &camera_, &msgcmd_, &scene_);
+    }
+#pragma omp barrier
+
+    while (nframes < cfg_nframes || (cfg_nframes < 0 && !msgcmd_.done)) {
+#pragma omp master
+      image_.clear();
+#pragma omp barrier
+      tracer_.trace();
+#pragma omp barrier
+#pragma omp master
+      {
+        image_.composite();
+
+        // recv command
+        MPI_Bcast((void *)&msgcmd_, sizeof(MessageCommand), MPI_UNSIGNED_CHAR,
+                  0, MPI_COMM_WORLD);
+
+        // handle command
+        Glfw<WbvhEmbree, CacheT>::cmdHandler();
+      }
+
+      ++nframes;
+#pragma omp barrier
+    }
+  }  // omp parallel
+
+#ifdef SPRAY_TIMING
+  tStop(TIMER_TOTAL);
+  tPrint(cfg_->nframes);
 #endif
 
   msgcmd_.view_mode = VIEW_MODE_TERMINATE;
@@ -382,7 +497,7 @@ void SprayRenderer<TracerT, CacheT>::renderFilmInOmpParallel() {
 #pragma omp master
       image_.clear();
 #pragma omp barrier
-      tracer_.traceInOmpParallel();
+      tracer_.traceInOmp();
 #pragma omp barrier
 #pragma omp master
       {

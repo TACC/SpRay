@@ -63,9 +63,7 @@ template <typename CacheT, typename ShaderT>
 class MultiThreadTracer {
  public:
   void trace();
-  void traceInOmpParallel() {
-    std::cout << "[warning] tracing in omp parallel region unsupported\n";
-  }
+  void traceInOmp();
 
  public:
   void init(const Config &cfg, const Camera &camera, Scene<CacheT> *scene,
@@ -126,6 +124,9 @@ class MultiThreadTracer {
  private:
   Tile mytile_;
   Tile image_tile_;
+
+  RayBuf shared_eyes_;
+  int done_;
 
  private:
   int rank_;

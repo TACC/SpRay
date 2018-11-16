@@ -582,6 +582,150 @@ void MultiThreadTracer<CacheT, ShaderT>::trace() {
   }    // # pragma omp parallel
 }
 
+template <typename CacheT, typename ShaderT>
+void MultiThreadTracer<CacheT, ShaderT>::traceInOmp() {
+#pragma omp master
+  {
+    vbuf_.resetTBufOut();
+    vbuf_.resetOBuf();
+
+    for (auto &tc : tcontexts_) {
+      tc.resetMems();
+    }
+
+    shared_eyes_.num =
+        (std::size_t)(mytile_.w * mytile_.h) * num_pixel_samples_;
+    if (shared_eyes_.num) {
+      shared_eyes_.rays = tcontexts_[0].allocMemIn(shared_eyes_.num);
+    } else {
+      shared_eyes_.rays = nullptr;
+    }
+  }
+#pragma omp barrier
+
+  const int nranks = num_ranks_;
+  const int nbounces = num_bounces_;
+  // int done = 0;
+#pragma omp single
+  done_ = 0;
+
+  int tid = omp_get_thread_num();
+  TContextType *tcontext = &tcontexts_[tid];
+
+  // generate eye rays
+  if (shared_eyes_.num) {
+    glm::vec3 cam_pos = camera_->getPosition();
+    if (num_pixel_samples_ > 1) {  // multi samples
+      genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2], image_tile_.y,
+                   mytile_, &shared_eyes_);
+
+    } else {  // single sample
+      genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2], image_tile_.y,
+                    mytile_, &shared_eyes_);
+    }
+#pragma omp barrier
+
+      // isect domains for eyes on shared variables the eyes buffer
+#pragma omp for schedule(static, 1)
+    for (std::size_t i = 0; i < shared_eyes_.num; ++i) {
+      Ray *ray = &shared_eyes_.rays[i];
+      tcontext->isectDomains(ray);
+    }
+
+    populateRadWorkStats(tcontext);
+  }
+
+  int ray_depth = 0;
+
+  while (1) {
+#pragma omp barrier
+
+#pragma omp master
+    {
+      work_stats_.reduce();
+
+      if (work_stats_.allDone()) {
+        done_ = 1;
+        comm_.waitForSend();
+      }
+    }
+
+#pragma omp barrier
+
+    if (done_) {
+      break;
+    }
+
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(ray_depth, nbounces + 1);
+#pragma omp barrier
+#endif
+
+    // send rays (transfer WorkSendMsg's to the comm q)
+    if (nranks > 1) {
+#ifdef SPRAY_GLOG_CHECK
+      CHECK(comm_.emptySendQ());
+#endif
+      sendRays(tid, tcontext);
+
+#pragma omp barrier
+#pragma omp master
+      {
+        comm_.waitForSend();
+        auto *memin = tcontext->getMemIn();
+        comm_.run(&work_stats_, memin, &recv_rq_, &recv_sq_);
+      }
+#pragma omp barrier
+    }
+
+    procCachedRq(ray_depth, tcontext);
+#pragma omp barrier
+
+    procLocalQs(tid, ray_depth, tcontext);
+#pragma omp barrier
+
+    if (nranks > 1) {
+      procRecvQs(ray_depth, tcontext);
+#pragma omp barrier
+    }
+
+#pragma omp master
+    {
+      if (ray_depth < nbounces && nranks > 1) {
+        vbuf_.compositeTBuf();
+      }
+
+      if (ray_depth > 0 && nranks > 1) {
+        vbuf_.compositeOBuf();
+      }
+
+      if (ray_depth > 0) {
+        for (auto &t : tcontexts_) {
+          t.procRetireQ(num_pixel_samples_);
+        }
+        vbuf_.resetOBuf();
+      }
+
+      vbuf_.resetTBufIn();
+      vbuf_.swapTBufs();
+    }
+#pragma omp barrier
+
+    // refer to tbuf input for correctness
+    tcontext->processRays2();
+
+#pragma omp barrier
+
+    populateWorkStats(tcontext);
+
+    tcontext->resetAndSwapMems();
+
+    ++ray_depth;
+
+#pragma omp barrier
+  }  // while (1)
+}
+
 }  // namespace insitu
 }  // namespace spray
 

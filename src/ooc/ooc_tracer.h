@@ -63,7 +63,7 @@ template <typename CacheT, typename ShaderT>
 class Tracer {
  public:
   void trace();
-  void traceInOmpParallel();
+  void traceInOmp();
 
  public:
   void init(const Config &cfg, const Camera &camera, Scene<CacheT> *scene,
