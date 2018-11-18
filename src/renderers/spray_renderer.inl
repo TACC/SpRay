@@ -77,8 +77,7 @@ void SprayRenderer<TracerT, CacheT>::init(const Config &cfg) {
   msgcmd_.camera_cmd = CAM_NOP;
 
   // glfw
-  if (cfg.dev_mode == Config::DEVMODE_NORMAL &&
-      cfg.view_mode != VIEW_MODE_FILM) {
+  if (cfg.view_mode != VIEW_MODE_FILM) {
     Glfw<WbvhEmbree, CacheT>::initialize(cfg, mpi::isRootProcess(), cfg.image_w,
                                          cfg.image_h, &camera_, &msgcmd_,
                                          &scene_);
@@ -203,14 +202,6 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTaskInOmp() {
 
     CHECK_EQ(msgcmd_.view_mode, VIEW_MODE_GLFW);
 
-#pragma omp master
-    {
-      Glfw<WbvhEmbree, CacheT>::initialize(*cfg_, mpi::isRootProcess(), image_w,
-                                           image_h, &camera_, &msgcmd_,
-                                           &scene_);
-    }
-#pragma omp barrier
-
     int64_t nframes = 0;
 
     while (nframes < cfg_nframes || (cfg_nframes < 0 && !msgcmd_.done)) {
@@ -311,14 +302,6 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwRootTaskInOmp() {
 
     CHECK_EQ(msgcmd_.view_mode, VIEW_MODE_GLFW);
 
-#pragma omp master
-    {
-      Glfw<WbvhEmbree, CacheT>::initialize(*cfg_, mpi::isRootProcess(), image_w,
-                                           image_h, &camera_, &msgcmd_,
-                                           &scene_);
-    }
-#pragma omp barrier
-
     int64_t nframes = 0;
 
     while (nframes < cfg_nframes || (cfg_nframes < 0 && !msgcmd_.done)) {
@@ -328,7 +311,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwRootTaskInOmp() {
         image_.clear();
       }
 #pragma omp barrier
-      tracer_.trace();
+      tracer_.traceInOmp();
 #pragma omp barrier
 #pragma omp master
       {
@@ -408,19 +391,11 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwChildTaskInOmp() {
     int64_t cfg_nframes = cfg_->nframes;
     int64_t nframes = 0;
 
-#pragma omp master
-    {
-      Glfw<WbvhEmbree, CacheT>::initialize(*cfg_, mpi::isRootProcess(),
-                                           cfg_->image_w, cfg_->image_h,
-                                           &camera_, &msgcmd_, &scene_);
-    }
-#pragma omp barrier
-
     while (nframes < cfg_nframes || (cfg_nframes < 0 && !msgcmd_.done)) {
 #pragma omp master
       image_.clear();
 #pragma omp barrier
-      tracer_.trace();
+      tracer_.traceInOmp();
 #pragma omp barrier
 #pragma omp master
       {

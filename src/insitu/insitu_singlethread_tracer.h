@@ -58,7 +58,10 @@ template <typename CacheT, typename ShaderT>
 class SingleThreadTracer {
  public:
   void trace();
-  void traceInOmp() { LOG(FATAL) << "threading unsupported"; }
+  void traceInOmp() {
+    LOG(FATAL) << "invalid traceInOmp() call: tracing in omp parallel region "
+                  "not supported";
+  }
 
  public:
   void init(const Config &cfg, const Camera &camera, Scene<CacheT> *scene,
