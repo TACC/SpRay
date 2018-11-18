@@ -59,8 +59,7 @@ class SingleThreadTracer {
  public:
   void trace();
   void traceInOmp() {
-    LOG(FATAL) << "invalid traceInOmp() call: tracing in omp parallel region "
-                  "not supported";
+    std::cout << "[warning] tracing in omp parallel region unsupported\n";
   }
 
  public:
