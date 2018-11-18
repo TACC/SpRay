@@ -55,9 +55,11 @@ class WorkStats {
     scatter_buf_.resize(nranks);
 
     ndomains_ = ndomains;
-    if (nthreads > 1) {
-      block_counters_.resize(ndomains + 1, 0);  // +1 for cached block
-    }
+    // bug fix: seg faults occuring with the following conditional statement
+    // when only 1 thread is launched
+    // if (nthreads > 1) {
+    block_counters_.resize(ndomains + 1, 0);  // +1 for cached block
+    // }
   }
 
   void reset() {
