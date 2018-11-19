@@ -59,10 +59,8 @@ class SprayRenderer {
   void renderGlfwChildTask();
   void renderGlfwDomainBounds(int view_mode);
 
-  void renderFilmInOmpParallel();
-  void renderGlfwSingleTaskInOmp();
-  void renderGlfwRootTaskInOmp();
-  void renderGlfwChildTaskInOmp();
+  void renderFilmInOmp();
+  void renderGlfwInOmp();
 
  private:
   const Config* cfg_;
