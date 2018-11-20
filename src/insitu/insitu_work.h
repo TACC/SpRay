@@ -38,6 +38,11 @@ enum WorkType {
 
 class VBuf;
 
+struct MsgHeader {
+  int domain_id;
+  int64_t payload_count;
+};
+
 class Work {
  public:
   Work(int t) : type(t), msg(nullptr), count(-1), dest(-1) {}
