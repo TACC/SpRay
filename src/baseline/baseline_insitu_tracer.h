@@ -77,6 +77,7 @@ class InsituTracer {
   void traceInOmp() {
     std::cout << "[warning] tracing in omp parallel region unsupported\n";
   }
+  int type() const { return TRACER_TYPE_BASELINE_INSITU; }
 
   void terminate() { img_sched_.terminate(); }
 
