@@ -16,7 +16,7 @@ Paul A. Navratil, Hank Childs, Donald S. Fussell, Calvin Lin
 IEEE Transactions on Visualization and Computer Graphics 2013
 ```
 
-You can find our paper and slides on <a href="https://hyungman.bitbucket.io/projects/spray/" target="_blank">[the project page]</a>.
+You can find our paper and slides on <a href="https://hyungman.bitbucket.io/projects/spray/" target="_blank">the project page</a>.
 
 ## Documentation
 
@@ -28,9 +28,9 @@ Please read our preliminary documentation to get started with SpRay. You can ref
 * [Example 2: generating a scene file and rendering the scene](example2.md)
 
 ## Contributors
-* Hyungman Park, ECE and TACC, UT Austin (Developer)
-* Paul Navratil, TACC, UT Austin (Advisor)
-* Donald Fussell, CS, UT Austin (Advisor)
+* <a href="https://hyungman.bitbucket.io/">Hyungman Park</a>, ECE and TACC, UT Austin (Developer)
+* <a href="http://pages.tacc.utexas.edu/~pnav/">Paul Navratil</a>, TACC, UT Austin (Advisor)
+* <a href="https://www.cs.utexas.edu/users/fussell/">Donald Fussell</a>, CS, UT Austin (Advisor)
 
 ## License
 Copyright (c) 2017-2018 The University of Texas at Austin. All rights reserved.
