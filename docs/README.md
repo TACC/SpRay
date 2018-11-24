@@ -48,7 +48,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
 [tvcg-paper]: https://www.cs.utexas.edu/~lin/papers/tvcg13.pdf
 [ldav-slides]: https://hyungman.bitbucket.io/projects/spray/ldav18_spray_slides.pdf
 [spray-project-page]: https://hyungman.bitbucket.io/projects/spray/
-[spray-doc]: https://TACC.github.io/SpRay/
+[spray-doc]: https://tacc.github.io/SpRay/
 [park]: https://hyungman.bitbucket.io/
 [navratil]: http://pages.tacc.utexas.edu/~pnav/
 [fussell]: https://www.cs.utexas.edu/users/fussell/

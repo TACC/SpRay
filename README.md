@@ -2,5 +2,5 @@
 
 Please read our preliminary documentation to get started with SpRay. You can refer to either the `docs` directory or the documentation page below:
 
-https://TACC.github.io/SpRay/
+https://tacc.github.io/SpRay/
 
