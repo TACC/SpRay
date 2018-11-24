@@ -16,22 +16,16 @@ Paul A. Navratil, Hank Childs, Donald S. Fussell, Calvin Lin
 IEEE Transactions on Visualization and Computer Graphics 2013
 ```
 
-You can find our paper and slides on [the project page][4]:
-
-https://hyungman.bitbucket.io/projects/spray/
+You can find our paper and slides on <a href="https://hyungman.bitbucket.io/projects/spray/" target="_blank">[the project page]</a>.
 
 ## Documentation
 
-Please read our preliminary documentation to get started with SpRay. You can refer to either the `docs` directory or the documentation page:
-
-https://TACC.github.io/SpRay/
+Please read our preliminary documentation to get started with SpRay. You can refer to either the `docs` directory or <a href="https://TACC.github.io/SpRay/" target="_blank">the documentation page</a>.
 
 * [Building SpRay on Linux](build_linux.md)
 * [Building SpRay on macOS](build_mac.md)
 * [Example 1: rendering a scene of 64 wavelet domains](example1.md)
 * [Example 2: generating a scene file and rendering the scene](example2.md)
-
-https://TACC.github.io/SpRay/
 
 ## Contributors
 * Hyungman Park, ECE and TACC, UT Austin (Developer)
