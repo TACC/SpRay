@@ -16,7 +16,7 @@ Paul A. Navratil, Hank Childs, Donald S. Fussell, Calvin Lin
 IEEE Transactions on Visualization and Computer Graphics 2013
 ```
 
-You can find our paper and slides on [the project page][4].
+You can find our paper and slides on [the project page][4]:
 
 https://hyungman.bitbucket.io/projects/spray/
 
