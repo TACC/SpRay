@@ -26,7 +26,6 @@ Please read our preliminary documentation to get started with SpRay. You can ref
 
 https://TACC.github.io/SpRay/
 
-* [Introduction](README.md)
 * [Building SpRay on Linux](build_linux.md)
 * [Building SpRay on macOS](build_mac.md)
 * [Example 1: rendering a scene of 64 wavelet domains](example1.md)
