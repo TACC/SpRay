@@ -5,14 +5,14 @@
 This repository contains the source code of the speculative ray scheduling technique described in the following paper:
 ```
 SpRay: Speculative Ray Scheduling for Large Data Visualization
-Hyungman Park, Donald Fussell, Paul Navrátil
+Hyungman Park, Donald Fussell, Paul Navratil
 IEEE Symposium on Large Data Analysis and Visualization 2018
 ```
 
 It also includes our implementations of the baseline algorithm described in the following paper:
 ```
 Exploring the Spectrum of Dynamic Scheduling Algorithms for Scalable Distributed-Memory Ray Tracing
-Paul A. Navrátil, Hank Childs, Donald S. Fussell, Calvin Lin
+Paul A. Navratil, Hank Childs, Donald S. Fussell, Calvin Lin
 IEEE Transactions on Visualization and Computer Graphics 2013
 ```
 
@@ -21,6 +21,8 @@ You can find our paper and slides on [the project page][4].
 https://hyungman.bitbucket.io/projects/spray/
 
 ## Documentation
+
+Please read our preliminary documentation to get started with SpRay. You can refer to either the `docs` directory or the documentation page:
 
 https://TACC.github.io/SpRay/
 

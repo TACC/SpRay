@@ -7,7 +7,7 @@ brew install libomp
 
 ```
 
-Build and install [Embree][2]. Make sure your Embree installation has the `lib` directory. We tested SpRay with Embree v2.17.1.
+Build and install [Embree][1]. Make sure your Embree installation has the `lib` directory. We tested SpRay with Embree v2.17.1.
 
 Check out SpRay with all submodules.
 
@@ -39,3 +39,5 @@ If you wish to install SpRay,
 ```bash
 make install
 ```
+
+[1]: https://github.com/embree/embree
