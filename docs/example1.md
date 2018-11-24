@@ -32,5 +32,5 @@ Type the q-key to close the window.
 
 You should see the following as a result:
 
-![wavelets.jpg](../images/wavelets64.jpg)
+![wavelets.jpg](assets/img/wavelets64.jpg)
 
