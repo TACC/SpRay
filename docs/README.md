@@ -16,11 +16,11 @@ Paul A. Navratil, Hank Childs, Donald S. Fussell, Calvin Lin
 IEEE Transactions on Visualization and Computer Graphics 2013
 ```
 
-You can find our [paper][ldav-paper] and [slides][ldav-slides] on [the project page][spray-project-page].
+You can find our [LDAV 2018 paper][ldav-paper] and [talk slides][ldav-slides] on the [project page][spray-project-page].
 
 ## Documentation
 
-Please read our preliminary documentation to get started with SpRay. You can refer to either the `docs` directory or [the documentation page][spray-doc].
+Please read our preliminary documentation to get started with SpRay.
 
 * [Building SpRay on Linux](build_linux.md)
 * [Building SpRay on macOS](build_mac.md)
