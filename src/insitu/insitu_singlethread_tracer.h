@@ -61,6 +61,7 @@ class SingleThreadTracer {
   void traceInOmp() {
     std::cout << "[warning] tracing in omp parallel region unsupported\n";
   }
+  int type() const { return TRACER_TYPE_SPRAY_INSITU_1_THREAD; }
 
  public:
   void init(const Config &cfg, const Camera &camera, Scene<CacheT> *scene,

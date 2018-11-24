@@ -30,6 +30,7 @@ class ImageTracer : public InsituTracer<CacheT, ScheduleT, ShaderT> {
  public:
   typedef InsituTracer<CacheT, ScheduleT, ShaderT> Base;
   void trace();
+  int type() const { return TRACER_TYPE_BASELINE_IMAGE; }
 
  private:
   void schedule(int ndomains, const ArenaQs<DRayQItem> &qs,

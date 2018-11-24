@@ -64,6 +64,7 @@ class Tracer {
  public:
   void trace();
   void traceInOmp();
+  int type() const { return TRACER_TYPE_SPRAY_OOC; }
 
  public:
   void init(const Config &cfg, const Camera &camera, Scene<CacheT> *scene,

@@ -42,11 +42,6 @@ class WorkStats;
 struct Work;
 struct SendPixelsWork;
 
-struct MsgHeader {
-  int domain_id;
-  int64_t payload_count;
-};
-
 class Comm {
  public:
   void init();
