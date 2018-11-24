@@ -22,7 +22,9 @@ https://hyungman.bitbucket.io/projects/spray/
 
 ## Documentation
 
-Please read our preliminary documentation to get started with SpRay.
+Please read our preliminary documentation to get started with SpRay. You can refer to either the `docs` directory or the documentation page:
+
+https://TACC.github.io/SpRay/
 
 * [Introduction](README.md)
 * [Building SpRay on Linux](build_linux.md)
