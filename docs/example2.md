@@ -14,7 +14,7 @@ For macOS:
 source examples/env_spray_macos.sh
 ```
 
-If you wish to skip the next two sections, copy the example scene file and go to the section of rendering a scene of two wavelet domains.
+If you wish to skip the next two sections, copy the example scene file and go to the section titled "Rendering a scene of two wavelet domains."
 
 ```bash
 cp $SPRAY_HOME_PATH/examples/wavelet/wavelet_example.spray $SPRAY_HOME_PATH/examples/wavelet/wavelet.spray
