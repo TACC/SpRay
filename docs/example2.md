@@ -2,10 +2,21 @@
 
 We now explain how to create a scene file and render the scene using a simple example with two domains of isosurfaces.
 
+If you have not done so, edit the script file to set environment variables: `examples/env_spray_linux.sh` for Linux or `examples/env_spray_macos.sh` for macOS.
+
+For Linux:
+```bash
+source examples/env_spray_linux.sh
+```
+
+For macOS:
+```bash
+source examples/env_spray_macos.sh
+```
+
 If you wish to skip the next two sections, copy the example scene file and go to the section of rendering a scene of two wavelet domains.
 
 ```bash
-export SPRAY_HOME_PATH=<path_to_spray_home>
 cp $SPRAY_HOME_PATH/examples/wavelet/wavelet_example.spray $SPRAY_HOME_PATH/examples/wavelet/wavelet.spray
 ```
 
@@ -15,13 +26,7 @@ Given ply files each associated with a domain, you can generate a scene file usi
 
 The following is how you can generate `wavelet.spray` for the two ply files, `wavelet0.ply` and `wavelet1.ply`, located in `$SPRAY_HOME_PATH/examples/wavelet`.
 
-First, set environmental variables, if you have not done so.
-```bash
-export SPRAY_HOME_PATH=<path_to_spray_home>
-export SPRAY_BIN_PATH=<path_to_spray_executables>
-```
-
-Then, run the Python script to generate a scene file.
+Run the Python script to generate a scene file.
 
 ```bash
 cd $SPRAY_HOME_PATH/scripts
@@ -55,19 +60,7 @@ The `diffuse` identifier defines a diffuse area light source that emits radiance
 
 ## Rendering a scene of two wavelet domains
 
-After adding light sources to the scene file, you can render the scene similarly as you did for 64 wavelet domains. But this time, the render time may increase due to using multiple samples. Refer to the `wavelet.sh` script below for rendering configurations.
-
-If you have not done so, edit the script file to set environment variables: `examples/env_spray_linux.sh` for Linux or `examples/env_spray_macos.sh` for macOS.
-
-For Linux:
-```bash
-source examples/env_spray_linux.sh
-```
-
-For macOS:
-```bash
-source examples/env_spray_macos.sh
-```
+After adding light sources to the scene file, you can render the scene similarly as you did for 64 wavelet domains. But this time, the render time may increase due to using multiple samples. Refer to the `wavelet.sh` script for rendering configurations.
 
 For film mode:
 
