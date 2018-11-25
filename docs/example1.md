@@ -8,13 +8,19 @@ Additionally, if you wish to use installed binaries, you'll have to modify the v
 
 ## Running the script
 
-Set a path to the project home.
+Edit the script file to set environment variables: `examples/env_spray_linux.sh` for Linux or `examples/env_spray_macos.sh` for macOS.
 
+For Linux:
 ```bash
-export SPRAY_HOME_PATH=<path_to_spray_home>
+source examples/env_spray_linux.sh
 ```
 
-For film mode,
+For macOS:
+```bash
+source examples/env_spray_macos.sh
+```
+
+For film mode:
 
 ```bash
 source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64.sh film
@@ -22,7 +28,7 @@ Type a number from the application list.
 display spray.ppm
 ```
 
-For glfw mode,
+For glfw mode:
 
 ```bash
 source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64.sh glfw
@@ -33,4 +39,3 @@ Type the q-key to close the window.
 You should see the following as a result:
 
 ![wavelets.jpg](assets/img/wavelets64.jpg)
-

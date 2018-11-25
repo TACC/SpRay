@@ -2,7 +2,7 @@
 
 We now explain how to create a scene file and render the scene using a simple example with two domains of isosurfaces.
 
-If you wish to skip the next two sections, copy the example scene file and go to the section of rendering a scene of two wavelet domains. 
+If you wish to skip the next two sections, copy the example scene file and go to the section of rendering a scene of two wavelet domains.
 
 ```bash
 export SPRAY_HOME_PATH=<path_to_spray_home>
@@ -57,13 +57,19 @@ The `diffuse` identifier defines a diffuse area light source that emits radiance
 
 After adding light sources to the scene file, you can render the scene similarly as you did for 64 wavelet domains. But this time, the render time may increase due to using multiple samples. Refer to the `wavelet.sh` script below for rendering configurations.
 
-Set a path to the project home, if you have not done so.
+If you have not done so, edit the script file to set environment variables: `examples/env_spray_linux.sh` for Linux or `examples/env_spray_macos.sh` for macOS.
 
+For Linux:
 ```bash
-export SPRAY_HOME_PATH=<path_to_spray_home>
+source examples/env_spray_linux.sh
 ```
 
-For film mode,
+For macOS:
+```bash
+source examples/env_spray_macos.sh
+```
+
+For film mode:
 
 ```bash
 source $SPRAY_HOME_PATH/examples/wavelet/wavelet.sh film
@@ -72,7 +78,7 @@ Type a number from the shader list (ambient occlusion or path tracing).
 display spray.ppm
 ```
 
-For glfw mode,
+For glfw mode:
 
 ```bash
 source $SPRAY_HOME_PATH/examples/wavelet/wavelet.sh glfw
