@@ -152,11 +152,6 @@ set_property(TARGET glfw PROPERTY FOLDER "dependencies")
 include_directories(${CMAKE_SOURCE_DIR}/deps/glfw/include)
 
 ########################################
-# glut
-########################################
-find_package(GLUT REQUIRED)
-
-########################################
 # Embree
 ########################################
 find_package(Embree REQUIRED)
