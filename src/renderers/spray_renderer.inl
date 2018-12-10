@@ -343,9 +343,7 @@ void SprayRenderer<TracerT, CacheT>::renderFilm() {
     image_.clear();
     tracer_.trace();
 
-    if (cluster) {
-      image_.composite();
-    }
+    if (cluster) image_.composite();
   }
 
 #ifdef SPRAY_TIMING
@@ -354,9 +352,7 @@ void SprayRenderer<TracerT, CacheT>::renderFilm() {
 
   bool root = (mpi::rank() == 0);
 
-  if (!cluster || root) {
-    image_.writePpm(cfg_->output_filename.c_str());
-  }
+  if (root) image_.writePpm(cfg_->output_filename.c_str());
 
 #ifdef SPRAY_TIMING
   tPrint(cfg_nframes);
@@ -383,9 +379,7 @@ void SprayRenderer<TracerT, CacheT>::renderFilmInOmp() {
 #pragma omp barrier
 #pragma omp master
       {
-        if (cluster) {
-          image_.composite();
-        }
+        if (cluster) image_.composite();
       }
 #pragma omp barrier
     }
@@ -397,9 +391,7 @@ void SprayRenderer<TracerT, CacheT>::renderFilmInOmp() {
 
   bool root = (mpi::rank() == 0);
 
-  if (!cluster || root) {
-    image_.writePpm(cfg_->output_filename.c_str());
-  }
+  if (root) image_.writePpm(cfg_->output_filename.c_str());
 
 #ifdef SPRAY_TIMING
   tPrint(cfg_nframes);
