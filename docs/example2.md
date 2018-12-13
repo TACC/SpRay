@@ -78,8 +78,8 @@ For glfw mode:
 ```bash
 source $SPRAY_HOME_PATH/examples/wavelet/wavelet.sh glfw [N] [n]
 Type a number from the application list.
-Type a number from the shader list.
-Type the q-key to close the window (ambient occlusion or path tracing).
+Type a number from the shader list (ambient occlusion or path tracing).
+Type the q-key to close the window.
 ```
 
 You should get something similar to the left image shown below. Noise in the image is caused by using a small number of samples. The right image shows the bounds of each domain: unhighlighted lines for the gray isosurface in one domain and highlighted lines for the blue isosurface in the other domain.
