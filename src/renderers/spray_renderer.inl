@@ -176,7 +176,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTask() {
   glfwTerminate();
 
 #ifdef SPRAY_TIMING
-  tPrint(cfg_nframes);
+  tPrint(nframes);
 #endif
 }
 
@@ -226,7 +226,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwRootTask() {
   msgcmd_.view_mode = VIEW_MODE_TERMINATE;
 
 #ifdef SPRAY_TIMING
-  tPrint(cfg_nframes);
+  tPrint(nframes);
 #endif
 }
 
@@ -236,6 +236,8 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwInOmp() {
   tReset();
   tStartMPI(TIMER_TOTAL);
 #endif
+
+  int64_t shared_nframes;
 
 #pragma omp parallel
   {
@@ -282,6 +284,9 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwInOmp() {
       ++nframes;
 #pragma omp barrier
     }
+
+#pragma omp master
+    shared_nframes = nframes;
   }  // omp parallel
 
 #ifdef SPRAY_TIMING
@@ -292,7 +297,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwInOmp() {
   msgcmd_.view_mode = VIEW_MODE_TERMINATE;
 
 #ifdef SPRAY_TIMING
-  tPrint(cfg_->nframes);
+  tPrint(shared_nframes);
 #endif
 }
 
@@ -323,7 +328,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwChildTask() {
 
 #ifdef SPRAY_TIMING
   tStop(TIMER_TOTAL);
-  tPrint(cfg_nframes);
+  tPrint(nframes);
 #endif
 
   msgcmd_.view_mode = VIEW_MODE_TERMINATE;
