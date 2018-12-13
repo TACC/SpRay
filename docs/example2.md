@@ -60,12 +60,14 @@ The `diffuse` identifier defines a diffuse area light source that emits radiance
 
 ## Rendering a scene of two wavelet domains
 
-After adding light sources to the scene file, you can render the scene similarly as you did for 64 wavelet domains. But this time, the render time may increase due to using multiple samples. Refer to the `wavelet.sh` script for rendering configurations.
+After adding light sources to the scene file, you can render the scene similarly as you did for 64 wavelet domains. But this time, the render time may increase due to using multiple samples.
+
+Depending on the mode you choose, run the script as shown below. N and n are optional, where N is the number of MPI tasks and n is the number of OpenMP threads for each MPI task. If these parameters are not set, 2 MPI tasks and 2 OpenMP threads per each task will be launched. For some special cases, the script discards N and n, using interally hardcoded values. For non-rendering modes, 1 MPI task and 1 thread are launched, and for the single-thread rendering mode, only 1 thread is launched with N MPI tasks. For the rendering settings used in this example, refer to the `wavelet.sh` script.
 
 For film mode:
 
 ```bash
-source $SPRAY_HOME_PATH/examples/wavelet/wavelet.sh film
+source $SPRAY_HOME_PATH/examples/wavelet/wavelet.sh film [N] [n] 
 Type a number from the application list.
 Type a number from the shader list (ambient occlusion or path tracing).
 display spray.ppm
@@ -74,7 +76,7 @@ display spray.ppm
 For glfw mode:
 
 ```bash
-source $SPRAY_HOME_PATH/examples/wavelet/wavelet.sh glfw
+source $SPRAY_HOME_PATH/examples/wavelet/wavelet.sh glfw [N] [n]
 Type a number from the application list.
 Type a number from the shader list.
 Type the q-key to close the window (ambient occlusion or path tracing).

@@ -20,10 +20,12 @@ For macOS:
 source examples/env_spray_macos.sh
 ```
 
+Depending on the mode you choose, run the script as shown below. N and n are optional, where N is the number of MPI tasks and n is the number of OpenMP threads for each MPI task. If these parameters are not set, 2 MPI tasks and 2 OpenMP threads per each task will be launched. For some special cases, the script discards N and n, using interally hardcoded values. For non-rendering modes, 1 MPI task and 1 thread are launched, and for the single-thread rendering mode, only 1 thread is launched with N MPI tasks. For the rendering settings used in this example, refer to the `wavelets64.sh` script.
+
 For film mode:
 
 ```bash
-source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64.sh film
+source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64.sh film [N] [n]
 Type a number from the application list.
 display spray.ppm
 ```
@@ -31,7 +33,7 @@ display spray.ppm
 For glfw mode:
 
 ```bash
-source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64.sh glfw
+source $SPRAY_HOME_PATH/examples/wavelets64/wavelets64.sh glfw [N] [n]
 Type a number from the application list.
 Type the q-key to close the window.
 ```
