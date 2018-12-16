@@ -18,9 +18,7 @@ IEEE Transactions on Visualization and Computer Graphics 2013
 
 You can find our [LDAV 2018 paper][ldav-paper] and [talk slides][ldav-slides] on the [project page][spray-project-page].
 
-## Documentation
-
-Please read our preliminary documentation to get started with SpRay.
+## Getting Started
 
 * [Building SpRay on Linux](build_linux.md)
 * [Building SpRay on macOS](build_mac.md)
