@@ -1,12 +1,7 @@
 # SpRay: a distributed-memory speculative ray tracer for out-of-core and in situ rendering
 
-Please read our preliminary documentation to get started with SpRay. You can refer to either the table of contents below or the documentation page:
-
-https://tacc.github.io/SpRay/
-
-Additionally, please see the project page for our LDAV 2018 paper and talk slides:
-
-https://hyungman.bitbucket.io/projects/spray/
+- [Documentation](https://tacc.github.io/SpRay/)
+- [Project page](https://hyungman.bitbucket.io/projects/spray/) for LDAV 2018
 
 ## Table of Contents
 
