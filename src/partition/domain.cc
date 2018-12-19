@@ -33,8 +33,8 @@
 #include "renderers/spray.h"
 #include "scene/light.h"
 
-#define PRINT_LINES
-// #define PRINT_TOKENS
+// #define SPRAY_PRINT_LINES
+// #define SPRAY_PRINT_TOKENS
 
 namespace spray {
 
@@ -73,7 +73,6 @@ void SceneParser::parseDomain(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
   d.id = domain_id_;
   d.transform = glm::mat4(1.f);
-  std::cout << "[INFO]: new domain " << d.id << "\n";
 }
 
 void SceneParser::parseFile(const std::string& ply_path,
@@ -199,8 +198,6 @@ void SceneParser::parseVertex(const std::vector<std::string>& tokens) {
   CHECK(tokens.size() == 2);
 
   d.num_vertices = std::stoul(tokens[1]);
-  std::cout << "set number of vertices: " << d.num_vertices << " in domain "
-            << d.id << "\n";
 }
 
 void SceneParser::parseLight(const std::vector<std::string>& tokens) {
@@ -334,13 +331,13 @@ void SceneParser::parse(const std::string& filename,
   while (infile.good()) {
     std::string line;
     getline(infile, line);
-#ifdef PRINT_LINES
+#ifdef SPRAY_PRINT_LINES
     std::cout << line << "\n";
 #endif
     char* token = std::strtok(&line[0], delim);
     tokens.clear();
     while (token != NULL) {
-#ifdef PRINT_TOKENS
+#ifdef SPRAY_PRINT_TOKENS
       std::cout << token << " token len:" << std::string(token).size() << "\n";
 #endif
       tokens.push_back(token);
