@@ -66,9 +66,9 @@ class Scene {
     for (std::size_t i = 0; i < lights_.size(); ++i) {
       delete lights_[i];
     }
-    for (std::size_t i = 0; i < domains_.size(); ++i) {
-      delete domains_[i].bsdf;
-    }
+    // for (std::size_t i = 0; i < domains_.size(); ++i) {
+    //   delete domains_[i].bsdf;
+    // }
     if (!storage_basepath_.empty()) deleteAllDomainsFromLocalDisk();
   }
 

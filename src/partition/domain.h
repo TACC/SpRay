@@ -34,7 +34,7 @@ class Light;
 
 struct Domain {
   Domain() : num_vertices(0), num_faces(0), bsdf(nullptr) {}
-  // ~Domain() { delete bsdf; }
+  ~Domain() { delete bsdf; }
 
   unsigned id;  // single domain id
   std::size_t num_vertices;
