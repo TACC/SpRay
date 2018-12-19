@@ -33,38 +33,12 @@
 #include "renderers/spray.h"
 #include "scene/light.h"
 
-// #define PRINT_LINES
-// #define PRINT_TOKENS
+// #define SPRAY_PRINT_LINES
+// #define SPRAY_PRINT_TOKENS
 
 namespace spray {
 
-// # domain 0
-// domain
-// file CornellBox-Original.obj
-// mtl 1
-// bound -1 -1 -1 1 1 1
-// scale 1 1 1
-// rotate 0 0 0
-// translate 0 0 0
-//
-// # domain 1
-// # tbd
-
-enum class DomainTokenType {
-  kComment,
-  kDomain,
-  kFile,
-  kMaterial,
-  kBound,
-  kScale,
-  kRotate,
-  kTranslate,
-  kFace,
-  kVertex,
-  kLight
-};
-
-inline DomainTokenType getTokenType(const std::string& tag) {
+SceneParser::DomainTokenType SceneParser::getTokenType(const std::string& tag) {
   DomainTokenType type;
   if (tag[0] == '#') {
     type = DomainTokenType::kComment;
@@ -94,29 +68,24 @@ inline DomainTokenType getTokenType(const std::string& tag) {
   return type;
 }
 
-inline void parseDomain(const std::vector<std::string>& tokens,
-                        std::vector<spray::Domain>& domain) {
-  spray::Domain d;
-  d.id = domain.size();
+void SceneParser::parseDomain(const std::vector<std::string>& tokens) {
+  nextDomain();
+  Domain& d = currentDomain();
+  d.id = domain_id_;
   d.transform = glm::mat4(1.f);
-  domain.push_back(d);
 }
 
-inline void parseFile(const std::string& ply_path,
-                      const std::vector<std::string>& tokens,
-                      std::vector<spray::Domain>& domain) {
-  CHECK(domain.size());
-  spray::Domain& d = domain[domain.size() - 1];
+void SceneParser::parseFile(const std::string& ply_path,
+                            const std::vector<std::string>& tokens) {
+  Domain& d = currentDomain();
 
   CHECK_EQ(tokens.size(), 2);
 
   d.filename = ply_path.empty() ? tokens[1] : ply_path + "/" + tokens[1];
 }
 
-inline void parseMaterial(const std::vector<std::string>& tokens,
-                          std::vector<spray::Domain>& domain) {
-  CHECK(domain.size());
-  spray::Domain& d = domain[domain.size() - 1];
+void SceneParser::parseMaterial(const std::vector<std::string>& tokens) {
+  Domain& d = currentDomain();
 
   if (tokens[1] == "diffuse") {
     // mtl diffuse albedo<r g b>
@@ -163,10 +132,8 @@ inline void parseMaterial(const std::vector<std::string>& tokens,
   }
 }
 
-inline void parseBound(const std::vector<std::string>& tokens,
-                       std::vector<spray::Domain>& domain) {
-  CHECK(domain.size());
-  spray::Domain& d = domain[domain.size() - 1];
+void SceneParser::parseBound(const std::vector<std::string>& tokens) {
+  Domain& d = currentDomain();
 
   CHECK_EQ(tokens.size(), 7);
 
@@ -178,10 +145,8 @@ inline void parseBound(const std::vector<std::string>& tokens,
   d.object_aabb.bounds[1] = max;
 }
 
-inline void parseScale(const std::vector<std::string>& tokens,
-                       std::vector<spray::Domain>& domain) {
-  CHECK(domain.size());
-  spray::Domain& d = domain[domain.size() - 1];
+void SceneParser::parseScale(const std::vector<std::string>& tokens) {
+  Domain& d = currentDomain();
 
   CHECK_EQ(tokens.size(), 4);
 
@@ -190,10 +155,8 @@ inline void parseScale(const std::vector<std::string>& tokens,
                              atof(tokens[3].c_str())));
 }
 
-inline void parseRotate(const std::vector<std::string>& tokens,
-                        std::vector<spray::Domain>& domain) {
-  CHECK(domain.size());
-  spray::Domain& d = domain[domain.size() - 1];
+void SceneParser::parseRotate(const std::vector<std::string>& tokens) {
+  Domain& d = currentDomain();
 
   CHECK_EQ(tokens.size(), 3);
 
@@ -211,10 +174,8 @@ inline void parseRotate(const std::vector<std::string>& tokens,
                             (float)glm::radians(atof(tokens[2].c_str())), axis);
 }
 
-inline void parseTranslate(const std::vector<std::string>& tokens,
-                           std::vector<spray::Domain>& domain) {
-  CHECK(domain.size());
-  spray::Domain& d = domain[domain.size() - 1];
+void SceneParser::parseTranslate(const std::vector<std::string>& tokens) {
+  Domain& d = currentDomain();
 
   CHECK(tokens.size() == 4);
 
@@ -223,28 +184,23 @@ inline void parseTranslate(const std::vector<std::string>& tokens,
                              atof(tokens[3].c_str())));
 }
 
-inline void parseFace(const std::vector<std::string>& tokens,
-                      std::vector<spray::Domain>& domain) {
-  CHECK(domain.size());
-  spray::Domain& d = domain[domain.size() - 1];
+void SceneParser::parseFace(const std::vector<std::string>& tokens) {
+  Domain& d = currentDomain();
 
   CHECK(tokens.size() == 2);
 
   d.num_faces = std::stoul(tokens[1]);
 }
 
-inline void parseVertex(const std::vector<std::string>& tokens,
-                        std::vector<spray::Domain>& domain) {
-  CHECK(domain.size());
-  spray::Domain& d = domain[domain.size() - 1];
+void SceneParser::parseVertex(const std::vector<std::string>& tokens) {
+  Domain& d = currentDomain();
 
   CHECK(tokens.size() == 2);
 
   d.num_vertices = std::stoul(tokens[1]);
 }
 
-inline void parseLight(const std::vector<std::string>& tokens,
-                       std::vector<spray::Light*>& lights) {
+void SceneParser::parseLight(const std::vector<std::string>& tokens) {
   if (tokens[1] == "point") {
     CHECK(tokens.size() == 8);
     glm::vec3 position, radiance;
@@ -257,8 +213,7 @@ inline void parseLight(const std::vector<std::string>& tokens,
     radiance[1] = atof(tokens[6].c_str());
     radiance[2] = atof(tokens[7].c_str());
 
-    spray::Light* light = new spray::PointLight(position, radiance);
-    lights.push_back(light);
+    addLight(new spray::PointLight(position, radiance));
 
   } else if (tokens[1] == "diffuse") {
     CHECK(tokens.size() == 5);
@@ -268,63 +223,107 @@ inline void parseLight(const std::vector<std::string>& tokens,
     radiance[1] = atof(tokens[3].c_str());
     radiance[2] = atof(tokens[4].c_str());
 
-    spray::Light* light = new spray::DiffuseHemisphereLight(radiance);
-    lights.push_back(light);
+    addLight(new spray::DiffuseHemisphereLight(radiance));
 
   } else {
     LOG(FATAL) << "unknown light source " << tokens[1];
   }
 }
 
-inline void parseLineTokens(const std::string& ply_path,
-                            const std::vector<std::string>& tokens,
-                            std::vector<spray::Domain>& domain,
-                            std::vector<spray::Light*>& lights) {
+void SceneParser::parseLineTokens(const std::string& ply_path,
+                                  const std::vector<std::string>& tokens) {
   DomainTokenType type = getTokenType(tokens[0]);
   switch (type) {
     case DomainTokenType::kDomain:
-      parseDomain(tokens, domain);
+      parseDomain(tokens);
       break;
     case DomainTokenType::kFile:
-      parseFile(ply_path, tokens, domain);
+      parseFile(ply_path, tokens);
       break;
     case DomainTokenType::kMaterial:
-      parseMaterial(tokens, domain);
+      parseMaterial(tokens);
       break;
     case DomainTokenType::kBound:
-      parseBound(tokens, domain);
+      parseBound(tokens);
       break;
     case DomainTokenType::kScale:
-      parseScale(tokens, domain);
+      parseScale(tokens);
       break;
     case DomainTokenType::kRotate:
-      parseRotate(tokens, domain);
+      parseRotate(tokens);
       break;
     case DomainTokenType::kTranslate:
-      parseTranslate(tokens, domain);
+      parseTranslate(tokens);
       break;
     case DomainTokenType::kFace:
-      parseFace(tokens, domain);
+      parseFace(tokens);
       break;
     case DomainTokenType::kVertex:
-      parseVertex(tokens, domain);
+      parseVertex(tokens);
       break;
     case DomainTokenType::kLight:
-      parseLight(tokens, lights);
+      parseLight(tokens);
       break;
     default:
       break;
   }
 }
 
-void loadDescriptor(const std::string& filename, const std::string& ply_path,
-                    std::vector<Domain>* domains_out,
-                    std::vector<Light*>* lights_out) {
-  std::vector<Domain> domains;
-  std::vector<Light*> lights;
+void SceneParser::countAndAllocate(std::ifstream& infile) {
+  int ndomains = 0;
+  int nlights = 0;
+
+  std::string line;
+
+  while (infile.good()) {
+    getline(infile, line);
+    char* token = std::strtok(&line[0], " ");
+    if (token != NULL) {
+      if (strcmp(token, "domain") == 0) {
+        ++ndomains;
+      } else if (strcmp(token, "light") == 0) {
+        ++nlights;
+      }
+    }
+  }
+
+  CHECK_GT(ndomains, 0);
+  domains_->resize(ndomains);
+
+  if (nlights)
+    lights_->resize(nlights);
+  else
+    std::cout << "[WARNING] no lights detected\n";
+
+  std::cout << "[INFO] number of domains: " << ndomains << "\n";
+  std::cout << "[INFO] number of lights: " << nlights << "\n";
+}
+
+// # domain 0
+// domain
+// file CornellBox-Original.obj
+// mtl 1
+// bound -1 -1 -1 1 1 1
+// scale 1 1 1
+// rotate 0 0 0
+// translate 0 0 0
+//
+// # domain 1
+// # tbd
+
+void SceneParser::parse(const std::string& filename,
+                        const std::string& ply_path,
+                        std::vector<Domain>* domains_out,
+                        std::vector<Light*>* lights_out) {
+  reset(domains_out, lights_out);
 
   std::ifstream infile(filename);
   CHECK(infile.is_open()) << "unable to open input file " << filename;
+
+  countAndAllocate(infile);
+
+  infile.clear();
+  infile.seekg(infile.beg);
 
   char delim[] = " ";
 
@@ -332,35 +331,30 @@ void loadDescriptor(const std::string& filename, const std::string& ply_path,
   while (infile.good()) {
     std::string line;
     getline(infile, line);
-#ifdef PRINT_LINES
+#ifdef SPRAY_PRINT_LINES
     std::cout << line << "\n";
 #endif
     char* token = std::strtok(&line[0], delim);
     tokens.clear();
     while (token != NULL) {
-#ifdef PRINT_TOKENS
+#ifdef SPRAY_PRINT_TOKENS
       std::cout << token << " token len:" << std::string(token).size() << "\n";
 #endif
       tokens.push_back(token);
       token = std::strtok(NULL, delim);
     }
-    if (tokens.size()) {
-      parseLineTokens(ply_path, tokens, domains, lights);
-    }
+    if (tokens.size()) parseLineTokens(ply_path, tokens);
   }
 
   infile.close();
 
   // apply transformation matrix
-  for (auto& d : domains) {
+  for (auto& d : (*domains_out)) {
     glm::vec4 min = d.transform * glm::vec4(d.object_aabb.bounds[0], 1.0f);
     glm::vec4 max = d.transform * glm::vec4(d.object_aabb.bounds[1], 1.0f);
     d.world_aabb.bounds[0] = glm::vec3(min);
     d.world_aabb.bounds[1] = glm::vec3(max);
   }
-
-  *domains_out = std::move(domains);
-  *lights_out = std::move(lights);
 }
 
 }  // namespace spray
