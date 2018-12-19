@@ -33,7 +33,8 @@ void Scene<CacheT>::init(const std::string& desc_filename,
                          const std::string& storage_basepath, int cache_size,
                          int view_mode, bool insitu_mode, int num_partitions) {
   // load .domain file
-  loadDescriptor(desc_filename, ply_path, &domains_, &lights_);
+  SceneParser parser;
+  parser.parse(desc_filename, ply_path, &domains_, &lights_);
 
   // merge domain bounds and find the scene bounds
   std::size_t max_num_vertices, max_num_faces;
