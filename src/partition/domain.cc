@@ -36,7 +36,7 @@
 // #define PRINT_LINES
 // #define PRINT_TOKENS
 
-namespace {
+namespace spray {
 
 // # domain 0
 // domain
@@ -316,10 +316,6 @@ inline void parseLineTokens(const std::string& ply_path,
       break;
   }
 }
-
-}  // namespace
-
-namespace spray {
 
 void loadDescriptor(const std::string& filename, const std::string& ply_path,
                     std::vector<Domain>* domains_out,
