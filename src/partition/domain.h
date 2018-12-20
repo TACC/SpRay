@@ -25,15 +25,13 @@
 
 #include "glm/glm.hpp"
 
+#include "materials/reflection.h"
 #include "partition/aabb.h"
 #include "scene/shape.h"
 
 namespace spray {
 
-class Bsdf;
 class Light;
-
-class Shape;
 
 class Domain {
  public:
@@ -76,7 +74,8 @@ class SceneParser {
     kTranslate,
     kFace,
     kVertex,
-    kLight
+    kLight,
+    kSphere
   };
 
   void reset(std::vector<Domain>* domains, std::vector<Light*>* lights) {
@@ -116,6 +115,8 @@ class SceneParser {
   void parseVertex(const std::vector<std::string>& tokens);
 
   void parseLight(const std::vector<std::string>& tokens);
+
+  void parseSphere(const std::vector<std::string>& tokens);
 
   void parseLineTokens(const std::string& ply_path,
                        const std::vector<std::string>& tokens);

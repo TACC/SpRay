@@ -62,6 +62,8 @@ SceneParser::DomainTokenType SceneParser::getTokenType(const std::string& tag) {
     type = DomainTokenType::kVertex;
   } else if (tag == "light") {
     type = DomainTokenType::kLight;
+  } else if (tag == "sphere") {
+    type = DomainTokenType::kSphere;
   } else {
     LOG(FATAL) << "unknown tag name " << tag;
   }
@@ -230,6 +232,24 @@ void SceneParser::parseLight(const std::vector<std::string>& tokens) {
   }
 }
 
+// sphere <center> <radius>
+void SceneParser::parseSphere(const std::vector<std::string>& tokens) {
+  CHECK(tokens.size() == 3);
+  Domain& d = currentDomain();
+
+  glm::vec3 center, radius;
+
+  center[0] = atof(tokens[1].c_str());
+  center[1] = atof(tokens[2].c_str());
+  center[2] = atof(tokens[3].c_str());
+
+  radius[0] = atof(tokens[4].c_str());
+  radius[1] = atof(tokens[5].c_str());
+  radius[2] = atof(tokens[6].c_str());
+
+  d.shapes.push_back(new Sphere(center, radius));
+}
+
 void SceneParser::parseLineTokens(const std::string& ply_path,
                                   const std::vector<std::string>& tokens) {
   DomainTokenType type = getTokenType(tokens[0]);
@@ -263,6 +283,9 @@ void SceneParser::parseLineTokens(const std::string& ply_path,
       break;
     case DomainTokenType::kLight:
       parseLight(tokens);
+      break;
+    case DomainTokenType::kSphere:
+      parseSphere(tokens);
       break;
     default:
       break;
