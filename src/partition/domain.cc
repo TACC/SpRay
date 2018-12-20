@@ -232,9 +232,9 @@ void SceneParser::parseLight(const std::vector<std::string>& tokens) {
   }
 }
 
-// sphere <center> <radius>
+// sphere <center_x> <center_y> <center_z> <radius>
 void SceneParser::parseSphere(const std::vector<std::string>& tokens) {
-  CHECK(tokens.size() == 3);
+  CHECK_EQ(tokens.size(), 5);
   Domain& d = currentDomain();
 
   glm::vec3 center, radius;

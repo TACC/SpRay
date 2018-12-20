@@ -279,6 +279,9 @@ target_link_libraries(spray_insitu_multithread spray ${DEP_LIBS})
 add_executable(spray_ooc apps/spray_ooc.cc)
 target_link_libraries(spray_ooc spray ${DEP_LIBS})
 
+add_executable(spray_insitu_shapes apps/spray_insitu_shapes.cc)
+target_link_libraries(spray_insitu_shapes spray ${DEP_LIBS})
+
 # ply info reader
 add_executable(ply_header_reader apps/ply_header_reader.cc)
 target_link_libraries(ply_header_reader spray ${PLY_HEADER_READER_LIBS})
