@@ -25,11 +25,11 @@
 
 #include "glm/glm.hpp"
 
+#include "materials/reflection.h"
 #include "partition/aabb.h"
 
 namespace spray {
 
-class Bsdf;
 class Light;
 
 struct Domain {

@@ -96,7 +96,7 @@ void SceneParser::parseMaterial(const std::vector<std::string>& tokens) {
     albedo[1] = atof(tokens[3].c_str());
     albedo[2] = atof(tokens[4].c_str());
 
-    d.bsdf = new spray::DiffuseBsdf(albedo);
+    d.bsdf = new DiffuseBsdf(albedo);
 
   } else if (tokens[1] == "mirror") {
     // mtl mirror reflectance<r g b>
@@ -107,7 +107,7 @@ void SceneParser::parseMaterial(const std::vector<std::string>& tokens) {
     reflectance[1] = atof(tokens[3].c_str());
     reflectance[2] = atof(tokens[4].c_str());
 
-    d.bsdf = new spray::MirrorBsdf(reflectance);
+    d.bsdf = new MirrorBsdf(reflectance);
 
   } else if (tokens[1] == "glass") {
     // mtl mirror etaA etaB
@@ -116,7 +116,7 @@ void SceneParser::parseMaterial(const std::vector<std::string>& tokens) {
     float eta_a = atof(tokens[2].c_str());
     float eta_b = atof(tokens[3].c_str());
 
-    d.bsdf = new spray::GlassBsdf(eta_a, eta_b);
+    d.bsdf = new GlassBsdf(eta_a, eta_b);
 
   } else if (tokens[1] == "transmission") {
     // mtl transmission etaA etaB
@@ -125,7 +125,7 @@ void SceneParser::parseMaterial(const std::vector<std::string>& tokens) {
     float eta_a = atof(tokens[2].c_str());
     float eta_b = atof(tokens[3].c_str());
 
-    d.bsdf = new spray::TransmissionBsdf(eta_a, eta_b);
+    d.bsdf = new TransmissionBsdf(eta_a, eta_b);
 
   } else {
     LOG(FATAL) << "unknown material type " << tokens[1];
@@ -213,7 +213,7 @@ void SceneParser::parseLight(const std::vector<std::string>& tokens) {
     radiance[1] = atof(tokens[6].c_str());
     radiance[2] = atof(tokens[7].c_str());
 
-    addLight(new spray::PointLight(position, radiance));
+    addLight(new PointLight(position, radiance));
 
   } else if (tokens[1] == "diffuse") {
     CHECK(tokens.size() == 5);
@@ -223,7 +223,7 @@ void SceneParser::parseLight(const std::vector<std::string>& tokens) {
     radiance[1] = atof(tokens[3].c_str());
     radiance[2] = atof(tokens[4].c_str());
 
-    addLight(new spray::DiffuseHemisphereLight(radiance));
+    addLight(new DiffuseHemisphereLight(radiance));
 
   } else {
     LOG(FATAL) << "unknown light source " << tokens[1];
