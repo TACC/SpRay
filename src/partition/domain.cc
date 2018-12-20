@@ -89,7 +89,7 @@ void SceneParser::parseMaterial(const std::vector<std::string>& tokens) {
 
   if (tokens[1] == "diffuse") {
     // mtl diffuse albedo<r g b>
-    CHECK(tokens.size() == 5);
+    CHECK_EQ(tokens.size(), 5);
     glm::vec3 albedo;
 
     albedo[0] = atof(tokens[2].c_str());
@@ -100,7 +100,7 @@ void SceneParser::parseMaterial(const std::vector<std::string>& tokens) {
 
   } else if (tokens[1] == "mirror") {
     // mtl mirror reflectance<r g b>
-    CHECK(tokens.size() == 5);
+    CHECK_EQ(tokens.size(), 5);
     glm::vec3 reflectance;
 
     reflectance[0] = atof(tokens[2].c_str());
@@ -111,7 +111,7 @@ void SceneParser::parseMaterial(const std::vector<std::string>& tokens) {
 
   } else if (tokens[1] == "glass") {
     // mtl mirror etaA etaB
-    CHECK(tokens.size() == 4);
+    CHECK_EQ(tokens.size(), 4);
 
     float eta_a = atof(tokens[2].c_str());
     float eta_b = atof(tokens[3].c_str());
@@ -120,7 +120,7 @@ void SceneParser::parseMaterial(const std::vector<std::string>& tokens) {
 
   } else if (tokens[1] == "transmission") {
     // mtl transmission etaA etaB
-    CHECK(tokens.size() == 4);
+    CHECK_EQ(tokens.size(), 4);
 
     float eta_a = atof(tokens[2].c_str());
     float eta_b = atof(tokens[3].c_str());
@@ -177,7 +177,7 @@ void SceneParser::parseRotate(const std::vector<std::string>& tokens) {
 void SceneParser::parseTranslate(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
-  CHECK(tokens.size() == 4);
+  CHECK_EQ(tokens.size(), 4);
 
   d.transform = glm::translate(
       d.transform, glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
@@ -187,7 +187,7 @@ void SceneParser::parseTranslate(const std::vector<std::string>& tokens) {
 void SceneParser::parseFace(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
-  CHECK(tokens.size() == 2);
+  CHECK_EQ(tokens.size(), 2);
 
   d.num_faces = std::stoul(tokens[1]);
 }
@@ -195,14 +195,14 @@ void SceneParser::parseFace(const std::vector<std::string>& tokens) {
 void SceneParser::parseVertex(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
-  CHECK(tokens.size() == 2);
+  CHECK_EQ(tokens.size(), 2);
 
   d.num_vertices = std::stoul(tokens[1]);
 }
 
 void SceneParser::parseLight(const std::vector<std::string>& tokens) {
   if (tokens[1] == "point") {
-    CHECK(tokens.size() == 8);
+    CHECK_EQ(tokens.size(), 8);
     glm::vec3 position, radiance;
 
     position[0] = atof(tokens[2].c_str());
@@ -216,7 +216,7 @@ void SceneParser::parseLight(const std::vector<std::string>& tokens) {
     addLight(new PointLight(position, radiance));
 
   } else if (tokens[1] == "diffuse") {
-    CHECK(tokens.size() == 5);
+    CHECK_EQ(tokens.size(), 5);
     glm::vec3 position, radiance;
 
     radiance[0] = atof(tokens[2].c_str());
