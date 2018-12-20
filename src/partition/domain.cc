@@ -91,43 +91,43 @@ void SceneParser::parseMaterial(const std::vector<std::string>& tokens) {
 
   if (tokens[1] == "diffuse") {
     // mtl diffuse albedo<r g b>
-    CHECK(tokens.size() == 5);
+    CHECK_EQ(tokens.size(), 5);
     glm::vec3 albedo;
 
     albedo[0] = atof(tokens[2].c_str());
     albedo[1] = atof(tokens[3].c_str());
     albedo[2] = atof(tokens[4].c_str());
 
-    d.bsdf = new spray::DiffuseBsdf(albedo);
+    d.bsdf = new DiffuseBsdf(albedo);
 
   } else if (tokens[1] == "mirror") {
     // mtl mirror reflectance<r g b>
-    CHECK(tokens.size() == 5);
+    CHECK_EQ(tokens.size(), 5);
     glm::vec3 reflectance;
 
     reflectance[0] = atof(tokens[2].c_str());
     reflectance[1] = atof(tokens[3].c_str());
     reflectance[2] = atof(tokens[4].c_str());
 
-    d.bsdf = new spray::MirrorBsdf(reflectance);
+    d.bsdf = new MirrorBsdf(reflectance);
 
   } else if (tokens[1] == "glass") {
     // mtl mirror etaA etaB
-    CHECK(tokens.size() == 4);
+    CHECK_EQ(tokens.size(), 4);
 
     float eta_a = atof(tokens[2].c_str());
     float eta_b = atof(tokens[3].c_str());
 
-    d.bsdf = new spray::GlassBsdf(eta_a, eta_b);
+    d.bsdf = new GlassBsdf(eta_a, eta_b);
 
   } else if (tokens[1] == "transmission") {
     // mtl transmission etaA etaB
-    CHECK(tokens.size() == 4);
+    CHECK_EQ(tokens.size(), 4);
 
     float eta_a = atof(tokens[2].c_str());
     float eta_b = atof(tokens[3].c_str());
 
-    d.bsdf = new spray::TransmissionBsdf(eta_a, eta_b);
+    d.bsdf = new TransmissionBsdf(eta_a, eta_b);
 
   } else {
     LOG(FATAL) << "unknown material type " << tokens[1];
@@ -179,7 +179,7 @@ void SceneParser::parseRotate(const std::vector<std::string>& tokens) {
 void SceneParser::parseTranslate(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
-  CHECK(tokens.size() == 4);
+  CHECK_EQ(tokens.size(), 4);
 
   d.transform = glm::translate(
       d.transform, glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
@@ -189,7 +189,7 @@ void SceneParser::parseTranslate(const std::vector<std::string>& tokens) {
 void SceneParser::parseFace(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
-  CHECK(tokens.size() == 2);
+  CHECK_EQ(tokens.size(), 2);
 
   d.num_faces = std::stoul(tokens[1]);
 }
@@ -197,14 +197,14 @@ void SceneParser::parseFace(const std::vector<std::string>& tokens) {
 void SceneParser::parseVertex(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
-  CHECK(tokens.size() == 2);
+  CHECK_EQ(tokens.size(), 2);
 
   d.num_vertices = std::stoul(tokens[1]);
 }
 
 void SceneParser::parseLight(const std::vector<std::string>& tokens) {
   if (tokens[1] == "point") {
-    CHECK(tokens.size() == 8);
+    CHECK_EQ(tokens.size(), 8);
     glm::vec3 position, radiance;
 
     position[0] = atof(tokens[2].c_str());
@@ -215,17 +215,17 @@ void SceneParser::parseLight(const std::vector<std::string>& tokens) {
     radiance[1] = atof(tokens[6].c_str());
     radiance[2] = atof(tokens[7].c_str());
 
-    addLight(new spray::PointLight(position, radiance));
+    addLight(new PointLight(position, radiance));
 
   } else if (tokens[1] == "diffuse") {
-    CHECK(tokens.size() == 5);
+    CHECK_EQ(tokens.size(), 5);
     glm::vec3 position, radiance;
 
     radiance[0] = atof(tokens[2].c_str());
     radiance[1] = atof(tokens[3].c_str());
     radiance[2] = atof(tokens[4].c_str());
 
-    addLight(new spray::DiffuseHemisphereLight(radiance));
+    addLight(new DiffuseHemisphereLight(radiance));
 
   } else {
     LOG(FATAL) << "unknown light source " << tokens[1];
