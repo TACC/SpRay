@@ -237,15 +237,14 @@ void SceneParser::parseSphere(const std::vector<std::string>& tokens) {
   CHECK_EQ(tokens.size(), 5);
   Domain& d = currentDomain();
 
-  glm::vec3 center, radius;
+  glm::vec3 center;
+  float radius;
 
   center[0] = atof(tokens[1].c_str());
   center[1] = atof(tokens[2].c_str());
   center[2] = atof(tokens[3].c_str());
 
-  radius[0] = atof(tokens[4].c_str());
-  radius[1] = atof(tokens[5].c_str());
-  radius[2] = atof(tokens[6].c_str());
+  radius = atof(tokens[4].c_str());
 
   d.shapes.push_back(new Sphere(center, radius));
 }

@@ -31,12 +31,12 @@ class Shape {
 
 class Sphere : public Shape {
  public:
-  Sphere(const glm::vec3& center, const glm::vec3& radius)
+  Sphere(const glm::vec3& center, float radius)
       : Shape(), center_(center), radius_(radius) {}
 
  private:
   glm::vec3 center_;
-  glm::vec3 radius_;
+  float radius_;
 };
 
 }  // namespace spray
