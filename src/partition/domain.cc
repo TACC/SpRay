@@ -247,6 +247,15 @@ void SceneParser::parseSphere(const std::vector<std::string>& tokens) {
   radius = atof(tokens[4].c_str());
 
   d.shapes.push_back(new Sphere(center, radius));
+
+  // vertices, faces
+  d.num_vertices = 0;
+  d.num_faces = 0;
+   
+  // object bounds
+  glm::vec3 v(radius);
+  d.object_aabb.bounds[0] = center - v;
+  d.object_aabb.bounds[1] = center + v;
 }
 
 void SceneParser::parseLineTokens(const std::string& ply_path,

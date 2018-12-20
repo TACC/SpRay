@@ -454,20 +454,22 @@ void Scene<CacheT>::mergeDomainBounds(std::size_t* max_num_vertices,
     // let's enforce that that domain world-space bound and
     // the number of faces are provided through preprocessing.
     CHECK_EQ(d.world_aabb.isValid(), true);
-    CHECK_GT(d.num_vertices, 0);
-    CHECK_GT(d.num_faces, 0);
+    if (d.shapes.empty()) {
+      CHECK_GT(d.num_vertices, 0);
+      CHECK_GT(d.num_faces, 0);
 
-    // maximum values
-    if (d.num_vertices > num_vertices) num_vertices = d.num_vertices;
-    if (d.num_faces > num_faces) num_faces = d.num_faces;
+      // maximum values
+      if (d.num_vertices > num_vertices) num_vertices = d.num_vertices;
+      if (d.num_faces > num_faces) num_faces = d.num_faces;
 
 #if defined(PRINT_DOMAIN_BOUNDS) && defined(SPRAY_GLOG_CHECK)
-    if (mpi::isRootProcess()) {
-      total_faces += d.num_faces;
-      LOG(INFO) << "[domain " << id << "] [bounds " << d.world_aabb
-                << "] [faces " << d.num_faces << "]";
-    }
+      if (mpi::isRootProcess()) {
+        total_faces += d.num_faces;
+        LOG(INFO) << "[domain " << id << "] [bounds " << d.world_aabb
+                  << "] [faces " << d.num_faces << "]";
+      }
 #endif
+    }
 
     world_space_bound.merge(d.world_aabb);
 
