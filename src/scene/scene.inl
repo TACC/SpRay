@@ -82,18 +82,12 @@ void Scene<CacheT>::init(const std::string& desc_filename,
                             max_num_faces, true /* compute_normals */);
 
     // warm up cache
-    if (insitu_mode) {
-      const std::list<int>& domains = partition_.getDomains(mpi::rank());
-      if (view_mode == VIEW_MODE_FILM || view_mode == VIEW_MODE_GLFW) {
-        for (int id : domains) {
-          load(id);
-        }
-      }
-    } else if (cache_size < 0) {
-      if (view_mode == VIEW_MODE_FILM || view_mode == VIEW_MODE_GLFW) {
-        for (std::size_t id = 0; id < domains_.size(); ++id) {
-          load(id);
-        }
+    if (view_mode == VIEW_MODE_FILM || view_mode == VIEW_MODE_GLFW) {
+      if (insitu_mode) {
+        const std::list<int>& domains = partition_.getDomains(mpi::rank());
+        for (int id : domains) load(id);
+      } else if (cache_size < 0) {
+        for (std::size_t id = 0; id < domains_.size(); ++id) load(id);
       }
     }
   }
