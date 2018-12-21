@@ -34,6 +34,8 @@
 
 namespace spray {
 
+class Shape;
+
 class TriMeshBuffer {
  public:
   TriMeshBuffer();
@@ -43,8 +45,17 @@ class TriMeshBuffer {
   void initialize(int max_cache_size_ndomains, std::size_t max_nvertices,
                   std::size_t max_nfaces, bool compute_normals);
 
-  RTCScene load(const std::string& filename, int cache_block,
-                const glm::mat4& transform, bool apply_transform);
+  RTCScene load(const std::string& filename, int cache_block, int cache_size,
+                const glm::mat4& transform, bool apply_transform,
+                std::vector<Shape*>& shapes);
+
+ private:
+  void loadTriangles(const std::string& filename, int cache_block,
+                     const glm::mat4& transform, bool apply_transform);
+
+  void loadShapes(std::vector<Shape*>& shapes, int cache_block, int cache_size);
+
+ public:
   RTCScene get(int cache_block) { return scenes_[cache_block]; }
 
   void getColorTuple(int cache_block, uint32_t primID,
@@ -77,6 +88,13 @@ class TriMeshBuffer {
                        std::size_t num_vertices, uint32_t* faces,
                        std::size_t num_faces);
 
+  static void sphereBoundsCallback(void* shape_ptr, std::size_t item,
+                                   RTCBounds& bounds_o);
+  static void sphereIntersect1Callback(void* shape_ptr, RTCRay& ray,
+                                       std::size_t item);
+  static void sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
+                                      std::size_t item);
+
  private:
   enum MeshStatus { CREATED = -1, DESTROYED = 0 };
 
@@ -102,7 +120,7 @@ class TriMeshBuffer {
   PlyLoader loader_;
 
   bool compute_normals_;
-};
+  };
 
 }  // namespace spray
 

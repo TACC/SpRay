@@ -20,9 +20,14 @@
 
 #include "partition/trimesh_buffer.h"
 
-#include <embree2/rtcore_geometry.h>
+#include <cmath>
 
+#include <embree2/rtcore_geometry.h>
+#include "glm/glm.hpp"
 #include "glog/logging.h"
+
+#include "scene/shape.h"
+#include "utils/math.h"
 
 #define DEBUG_MESH
 #undef DEBUG_MESH
@@ -113,7 +118,20 @@ void TriMeshBuffer::initialize(int max_cache_size_ndomains,
 }
 
 RTCScene TriMeshBuffer::load(const std::string& filename, int cache_block,
-                             const glm::mat4& transform, bool apply_transform) {
+                             int cache_size, const glm::mat4& transform,
+                             bool apply_transform,
+                             std::vector<Shape*>& shapes) {
+  if (!filename.empty())
+    loadTriangles(filename, cache_block, transform, apply_transform);
+
+  if (!shapes.empty()) loadShapes(shapes, cache_block, cache_size);
+
+  return scenes_[cache_block];
+}
+
+void TriMeshBuffer::loadTriangles(const std::string& filename, int cache_block,
+                                  const glm::mat4& transform,
+                                  bool apply_transform) {
   // setup
   PlyLoader::Data d;
   d.vertices_capacity = max_nvertices_ * 3;                // in
@@ -161,9 +179,46 @@ RTCScene TriMeshBuffer::load(const std::string& filename, int cache_block,
   // map buffers
   mapEmbreeBuffer(cache_block, d.vertices, d.num_vertices, d.faces,
                   d.num_faces);
+}
 
-  // return scene
-  return scenes_[cache_block];
+void TriMeshBuffer::loadShapes(std::vector<Shape*>& shapes, int cache_block,
+                               int cache_size) {
+  // TODO: can we somehow not delete geometry? i.e. something similar to how we
+  // handle triangles using rtcSetBuffer2?
+  // TODO: support ooc (ooc not supported at this moment)
+  CHECK_LT(cache_size, 0);
+
+  RTCSceneFlags sflags = RTC_SCENE_STATIC | RTC_SCENE_HIGH_QUALITY;
+  RTCAlgorithmFlags aflags = RTC_INTERSECT1;
+  RTCScene scene = scenes_[cache_block];
+
+  // create geometry
+  unsigned int geom_id = rtcNewUserGeometry(scene, shapes.size());
+
+  // set geom id
+  void* shape_ptr = (void*)&shapes[0];
+  for (std::size_t i=0; i<shapes.size(); ++i) {
+    // TODO: only spheres are supported
+    Shape* shape = shapes[i];
+    CHECK_EQ(shape->type(), Shape::SPHERE);
+    shape->setGeomId(geom_id);
+  }
+
+  // set data
+  rtcSetUserData(scene, geom_id, shape_ptr);
+
+  // callback functions
+  rtcSetBoundsFunction(scene, geom_id, TriMeshBuffer::sphereBoundsCallback);
+  rtcSetIntersectFunction(scene, geom_id,
+                          TriMeshBuffer::sphereIntersect1Callback);
+  rtcSetOccludedFunction(scene, geom_id,
+                         TriMeshBuffer::sphereOccluded1Callback);
+
+  // update geometry
+  rtcUpdate(scene, geom_id);
+  rtcEnable(scene, geom_id);
+
+  rtcCommit(scene);
 }
 
 void TriMeshBuffer::cleanup() {
@@ -220,6 +275,104 @@ void TriMeshBuffer::mapEmbreeBuffer(int cache_block, float* vertices,
   rtcEnable(scene, 0 /*geomID*/);
 
   rtcCommit(scene);
+}
+
+void TriMeshBuffer::sphereBoundsCallback(void* shape_ptr, std::size_t item,
+                                         RTCBounds& bounds_o) {
+  const Sphere** spheres = static_cast<const Sphere**>(shape_ptr);
+  const Sphere* sphere = spheres[item];
+  bounds_o.lower_x = sphere->center.x - sphere->radius;
+  bounds_o.lower_y = sphere->center.y - sphere->radius;
+  bounds_o.lower_z = sphere->center.z - sphere->radius;
+  bounds_o.upper_x = sphere->center.x + sphere->radius;
+  bounds_o.upper_y = sphere->center.y + sphere->radius;
+  bounds_o.upper_z = sphere->center.z + sphere->radius;
+}
+
+void TriMeshBuffer::sphereIntersect1Callback(void* shape_ptr, RTCRay& ray,
+                                             std::size_t item) {
+  const Sphere** spheres = static_cast<const Sphere**>(shape_ptr);
+  const Sphere* sphere = spheres[item];
+
+  const glm::vec3 center_to_origin(ray.org[0] - sphere->center[0],
+                                   ray.org[1] - sphere->center[1],
+                                   ray.org[2] - sphere->center[2]);
+
+  float a = spray::dot(ray.dir, ray.dir);
+  float b = 2.0f * spray::dot(center_to_origin, ray.dir);
+  float c = glm::dot(center_to_origin, center_to_origin) -
+            (sphere->radius * sphere->radius);
+  float discriminant = (b * b) - (4.0f * a * c);
+  if (discriminant < 0.0f) return;
+
+  float sqrt_d = std::sqrt(discriminant);
+
+  // TODO: use embree's rcp() for 1/a
+  float a2 = 2.0f * a;
+  float root0 = (-b - sqrt_d) / a2;
+  float root1 = (-b + sqrt_d) / a2;
+
+  // root0 between tnear and tfar
+  if (root0 > ray.tnear && root0 < ray.tfar) {
+    // TODO: update u,v with correct values
+    ray.u = 0.0f;
+    ray.v = 0.0f;
+    ray.tfar = root0;
+    ray.geomID = sphere->geom_id;
+    ray.primID = static_cast<unsigned int>(item);
+    // NOTE: Ng not normalized
+    ray.Ng[0] = ray.org[0] + (root0 * ray.dir[0]) - sphere->center[0];
+    ray.Ng[1] = ray.org[1] + (root0 * ray.dir[1]) - sphere->center[1];
+    ray.Ng[2] = ray.org[2] + (root0 * ray.dir[2]) - sphere->center[2];
+  }
+
+  // root1 between tnear and tfar
+  if (root1 > ray.tnear && root1 < ray.tfar) {
+    // TODO: update u,v with correct values
+    ray.u = 0.0f;
+    ray.v = 0.0f;
+    ray.tfar = root1;
+    ray.geomID = sphere->geom_id;
+    ray.primID = static_cast<unsigned int>(item);
+    // NOTE: Ng not normalized
+    ray.Ng[0] = ray.org[0] + (root1 * ray.dir[0]) - sphere->center[0];
+    ray.Ng[1] = ray.org[1] + (root1 * ray.dir[1]) - sphere->center[1];
+    ray.Ng[2] = ray.org[2] + (root1 * ray.dir[2]) - sphere->center[2];
+  }
+}
+
+void TriMeshBuffer::sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
+                                            std::size_t item) {
+  const Sphere** spheres = static_cast<const Sphere**>(shape_ptr);
+  const Sphere* sphere = spheres[item];
+
+  const glm::vec3 center_to_origin(ray.org[0] - sphere->center[0],
+                                   ray.org[1] - sphere->center[1],
+                                   ray.org[2] - sphere->center[2]);
+
+  float a = spray::dot(ray.dir, ray.dir);
+  float b = 2.0f * spray::dot(center_to_origin, ray.dir);
+  float c = glm::dot(center_to_origin, center_to_origin) -
+            (sphere->radius * sphere->radius);
+  float discriminant = (b * b) - (4.0f * a * c);
+  if (discriminant < 0.0f) return;
+
+  float sqrt_d = std::sqrt(discriminant);
+
+  // TODO: use embree's rcp() for 1/a
+  float a2 = 2.0f * a;
+  float root0 = (-b - sqrt_d) / a2;
+  float root1 = (-b + sqrt_d) / a2;
+
+  // root0 between tnear and tfar
+  if (root0 > ray.tnear && root0 < ray.tfar) {
+    ray.geomID = 0;  // 0 means occluded
+  }
+
+  // root1 between tnear and tfar
+  if (root1 > ray.tnear && root1 < ray.tfar) {
+    ray.geomID = 0;  // 0 means occluded
+  }
 }
 
 void TriMeshBuffer::getColorTuple(int cache_block, uint32_t primID,

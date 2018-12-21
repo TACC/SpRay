@@ -21,22 +21,33 @@
 #pragma once
 
 #include "glm/glm.hpp"
+#include "glog/logging.h"
 
 namespace spray {
 
 class Shape {
  public:
   Shape() {}
+
+  enum ShapeType { UNDEFINED, SPHERE };
+  virtual int type() const {
+    LOG(FATAL) << "undefined";
+    return UNDEFINED;
+  }
+  virtual void setGeomId(int id) { LOG(FATAL) << "undefined"; }
 };
 
 class Sphere : public Shape {
  public:
   Sphere(const glm::vec3& center, float radius)
-      : Shape(), center_(center), radius_(radius) {}
+      : Shape(), center(center), radius(radius) {}
 
- private:
-  glm::vec3 center_;
-  float radius_;
+  int type() const override { return Shape::SPHERE; }
+  void setGeomId(int id) override { geom_id = id; }
+
+  const glm::vec3 center;
+  const float radius;
+  unsigned int geom_id;
 };
 
 }  // namespace spray

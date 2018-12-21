@@ -209,6 +209,7 @@ class Scene {
 
   RTCScene scene_;   // current domain's scene
   int cache_block_;  // current cache block
+  int cache_size_;   // cache size
 
   WbvhEmbree wbvh_;
 
