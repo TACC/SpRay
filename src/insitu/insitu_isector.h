@@ -68,6 +68,7 @@ class Isector {
     }
   }
 
+  // for processing eye rays
   template <typename CacheT>
   void intersect(int ndomains, Scene<CacheT>* scene, RayBuf ray_buf,
                  spray::QVector<Ray*>* qs) {
