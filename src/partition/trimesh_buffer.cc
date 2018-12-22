@@ -118,13 +118,12 @@ void TriMeshBuffer::initialize(int max_cache_size_ndomains,
 }
 
 RTCScene TriMeshBuffer::load(const std::string& filename, int cache_block,
-                             int cache_size, const glm::mat4& transform,
-                             bool apply_transform,
+                             const glm::mat4& transform, bool apply_transform,
                              std::vector<Shape*>& shapes) {
   if (!filename.empty())
     loadTriangles(filename, cache_block, transform, apply_transform);
 
-  if (!shapes.empty()) loadShapes(shapes, cache_block, cache_size);
+  if (!shapes.empty()) loadShapes(shapes, cache_block);
 
   return scenes_[cache_block];
 }
@@ -181,12 +180,10 @@ void TriMeshBuffer::loadTriangles(const std::string& filename, int cache_block,
                   d.num_faces);
 }
 
-void TriMeshBuffer::loadShapes(std::vector<Shape*>& shapes, int cache_block,
-                               int cache_size) {
+void TriMeshBuffer::loadShapes(std::vector<Shape*>& shapes, int cache_block) {
   // TODO: can we somehow not delete geometry? i.e. something similar to how we
   // handle triangles using rtcSetBuffer2?
   // TODO: support ooc (ooc not supported at this moment)
-  CHECK_LT(cache_size, 0);
 
   RTCSceneFlags sflags = RTC_SCENE_STATIC | RTC_SCENE_HIGH_QUALITY;
   RTCAlgorithmFlags aflags = RTC_INTERSECT1;

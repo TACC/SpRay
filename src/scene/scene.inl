@@ -32,7 +32,6 @@ void Scene<CacheT>::init(const std::string& desc_filename,
                          const std::string& ply_path,
                          const std::string& storage_basepath, int cache_size,
                          int view_mode, bool insitu_mode, int num_partitions) {
-  cache_size_ = cache_size;
   // load .domain file
   SceneParser parser;
   parser.parse(desc_filename, ply_path, &domains_, &lights_);
@@ -40,6 +39,14 @@ void Scene<CacheT>::init(const std::string& desc_filename,
   // merge domain bounds and find the scene bounds
   std::size_t max_num_vertices, max_num_faces;
   mergeDomainBounds(&max_num_vertices, &max_num_faces);
+
+  // TODO: support ooc (ooc not supported at this moment)
+  // see notes in TriMeshBuffer::loadShapes
+  for (std::size_t i = 0; i < domains_.size(); ++i) {
+    if (!domains_[i].shapes.empty()) {
+      CHECK_LT(cache_size, 0);
+    }
+  }
 
   insitu_ = false;
 
@@ -65,7 +72,6 @@ void Scene<CacheT>::init(const std::string& desc_filename,
 #endif
     // NOTE: override cache size
     cache_size = partition_.getNumDomains(mpi::rank());
-    cache_size_ = cache_size;
   }
 
   // copy to local disk
@@ -151,8 +157,8 @@ void Scene<CacheT>::load(int id) {
     const glm::mat4& x = domains_[id].transform;
     bool apply_transform = (x != glm::mat4(1.0));
 
-    scene_ = trimesh_buf_.load(domains_[id].filename, cache_block, cache_size_,
-                               x, apply_transform, domains_[id].shapes);
+    scene_ = trimesh_buf_.load(domains_[id].filename, cache_block, x,
+                               apply_transform, domains_[id].shapes);
 
     // cache_.setLoaded(cache_block);
   }
@@ -178,8 +184,8 @@ void Scene<CacheT>::load(int id, SceneInfo* sinfo) {
     const glm::mat4& x = domains_[id].transform;
     bool apply_transform = (x != glm::mat4(1.0));
 
-    scene_ = trimesh_buf_.load(domains_[id].filename, cache_block, cache_size_,
-                               x, apply_transform, domains_[id].shapes);
+    scene_ = trimesh_buf_.load(domains_[id].filename, cache_block, x,
+                               apply_transform, domains_[id].shapes);
 
     // cache_.setLoaded(cache_block);
   }

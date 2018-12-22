@@ -45,7 +45,7 @@ class TriMeshBuffer {
   void initialize(int max_cache_size_ndomains, std::size_t max_nvertices,
                   std::size_t max_nfaces, bool compute_normals);
 
-  RTCScene load(const std::string& filename, int cache_block, int cache_size,
+  RTCScene load(const std::string& filename, int cache_block,
                 const glm::mat4& transform, bool apply_transform,
                 std::vector<Shape*>& shapes);
 
@@ -53,7 +53,7 @@ class TriMeshBuffer {
   void loadTriangles(const std::string& filename, int cache_block,
                      const glm::mat4& transform, bool apply_transform);
 
-  void loadShapes(std::vector<Shape*>& shapes, int cache_block, int cache_size);
+  void loadShapes(std::vector<Shape*>& shapes, int cache_block);
 
  public:
   RTCScene get(int cache_block) { return scenes_[cache_block]; }
