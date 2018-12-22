@@ -69,7 +69,7 @@ class Isector {
   }
 
   template <typename CacheT>
-  void intersect(int ndomains, Scene<CacheT>* scene, RayBuf ray_buf,
+  void intersect(int ndomains, Scene<CacheT>* scene, RayBuf<Ray> ray_buf,
                  spray::QVector<Ray*>* qs) {
     Ray* rays = ray_buf.rays;
 

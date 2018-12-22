@@ -109,7 +109,7 @@ void SingleThreadTracer<CacheT, ShaderT>::genSingleEyes(int image_w, float orgx,
                                                         float orgy, float orgz,
                                                         int base_tile_y,
                                                         Tile tile,
-                                                        RayBuf *ray_buf) {
+                                                        RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
   for (int y = tile.y; y < tile.y + tile.h; ++y) {
     for (int x = tile.x; x < tile.x + tile.w; ++x) {
@@ -149,7 +149,7 @@ void SingleThreadTracer<CacheT, ShaderT>::genMultiEyes(int image_w, float orgx,
                                                        float orgy, float orgz,
                                                        int base_tile_y,
                                                        Tile tile,
-                                                       RayBuf *ray_buf) {
+                                                       RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
 
   int nsamples = num_pixel_samples_;
@@ -482,7 +482,7 @@ void SingleThreadTracer<CacheT, ShaderT>::trace() {
   vbuf_.resetTBufOut();
   vbuf_.resetOBuf();
 
-  RayBuf shared_eyes;
+  RayBuf<Ray> shared_eyes;
 
   shared_eyes.num = (std::size_t)(mytile_.w * mytile_.h) * num_pixel_samples_;
   if (shared_eyes.num) {

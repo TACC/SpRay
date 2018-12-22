@@ -33,15 +33,5 @@ std::size_t getNumItems(void* base, std::size_t bytes) {
   return ((T*)end - (T*)base);
 }
 
-struct RayBuf {
-  RayBuf() { reset(); }
-  void reset() {
-    num = 0;
-    rays = nullptr;
-  }
-  std::size_t num;
-  Ray* rays;
-};
-
 }  // namespace insitu
 }  // namespace spray

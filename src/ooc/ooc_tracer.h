@@ -49,16 +49,6 @@
 namespace spray {
 namespace ooc {
 
-struct RayBuf {
-  RayBuf() { reset(); }
-  void reset() {
-    num = 0;
-    rays = nullptr;
-  }
-  std::size_t num;
-  Ray *rays;
-};
-
 template <typename CacheT, typename ShaderT>
 class Tracer {
  public:
@@ -77,11 +67,11 @@ class Tracer {
 
  private:
   void genSingleEyes(int image_w, float orgx, float orgy, float orgz, Tile tile,
-                     RayBuf *ray_buf);
+                     RayBuf<Ray> *ray_buf);
   void genMultiEyes(int image_w, float orgx, float orgy, float orgz, Tile tile,
-                    RayBuf *ray_buf);
+                    RayBuf<Ray> *ray_buf);
 
-  void isectDomsRads(RayBuf buf, TContext *tc);
+  void isectDomsRads(RayBuf<Ray> buf, TContext *tc);
   void isectPrimsRads(TContext *tc);
 
  private:
@@ -92,7 +82,7 @@ class Tracer {
 
   Tile image_tile_;
   Tile mytile_;
-  RayBuf shared_eyes_;
+  RayBuf<Ray> shared_eyes_;
 
  private:
   int rank_;
