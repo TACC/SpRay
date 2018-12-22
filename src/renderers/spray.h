@@ -154,6 +154,37 @@ class ThreadStatus {
   std::vector<int> status_;
 };
 
+/**
+ * \brief Information for a ray buffer storing eye rays.
+ * Memory is externally managed.
+ */
+template <typename RayT>
+struct RayBuf {
+  /** A constructor that resets the buffer size and pointer. */
+  RayBuf() { reset(); }
+
+  /** Invalidates the buffer size and pointer. */
+  void reset() {
+    num = 0;
+    rays = nullptr;
+  }
+  std::size_t num;  ///< A buffer size.
+  RayT *rays;       ///< A buffer pointer.
+};
+
+/**
+ * A helper taking a string of bytes to evaluate the number of items in type T.
+ *
+ * \param base A pointer to the string.
+ * \param bytes A string size in byte.
+ * \return The number of items in type T.
+ */
+template <class T>
+std::size_t getNumItems(void* base, std::size_t bytes) {
+  uint8_t* end = ((uint8_t*)base) + bytes;
+  return ((T*)end - (T*)base);
+}
+
 extern MpiComm global_mpi_comm;
 extern Profiler global_profiler;
 

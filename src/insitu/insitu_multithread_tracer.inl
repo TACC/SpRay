@@ -116,7 +116,7 @@ void MultiThreadTracer<CacheT, ShaderT>::genSingleEyes(int image_w, float orgx,
                                                        float orgy, float orgz,
                                                        int base_tile_y,
                                                        Tile tile,
-                                                       RayBuf *ray_buf) {
+                                                       RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
 #pragma omp for collapse(2) schedule(static)
   for (int y = tile.y; y < tile.y + tile.h; ++y) {
@@ -160,7 +160,7 @@ void MultiThreadTracer<CacheT, ShaderT>::genMultiEyes(int image_w, float orgx,
                                                       float orgy, float orgz,
                                                       int base_tile_y,
                                                       Tile tile,
-                                                      RayBuf *ray_buf) {
+                                                      RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
 
   int nsamples = num_pixel_samples_;
@@ -447,7 +447,7 @@ void MultiThreadTracer<CacheT, ShaderT>::trace() {
   vbuf_.resetTBufOut();
   vbuf_.resetOBuf();
 
-  RayBuf shared_eyes;
+  RayBuf<Ray> shared_eyes;
 
   for (auto &tc : tcontexts_) {
     tc.resetMems();
