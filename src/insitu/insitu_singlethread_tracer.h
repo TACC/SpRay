@@ -37,7 +37,6 @@
 #include "insitu/insitu_isector.h"
 #include "insitu/insitu_ray.h"
 #include "insitu/insitu_tiler.h"
-#include "insitu/insitu_util.h"
 #include "insitu/insitu_vbuf.h"
 #include "insitu/insitu_work.h"
 #include "insitu/insitu_work_stats.h"

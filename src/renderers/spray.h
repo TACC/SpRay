@@ -172,6 +172,19 @@ struct RayBuf {
   RayT *rays;       ///< A buffer pointer.
 };
 
+/**
+ * A helper taking a string of bytes to evaluate the number of items in type T.
+ *
+ * \param base A pointer to the string.
+ * \param bytes A string size in byte.
+ * \return The number of items in type T.
+ */
+template <class T>
+std::size_t getNumItems(void* base, std::size_t bytes) {
+  uint8_t* end = ((uint8_t*)base) + bytes;
+  return ((T*)end - (T*)base);
+}
+
 extern MpiComm global_mpi_comm;
 extern Profiler global_profiler;
 
