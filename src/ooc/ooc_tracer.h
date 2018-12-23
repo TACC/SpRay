@@ -61,9 +61,11 @@ class Tracer {
             HdrImage *image);
 
  private:
+  typedef TContext<CacheT, ShaderT> TContextType;
+
   ShaderT shader_;
   PContext pcontext_;
-  std::vector<TContext> tcontexts_;
+  std::vector<TContextType> tcontexts_;
 
  private:
   void genSingleEyes(int image_w, float orgx, float orgy, float orgz, Tile tile,
@@ -71,8 +73,8 @@ class Tracer {
   void genMultiEyes(int image_w, float orgx, float orgy, float orgz, Tile tile,
                     RayBuf<Ray> *ray_buf);
 
-  void isectDomsRads(RayBuf<Ray> buf, TContext *tc);
-  void isectPrimsRads(TContext *tc);
+  void isectDomsRads(RayBuf<Ray> buf, TContextType *tc);
+  void isectPrimsRads(TContextType *tc);
 
  private:
   const spray::Camera *camera_;

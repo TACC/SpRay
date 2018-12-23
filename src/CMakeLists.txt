@@ -255,7 +255,6 @@ set(SPRAY_SRC_LIST
     ooc/ooc_vbuf.cc
     ooc/ooc_domain_stats.cc
     ooc/ooc_pcontext.cc
-    ooc/ooc_tcontext.cc
 
     # baseline
     baseline/baseline_ray.cc

@@ -32,6 +32,7 @@
 namespace spray {
 namespace ooc {
 
+template <typename CacheT>
 class Isector {
  private:
   DomainList domains_;
@@ -41,7 +42,6 @@ class Isector {
   RayData ray_data_;
 
  public:
-  template <typename CacheT>
   void intersect(int ndomains, Scene<CacheT>* scene, Ray* ray,
                  spray::QVector<RayData>* qs, DomainStats* stats) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
@@ -73,7 +73,6 @@ class Isector {
     }
   }
 
-  template <typename CacheT>
   bool intersect(int exclude_id, int ndomains, Scene<CacheT>* scene, Ray* ray,
                  spray::QVector<RayData>* qs, DomainStats* stats) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,

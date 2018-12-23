@@ -108,7 +108,7 @@ class SingleThreadTracer {
   std::vector<spray::Light *> lights_;
   Scene<CacheT> *scene_;
   spray::HdrImage *image_;
-  Isector isector_;
+  Isector<CacheT> isector_;
 
   spray::QVector<Ray *> rqs_;
   spray::QVector<Ray *> sqs_;

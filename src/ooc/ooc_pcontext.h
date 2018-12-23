@@ -86,12 +86,13 @@ class PContext {
 
  public:
   template <typename CacheT, typename ShaderT>
-  void isectPrims(Scene<CacheT>* scene, ShaderT& shader, TContext* tcontext);
+  void isectPrims(Scene<CacheT>* scene, ShaderT& shader,
+                  TContext<CacheT, ShaderT>* tcontext);
 };
 
 template <typename CacheT, typename ShaderT>
 void PContext::isectPrims(Scene<CacheT>* scene, ShaderT& shader,
-                          TContext* tcontext) {
+                          TContext<CacheT, ShaderT>* tcontext) {
   int tid = omp_get_thread_num();
   int ray_depth = 0;
 
