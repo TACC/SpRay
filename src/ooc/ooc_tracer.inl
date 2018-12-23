@@ -178,12 +178,12 @@ void Tracer<CacheT, ShaderT>::genMultiEyes(int image_w, float orgx, float orgy,
 }
 
 template <typename CacheT, typename ShaderT>
-void Tracer<CacheT, ShaderT>::isectDomsRads(RayBuf<Ray> buf, TContext *tc) {
+void Tracer<CacheT, ShaderT>::isectDomsRads(RayBuf<Ray> buf, TContextType *tc) {
   tc->resetRstats();
 #pragma omp for schedule(static, 1)
   for (std::size_t i = 0; i < buf.num; ++i) {
     Ray *ray = &buf.rays[i];
-    tc->enqRad<CacheT>(scene_, ray);
+    tc->enqRad(scene_, ray);
   }
 }
 
@@ -193,7 +193,7 @@ void Tracer<CacheT, ShaderT>::trace() {
 
 #pragma omp parallel
   {
-    TContext *tcontext = &tcontexts_[omp_get_thread_num()];
+    TContextType *tcontext = &tcontexts_[omp_get_thread_num()];
     tcontext->resetMems();
 
 #pragma omp single
@@ -206,7 +206,7 @@ void Tracer<CacheT, ShaderT>::trace() {
       CHECK(shared_eyes.num);
 #endif
       if (shared_eyes.num) {
-        shared_eyes.rays = tcontext->allocMemIn<Ray>(shared_eyes.num);
+        shared_eyes.rays = tcontext->template allocMemIn<Ray>(shared_eyes.num);
       }
     }
 
@@ -232,7 +232,7 @@ void Tracer<CacheT, ShaderT>::trace() {
 
 template <typename CacheT, typename ShaderT>
 void Tracer<CacheT, ShaderT>::traceInOmp() {
-  TContext *tcontext = &tcontexts_[omp_get_thread_num()];
+  TContextType *tcontext = &tcontexts_[omp_get_thread_num()];
   tcontext->resetMems();
 
 #pragma omp single
@@ -245,7 +245,7 @@ void Tracer<CacheT, ShaderT>::traceInOmp() {
     CHECK(shared_eyes_.num);
 #endif
     if (shared_eyes_.num) {
-      shared_eyes_.rays = tcontext->allocMemIn<Ray>(shared_eyes_.num);
+      shared_eyes_.rays = tcontext->template allocMemIn<Ray>(shared_eyes_.num);
     }
   }
 

@@ -41,10 +41,13 @@
 #include "partition/qvector.h"
 #include "renderers/rays.h"
 #include "utils/scan.h"
+#include "display/image.h"
+#include "utils/scan.h"
 
 namespace spray {
 namespace ooc {
 
+template <typename CacheT, typename ShaderT>
 class TContext {
  public:
   TContext() {
@@ -112,7 +115,6 @@ class TContext {
   spray::MemoryArena mem_1_;
 
  public:
-  template <typename CacheT>
   void enqRad(Scene<CacheT>* scene, Ray* ray) {
     isector_.intersect(num_domains_, scene, ray, &rqs_, &rstats_);
   }
@@ -121,7 +123,7 @@ class TContext {
   RTCRay& getRTCRay() { return rtc_ray_; }
 
  private:
-  Isector isector_;
+  Isector<CacheT> isector_;
   spray::RTCRayIntersection rtc_isect_;
   RTCRay rtc_ray_;
 
@@ -182,7 +184,6 @@ class TContext {
   void filterSqs(int id, QVector<RayData>* sqs, std::queue<Ray*>* fsq);
 
  public:
-  template <typename CacheT, typename ShaderT>
   void procFilterQs(int id, Scene<CacheT>* scene, SceneInfo& sinfo,
                     ShaderT& shader, int ray_depth) {
     procRads(id, scene, sinfo, shader, ray_depth);
@@ -191,22 +192,17 @@ class TContext {
   }
 
  private:
-  template <typename CacheT, typename ShaderT>
   void procRads(int id, Scene<CacheT>* scene, SceneInfo& sinfo, ShaderT& shader,
                 int ray_depth);
 
-  template <typename CacheT>
   void procShads2(int id, Scene<CacheT>* scene, SceneInfo& sinfo);
 
-  template <typename CacheT>
   void procRads2(Scene<CacheT>* scene, SceneInfo& sinfo);
 
-  template <typename CacheT>
   void procShads(Scene<CacheT>* scene, SceneInfo& sinfo, std::queue<Ray*>* qin,
                  std::queue<Ray*>* qout);
 
  public:
-  template <typename CacheT>
   void procPendingQ(Scene<CacheT>* scene) {
     while (!pending_q_.empty()) {
       Ray* r = pending_q_.front();
@@ -229,76 +225,11 @@ class TContext {
   const DomainStats& getRstats() const { return rstats_; }
 };
 
-template <typename CacheT, typename ShaderT>
-void TContext::procRads(int id, Scene<CacheT>* scene, SceneInfo& sinfo,
-                        ShaderT& shader, int ray_depth) {
-  //
-  while (!frq_.empty()) {
-    Ray* r = frq_.front();
-    frq_.pop();
-
-    bool is_hit = scene->intersect(sinfo.rtc_scene, sinfo.cache_block, r->org,
-                                   r->dir, &rtc_isect_);
-
-    if (is_hit) {
-      if (vbuf_.update(rtc_isect_.tfar, r)) {
-        shader(id, *r, rtc_isect_, mem_out_, &sq2_, &rq2_, &pending_q_,
-               ray_depth);
-        procShads2(id, scene, sinfo);
-        procRads2(scene, sinfo);
-      }
-    }
-  }
-}
-
-template <typename CacheT>
-void TContext::procShads(Scene<CacheT>* scene, SceneInfo& sinfo,
-                         std::queue<Ray*>* qin, std::queue<Ray*>* qout) {
-  while (!qin->empty()) {
-    Ray* r = qin->front();
-    qin->pop();
-    bool is_occluded =
-        scene->occluded(sinfo.rtc_scene, r->org, r->dir, &rtc_ray_);
-
-    if (is_occluded) {
-      r->occluded = 1;
-    }
-
-    if (!is_occluded && !r->committed) {
-      r->committed = 1;
-      qout->push(r);
-    }
-  }
-}
-
-template <typename CacheT>
-void TContext::procShads2(int id, Scene<CacheT>* scene, SceneInfo& sinfo) {
-  while (!sq2_.empty()) {
-    Ray* r = sq2_.front();
-    sq2_.pop();
-    bool is_occluded =
-        scene->occluded(sinfo.rtc_scene, r->org, r->dir, &rtc_ray_);
-    if (!is_occluded) {
-      if (!isector_.intersect(id, num_domains_, scene, r, sqs_out_,
-                              &rstats_)) {  // unoccluded
-#ifdef SPRAY_GLOG_CHECK
-        CHECK_EQ(r->occluded, 0);
-#endif
-        r->committed = 1;
-        commit_q_->push(r);
-      }
-    }
-  }
-}
-
-template <typename CacheT>
-void TContext::procRads2(Scene<CacheT>* scene, SceneInfo& sinfo) {
-  while (!rq2_.empty()) {
-    Ray* r = rq2_.front();
-    rq2_.pop();
-    isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
-  }
-}
-
 }  // namespace ooc
 }  // namespace spray
+
+#define SPRAY_OOC_TCONTEXT_INL
+#include "ooc/ooc_tcontext.inl"
+#undef SPRAY_OOC_TCONTEXT_INL
+
+

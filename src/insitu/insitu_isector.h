@@ -33,6 +33,7 @@
 namespace spray {
 namespace insitu {
 
+template <typename CacheT>
 class Isector {
  private:
   DomainList domains_;
@@ -42,7 +43,6 @@ class Isector {
 
  public:
   // used for parallel ray queuing
-  template <typename CacheT>
   void intersect(int ndomains, Scene<CacheT>* scene, Ray* ray,
                  spray::QVector<Ray*>* qs) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
@@ -68,7 +68,6 @@ class Isector {
   }
 
   // for processing eye rays
-  template <typename CacheT>
   void intersect(int ndomains, Scene<CacheT>* scene, RayBuf<Ray> ray_buf,
                  spray::QVector<Ray*>* qs) {
     Ray* rays = ray_buf.rays;
@@ -95,7 +94,6 @@ class Isector {
     }
   }
 
-  template <typename CacheT>
   void intersect(int exclude_id, int ndomains, Scene<CacheT>* scene, Ray* ray,
                  spray::QVector<Ray*>* qs) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
@@ -118,7 +116,6 @@ class Isector {
     }
   }
 
-  template <typename CacheT>
   void intersect(int exclude_id, float t, int ndomains, Scene<CacheT>* scene,
                  Ray* ray, spray::QVector<Ray*>* qs) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,

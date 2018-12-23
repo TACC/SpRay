@@ -107,7 +107,7 @@ class TContext {
 
  public:
   void isectDomains(Ray* ray) {
-    isector_.intersect<CacheT>(num_domains_, scene_, ray, &rqs_);
+    isector_.intersect(num_domains_, scene_, ray, &rqs_);
   }
 
  public:
@@ -201,7 +201,7 @@ class TContext {
 
   ShaderT shader_;
 
-  Isector isector_;
+  Isector<CacheT> isector_;
   spray::RTCRayIntersection rtc_isect_;
   RTCRay rtc_ray_;
 
