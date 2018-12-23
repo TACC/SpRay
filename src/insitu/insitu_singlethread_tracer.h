@@ -53,7 +53,8 @@
 namespace spray {
 namespace insitu {
 
-template <typename CacheT, typename ShaderT, typename IntersectorT = Isector>
+template <typename CacheT, typename ShaderT,
+          typename IntersectorT = Isector<CacheT>>
 class SingleThreadTracer {
  public:
   void trace();

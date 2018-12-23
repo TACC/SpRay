@@ -21,11 +21,12 @@
 #include "glog/logging.h"
 
 #include "caches/caches.h"
+#include "insitu/insitu_ray.h"
 #include "insitu/insitu_shader_ao.h"
 #include "insitu/insitu_shader_pt.h"
 #include "insitu/insitu_singlethread_tracer.h"
 #include "renderers/config.h"
-#include "renderers/implicit_shape_isector.h"
+#include "renderers/domain_intersector.h"
 #include "renderers/spray.h"
 #include "renderers/spray_renderer.h"
 #include "utils/comm.h"
@@ -53,24 +54,24 @@ int main(int argc, char** argv) {
   spray::Config cfg;
   cfg.parse(argc, argv);
 
+  typedef spray::InfiniteCache CacheT;
+  typedef spray::insitu::Ray RayT;
+  typedef spray::DomainIntersector<CacheT, RayT> IntersectorT;
+  typedef spray::insitu::ShaderAo<CacheT> AoShaderT;
+  typedef spray::insitu::ShaderPt<CacheT> PtShaderT;
+  typedef spray::insitu::SingleThreadTracer<CacheT, AoShaderT, IntersectorT>
+      AoTracerT;
+  typedef spray::insitu::SingleThreadTracer<CacheT, PtShaderT, IntersectorT>
+      PtTracerT;
+
   if (cfg.partition == spray::Config::INSITU) {
     if (cfg.cache_size < 0) {
       if (cfg.ao_mode) {
-        spray::SprayRenderer<spray::insitu::SingleThreadTracer<
-                                 spray::InfiniteCache,
-                                 spray::insitu::ShaderAo<spray::InfiniteCache>,
-                                 spray::ImplicitShapeIsector>,
-                             spray::InfiniteCache>
-            render;
+        spray::SprayRenderer<AoTracerT, CacheT> render;
         render.init(cfg);
         render.run();
       } else {
-        spray::SprayRenderer<spray::insitu::SingleThreadTracer<
-                                 spray::InfiniteCache,
-                                 spray::insitu::ShaderPt<spray::InfiniteCache>,
-                                 spray::ImplicitShapeIsector>,
-                             spray::InfiniteCache>
-            render;
+        spray::SprayRenderer<PtTracerT, CacheT> render;
         render.init(cfg);
         render.run();
       }
