@@ -58,7 +58,7 @@ struct SceneInfo {
   int cache_block;
 };
 
-template <class CacheT>
+template <typename CacheT, typename SurfaceBufferT = TriMeshBuffer>
 class Scene {
  public:
   Scene() {}
@@ -205,7 +205,7 @@ class Scene {
   std::string storage_basepath_;
 
   CacheT cache_;
-  TriMeshBuffer trimesh_buf_;
+  SurfaceBufferT surface_buf_;
 
   RTCScene scene_;   // current domain's scene
   int cache_block_;  // current cache block
