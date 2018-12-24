@@ -39,12 +39,12 @@ struct MouseState {
   int y;
 };
 
-template <class WbvhT, class CacheT>
+template <class WbvhT, class SceneT>
 class Glfw {
  public:
   static void initialize(const Config& cfg, bool is_root_process,
                          unsigned image_w, unsigned image_h, Camera* camera,
-                         MessageCommand* cmd, Scene<CacheT>* scene);
+                         MessageCommand* cmd, SceneT* scene);
 
   static void setShouldClose() {
     glfwSetWindowShouldClose(glfw_window_, GL_TRUE);
@@ -94,7 +94,7 @@ class Glfw {
   static float zoom_sensitivity_;
   static MouseState mouse_state_;
   static GLFWwindow* glfw_window_;
-  static Scene<CacheT>* scene_;
+  static SceneT* scene_;
 };
 
 }  // namespace spray

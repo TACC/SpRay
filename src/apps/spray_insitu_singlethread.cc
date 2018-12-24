@@ -27,6 +27,7 @@
 #include "renderers/config.h"
 #include "renderers/spray.h"
 #include "renderers/spray_renderer.h"
+#include "scene/scene.h"
 #include "utils/comm.h"
 
 int main(int argc, char** argv) {
@@ -49,25 +50,33 @@ int main(int argc, char** argv) {
             << " (world size: " << spray::mpi::worldSize() << ")";
 #endif
 
+  // cache
+  typedef spray::InfiniteCache CacheT;
+
+  // scene
+  typedef spray::Scene<CacheT> SceneT;
+
+  // ao
+  typedef spray::insitu::ShaderAo<CacheT> ShaderAoT;
+  typedef spray::insitu::SingleThreadTracer<CacheT, ShaderAoT> TracerAoT;
+  typedef spray::SprayRenderer<TracerAoT, SceneT> RenderAoT;
+
+  // pt
+  typedef spray::insitu::ShaderPt<CacheT> ShaderPtT;
+  typedef spray::insitu::SingleThreadTracer<CacheT, ShaderPtT> TracerPtT;
+  typedef spray::SprayRenderer<TracerPtT, SceneT> RenderPtT;
+
   spray::Config cfg;
   cfg.parse(argc, argv);
 
   if (cfg.partition == spray::Config::INSITU) {
     if (cfg.cache_size < 0) {
       if (cfg.ao_mode) {
-        spray::SprayRenderer<spray::insitu::SingleThreadTracer<
-                                 spray::InfiniteCache,
-                                 spray::insitu::ShaderAo<spray::InfiniteCache>>,
-                             spray::InfiniteCache>
-            render;
+        RenderAoT render;
         render.init(cfg);
         render.run();
       } else {
-        spray::SprayRenderer<spray::insitu::SingleThreadTracer<
-                                 spray::InfiniteCache,
-                                 spray::insitu::ShaderPt<spray::InfiniteCache>>,
-                             spray::InfiniteCache>
-            render;
+        RenderPtT render;
         render.init(cfg);
         render.run();
       }
