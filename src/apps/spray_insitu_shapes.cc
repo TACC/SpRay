@@ -51,27 +51,33 @@ int main(int argc, char** argv) {
             << " (world size: " << spray::mpi::worldSize() << ")";
 #endif
 
+  // cache
+  typedef spray::InfiniteCache CacheT;
+
+  // scene
+  typedef spray::Scene<CacheT> SceneT;
+
+  // ao
+  typedef spray::insitu::ShaderAo<CacheT> ShaderAoT;
+  typedef spray::insitu::SingleThreadTracer<CacheT, ShaderAoT> TracerAoT;
+  typedef spray::SprayRenderer<TracerAoT, SceneT> RenderAoT;
+
+  // pt
+  typedef spray::insitu::ShaderPt<CacheT> ShaderPtT;
+  typedef spray::insitu::SingleThreadTracer<CacheT, ShaderPtT> TracerPtT;
+  typedef spray::SprayRenderer<TracerPtT, SceneT> RenderPtT;
+
   spray::Config cfg;
   cfg.parse(argc, argv);
-
-  typedef spray::InfiniteCache CacheT;
-  typedef spray::insitu::Ray RayT;
-  typedef spray::DomainIntersector<CacheT, RayT> IntersectorT;
-  typedef spray::insitu::ShaderAo<CacheT> AoShaderT;
-  typedef spray::insitu::ShaderPt<CacheT> PtShaderT;
-  typedef spray::insitu::SingleThreadTracer<CacheT, AoShaderT, IntersectorT>
-      AoTracerT;
-  typedef spray::insitu::SingleThreadTracer<CacheT, PtShaderT, IntersectorT>
-      PtTracerT;
 
   if (cfg.partition == spray::Config::INSITU) {
     if (cfg.cache_size < 0) {
       if (cfg.ao_mode) {
-        spray::SprayRenderer<AoTracerT, CacheT> render;
+        RenderAoT render;
         render.init(cfg);
         render.run();
       } else {
-        spray::SprayRenderer<PtTracerT, CacheT> render;
+        RenderPtT render;
         render.init(cfg);
         render.run();
       }
