@@ -54,7 +54,8 @@ namespace spray {
 namespace insitu {
 
 template <typename CacheT, typename ShaderT,
-          typename IntersectorT = Isector<CacheT>>
+          typename DomainIsectorT = Isector<CacheT>,
+          typename SceneT = Scene<CacheT>>
 class SingleThreadTracer {
  public:
   void trace();
@@ -64,7 +65,7 @@ class SingleThreadTracer {
   int type() const { return TRACER_TYPE_SPRAY_INSITU_1_THREAD; }
 
  public:
-  void init(const Config &cfg, const Camera &camera, Scene<CacheT> *scene,
+  void init(const Config &cfg, const Camera &camera, SceneT *scene,
             HdrImage *image);
 
  private:
@@ -107,9 +108,9 @@ class SingleThreadTracer {
   const spray::Camera *camera_;
   const spray::InsituPartition *partition_;
   std::vector<spray::Light *> lights_;
-  Scene<CacheT> *scene_;
+  SceneT *scene_;
   spray::HdrImage *image_;
-  IntersectorT isector_;
+  DomainIsectorT isector_;
 
   spray::QVector<Ray *> rqs_;
   spray::QVector<Ray *> sqs_;
