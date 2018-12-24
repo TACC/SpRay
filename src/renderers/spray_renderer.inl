@@ -24,8 +24,8 @@
 
 namespace spray {
 
-template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::init(const Config &cfg) {
+template <class TracerT, class SceneT>
+void SprayRenderer<TracerT, SceneT>::init(const Config &cfg) {
   // config
   cfg_ = &cfg;
 
@@ -78,7 +78,7 @@ void SprayRenderer<TracerT, CacheT>::init(const Config &cfg) {
 
   // glfw
   if (cfg.view_mode != VIEW_MODE_FILM) {
-    Glfw<WbvhEmbree, CacheT>::initialize(cfg, mpi::isRootProcess(), cfg.image_w,
+    Glfw<WbvhEmbree, SceneT>::initialize(cfg, mpi::isRootProcess(), cfg.image_w,
                                          cfg.image_h, &camera_, &msgcmd_,
                                          &scene_);
   }
@@ -89,8 +89,8 @@ void SprayRenderer<TracerT, CacheT>::init(const Config &cfg) {
 #endif
 }
 
-template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::run() {
+template <class TracerT, class SceneT>
+void SprayRenderer<TracerT, SceneT>::run() {
   CHECK(cfg_) << "failed to run. not configured.";
 
   if (cfg_->dev_mode == Config::DEVMODE_NORMAL) {
@@ -100,8 +100,8 @@ void SprayRenderer<TracerT, CacheT>::run() {
   }
 }
 
-template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::run_normal() {
+template <class TracerT, class SceneT>
+void SprayRenderer<TracerT, SceneT>::run_normal() {
   if (msgcmd_.view_mode == VIEW_MODE_FILM) {
     renderFilm();
   } else if (msgcmd_.view_mode == VIEW_MODE_GLFW) {
@@ -122,8 +122,8 @@ void SprayRenderer<TracerT, CacheT>::run_normal() {
   }
 }
 
-template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::run_dev() {
+template <class TracerT, class SceneT>
+void SprayRenderer<TracerT, SceneT>::run_dev() {
   if (msgcmd_.view_mode == VIEW_MODE_FILM) {
     renderFilmInOmp();
   } else if (msgcmd_.view_mode == VIEW_MODE_GLFW) {
@@ -139,8 +139,8 @@ void SprayRenderer<TracerT, CacheT>::run_dev() {
   }
 }
 
-template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTask() {
+template <class TracerT, class SceneT>
+void SprayRenderer<TracerT, SceneT>::renderGlfwSingleTask() {
 #ifdef SPRAY_TIMING
   tReset();
   tStartMPI(TIMER_TOTAL);
@@ -162,9 +162,9 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTask() {
     tracer_.trace();
 
     glDrawPixels(image_w, image_h, GL_RGBA, GL_FLOAT, image_buf);
-    Glfw<WbvhEmbree, CacheT>::swapBuffers();
+    Glfw<WbvhEmbree, SceneT>::swapBuffers();
     glfwPollEvents();
-    Glfw<WbvhEmbree, CacheT>::cmdHandler();
+    Glfw<WbvhEmbree, SceneT>::cmdHandler();
 
     ++nframes;
   }
@@ -180,8 +180,8 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwSingleTask() {
 #endif
 }
 
-template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::renderGlfwRootTask() {
+template <class TracerT, class SceneT>
+void SprayRenderer<TracerT, SceneT>::renderGlfwRootTask() {
 #ifdef SPRAY_TIMING
   tReset();
   tStartMPI(TIMER_TOTAL);
@@ -205,7 +205,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwRootTask() {
 
     glDrawPixels(image_w, image_h, GL_RGBA, GL_FLOAT, image_buf);
 
-    Glfw<WbvhEmbree, CacheT>::swapBuffers();
+    Glfw<WbvhEmbree, SceneT>::swapBuffers();
     glfwPollEvents();
 
     // send command
@@ -213,7 +213,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwRootTask() {
               MPI_COMM_WORLD);
 
     // handle command
-    Glfw<WbvhEmbree, CacheT>::cmdHandler();
+    Glfw<WbvhEmbree, SceneT>::cmdHandler();
 
     ++nframes;
   }
@@ -230,8 +230,8 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwRootTask() {
 #endif
 }
 
-template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::renderGlfwInOmp() {
+template <class TracerT, class SceneT>
+void SprayRenderer<TracerT, SceneT>::renderGlfwInOmp() {
 #ifdef SPRAY_TIMING
   tReset();
   tStartMPI(TIMER_TOTAL);
@@ -268,7 +268,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwInOmp() {
         if (is_root) {
           glDrawPixels(image_w, image_h, GL_RGBA, GL_FLOAT, image_buf);
 
-          Glfw<WbvhEmbree, CacheT>::swapBuffers();
+          Glfw<WbvhEmbree, SceneT>::swapBuffers();
           glfwPollEvents();
         }
 
@@ -279,7 +279,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwInOmp() {
         }
 
         // handle command
-        Glfw<WbvhEmbree, CacheT>::cmdHandler();
+        Glfw<WbvhEmbree, SceneT>::cmdHandler();
       }
       ++nframes;
 #pragma omp barrier
@@ -301,8 +301,8 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwInOmp() {
 #endif
 }
 
-template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::renderGlfwChildTask() {
+template <class TracerT, class SceneT>
+void SprayRenderer<TracerT, SceneT>::renderGlfwChildTask() {
 #ifdef SPRAY_TIMING
   tReset();
   tStartMPI(TIMER_TOTAL);
@@ -321,7 +321,7 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwChildTask() {
               MPI_COMM_WORLD);
 
     // handle command
-    Glfw<WbvhEmbree, CacheT>::cmdHandler();
+    Glfw<WbvhEmbree, SceneT>::cmdHandler();
 
     ++nframes;
   }
@@ -334,8 +334,8 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwChildTask() {
   msgcmd_.view_mode = VIEW_MODE_TERMINATE;
 }
 
-template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::renderFilm() {
+template <class TracerT, class SceneT>
+void SprayRenderer<TracerT, SceneT>::renderFilm() {
 #if defined(SPRAY_TIMING)
   tReset();
   tStartMPI(TIMER_TOTAL);
@@ -364,8 +364,8 @@ void SprayRenderer<TracerT, CacheT>::renderFilm() {
 #endif
 }
 
-template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::renderFilmInOmp() {
+template <class TracerT, class SceneT>
+void SprayRenderer<TracerT, SceneT>::renderFilmInOmp() {
 #if defined(SPRAY_TIMING)
   tReset();
   tStartMPI(TIMER_TOTAL);
@@ -403,8 +403,8 @@ void SprayRenderer<TracerT, CacheT>::renderFilmInOmp() {
 #endif
 }
 
-template <class TracerT, class CacheT>
-void SprayRenderer<TracerT, CacheT>::renderGlfwDomainBounds(int view_mode) {
+template <class TracerT, class SceneT>
+void SprayRenderer<TracerT, SceneT>::renderGlfwDomainBounds(int view_mode) {
   CHECK_EQ(mpi::size(), 1);
 
   while (msgcmd_.view_mode == VIEW_MODE_DOMAIN ||
@@ -430,9 +430,9 @@ void SprayRenderer<TracerT, CacheT>::renderGlfwDomainBounds(int view_mode) {
       scene_.drawDomains();
     }
 
-    Glfw<WbvhEmbree, CacheT>::swapBuffers();
+    Glfw<WbvhEmbree, SceneT>::swapBuffers();
     glfwPollEvents();
-    Glfw<WbvhEmbree, CacheT>::cmdHandler();
+    Glfw<WbvhEmbree, SceneT>::cmdHandler();
   }
 
   glfwTerminate();

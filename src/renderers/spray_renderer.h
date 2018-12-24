@@ -42,7 +42,7 @@
 
 namespace spray {
 
-template <class TracerT, class CacheT>
+template <class TracerT, class SceneT>
 class SprayRenderer {
  public:
   SprayRenderer() : cfg_(nullptr) {}
@@ -67,7 +67,7 @@ class SprayRenderer {
 
   MessageCommand msgcmd_;
 
-  Scene<CacheT> scene_;
+  SceneT scene_;
   Camera camera_;
   TracerT tracer_;
   HdrImage image_;

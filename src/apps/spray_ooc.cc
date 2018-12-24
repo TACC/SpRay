@@ -49,43 +49,55 @@ int main(int argc, char** argv) {
             << " (world size: " << spray::mpi::worldSize() << ")";
 #endif
 
+  // caches
+  typedef spray::InfiniteCache InfCacheT;
+  typedef spray::LruCache LruCacheT;
+
+  // scenes
+  typedef spray::Scene<InfCacheT> SceneInfT;
+  typedef spray::Scene<LruCacheT> SceneLruT;
+
+  // ao, infinite cache
+  typedef spray::ooc::ShaderAo<InfCacheT> ShaderAoInfT;
+  typedef spray::ooc::Tracer<InfCacheT, ShaderAoInfT> TracerAoInfT;
+  typedef spray::SprayRenderer<TracerAoInfT, SceneInfT> RenderAoInfT;
+
+  // ao, LRU cache
+  typedef spray::ooc::ShaderAo<LruCacheT> ShaderAoLruT;
+  typedef spray::ooc::Tracer<LruCacheT, ShaderAoLruT> TracerAoLruT;
+  typedef spray::SprayRenderer<TracerAoLruT, SceneLruT> RenderAoLruT;
+
+  // pt, infinite cache
+  typedef spray::ooc::ShaderPt<InfCacheT> ShaderPtInfT;
+  typedef spray::ooc::Tracer<InfCacheT, ShaderPtInfT> TracerPtInfT;
+  typedef spray::SprayRenderer<TracerPtInfT, SceneInfT> RenderPtInfT;
+
+  // pt, LRU cache
+  typedef spray::ooc::ShaderPt<LruCacheT> ShaderPtLruT;
+  typedef spray::ooc::Tracer<LruCacheT, ShaderPtLruT> TracerPtLruT;
+  typedef spray::SprayRenderer<TracerPtLruT, SceneLruT> RenderPtLruT;
+
   spray::Config cfg;
   cfg.parse(argc, argv);
 
   if (cfg.partition == spray::Config::IMAGE) {
     if (cfg.ao_mode) {
       if (cfg.cache_size < 0) {
-        spray::SprayRenderer<
-            spray::ooc::Tracer<spray::InfiniteCache,
-                               spray::ooc::ShaderAo<spray::InfiniteCache>>,
-            spray::InfiniteCache>
-            render;
+        RenderAoInfT render;
         render.init(cfg);
         render.run();
       } else {
-        spray::SprayRenderer<
-            spray::ooc::Tracer<spray::LruCache,
-                               spray::ooc::ShaderAo<spray::LruCache>>,
-            spray::LruCache>
-            render;
+        RenderAoLruT render;
         render.init(cfg);
         render.run();
       }
     } else {
       if (cfg.cache_size < 0) {
-        spray::SprayRenderer<
-            spray::ooc::Tracer<spray::InfiniteCache,
-                               spray::ooc::ShaderPt<spray::InfiniteCache>>,
-            spray::InfiniteCache>
-            render;
+        RenderPtInfT render;
         render.init(cfg);
         render.run();
       } else {
-        spray::SprayRenderer<
-            spray::ooc::Tracer<spray::LruCache,
-                               spray::ooc::ShaderPt<spray::LruCache>>,
-            spray::LruCache>
-            render;
+        RenderPtLruT render;
         render.init(cfg);
         render.run();
       }

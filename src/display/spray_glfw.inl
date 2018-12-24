@@ -24,35 +24,35 @@
 
 namespace spray {
 
-template <class WbvhT, class CacheT>
-MessageCommand* Glfw<WbvhT, CacheT>::msgcmd_ = nullptr;
+template <class WbvhT, class SceneT>
+MessageCommand* Glfw<WbvhT, SceneT>::msgcmd_ = nullptr;
 
-template <class WbvhT, class CacheT>
-float Glfw<WbvhT, CacheT>::rotate_pan_sensitivity_ = 8.0f;
+template <class WbvhT, class SceneT>
+float Glfw<WbvhT, SceneT>::rotate_pan_sensitivity_ = 8.0f;
 
-template <class WbvhT, class CacheT>
-const Config* Glfw<WbvhT, CacheT>::cfg_ = nullptr;
+template <class WbvhT, class SceneT>
+const Config* Glfw<WbvhT, SceneT>::cfg_ = nullptr;
 
-template <class WbvhT, class CacheT>
-Camera* Glfw<WbvhT, CacheT>::camera_ = nullptr;
+template <class WbvhT, class SceneT>
+Camera* Glfw<WbvhT, SceneT>::camera_ = nullptr;
 
-template <class WbvhT, class CacheT>
-float Glfw<WbvhT, CacheT>::zoom_sensitivity_ = 2.0f;
+template <class WbvhT, class SceneT>
+float Glfw<WbvhT, SceneT>::zoom_sensitivity_ = 2.0f;
 
-template <class WbvhT, class CacheT>
-MouseState Glfw<WbvhT, CacheT>::mouse_state_;
+template <class WbvhT, class SceneT>
+MouseState Glfw<WbvhT, SceneT>::mouse_state_;
 
-template <class WbvhT, class CacheT>
-GLFWwindow* Glfw<WbvhT, CacheT>::glfw_window_ = nullptr;
+template <class WbvhT, class SceneT>
+GLFWwindow* Glfw<WbvhT, SceneT>::glfw_window_ = nullptr;
 
-template <class WbvhT, class CacheT>
-Scene<CacheT>* Glfw<WbvhT, CacheT>::scene_ = nullptr;
+template <class WbvhT, class SceneT>
+SceneT* Glfw<WbvhT, SceneT>::scene_ = nullptr;
 
-template <class WbvhT, class CacheT>
-void Glfw<WbvhT, CacheT>::initialize(const Config& cfg, bool is_root_process,
+template <class WbvhT, class SceneT>
+void Glfw<WbvhT, SceneT>::initialize(const Config& cfg, bool is_root_process,
                                      unsigned image_w, unsigned image_h,
                                      Camera* camera, MessageCommand* cmd,
-                                     Scene<CacheT>* scene) {
+                                     SceneT* scene) {
   cfg_ = &cfg;
 
   camera_ = camera;
@@ -98,8 +98,8 @@ void Glfw<WbvhT, CacheT>::initialize(const Config& cfg, bool is_root_process,
   glMatrixMode(GL_PROJECTION);
 }
 
-template <class WbvhT, class CacheT>
-void Glfw<WbvhT, CacheT>::cmdHandler() {
+template <class WbvhT, class SceneT>
+void Glfw<WbvhT, SceneT>::cmdHandler() {
   if (msgcmd_->camera_cmd == CAM_ZOOM) {
     camera_->zoom(msgcmd_->zoom_offset);
   } else if (msgcmd_->camera_cmd == CAM_ROTATE) {
@@ -115,14 +115,14 @@ void Glfw<WbvhT, CacheT>::cmdHandler() {
   msgcmd_->camera_cmd = CAM_NOP;
 }
 
-template <class WbvhT, class CacheT>
-void Glfw<WbvhT, CacheT>::closeCallback(GLFWwindow* window) {
+template <class WbvhT, class SceneT>
+void Glfw<WbvhT, SceneT>::closeCallback(GLFWwindow* window) {
   msgcmd_->view_mode = VIEW_MODE_TERMINATE;
   msgcmd_->done = 1;
 }
 
-template <class WbvhT, class CacheT>
-void Glfw<WbvhT, CacheT>::keyCallback(GLFWwindow* window, int key, int scancode,
+template <class WbvhT, class SceneT>
+void Glfw<WbvhT, SceneT>::keyCallback(GLFWwindow* window, int key, int scancode,
                                       int action, int mods) {
   if (action == GLFW_PRESS) {
     switch (key) {
@@ -165,9 +165,9 @@ void Glfw<WbvhT, CacheT>::keyCallback(GLFWwindow* window, int key, int scancode,
         msgcmd_->view_mode = VIEW_MODE_GLFW;
         break;
 
-      // case GLFW_KEY_O:  // opengl
-      //   msgcmd_->view_mode = VIEW_MODE_OPENGL;
-      //   break;
+        // case GLFW_KEY_O:  // opengl
+        //   msgcmd_->view_mode = VIEW_MODE_OPENGL;
+        //   break;
 
       case GLFW_KEY_W: {  // wbvh
         bool success = Vis<WbvhT>::initializeTraversal();
@@ -293,15 +293,15 @@ void Glfw<WbvhT, CacheT>::keyCallback(GLFWwindow* window, int key, int scancode,
   }  // if (action == GLFW_PRESS) {
 }
 
-template <class WbvhT, class CacheT>
-void Glfw<WbvhT, CacheT>::scrollCallback(GLFWwindow* window, double xoffset,
+template <class WbvhT, class SceneT>
+void Glfw<WbvhT, SceneT>::scrollCallback(GLFWwindow* window, double xoffset,
                                          double yoffset) {
   float offset = zoom_sensitivity_ * yoffset;
   zoom(offset);
 }
 
-template <class WbvhT, class CacheT>
-void Glfw<WbvhT, CacheT>::mouseButtonCallback(GLFWwindow* window, int button,
+template <class WbvhT, class SceneT>
+void Glfw<WbvhT, SceneT>::mouseButtonCallback(GLFWwindow* window, int button,
                                               int action, int mods) {
   if (action == GLFW_PRESS) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
@@ -318,8 +318,8 @@ void Glfw<WbvhT, CacheT>::mouseButtonCallback(GLFWwindow* window, int button,
   }
 }
 
-template <class WbvhT, class CacheT>
-void Glfw<WbvhT, CacheT>::cursorPosCallback(GLFWwindow* window, double xpos,
+template <class WbvhT, class SceneT>
+void Glfw<WbvhT, SceneT>::cursorPosCallback(GLFWwindow* window, double xpos,
                                             double ypos) {
   if (mouse_state_.left && !mouse_state_.middle && !mouse_state_.right) {
     // left click

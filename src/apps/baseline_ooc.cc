@@ -51,47 +51,62 @@ int main(int argc, char** argv) {
             << " (world size: " << spray::mpi::worldSize() << ")";
 #endif
 
+  // caches
+  typedef spray::InfiniteCache InfCacheT;
+  typedef spray::LruCache LruCacheT;
+
+  // scenes
+  typedef spray::Scene<InfCacheT> SceneInfT;
+  typedef spray::Scene<LruCacheT> SceneLruT;
+
+  // schedule
+  typedef spray::baseline::LoadAnyOnceImageSched ScheduleT;
+
+  // ao, infinite cache
+  typedef spray::baseline::ShaderAo<InfCacheT> ShaderAoInfT;
+  typedef spray::baseline::ImageTracer<InfCacheT, ScheduleT, ShaderAoInfT>
+      TracerAoInfT;
+  typedef spray::SprayRenderer<TracerAoInfT, SceneInfT> RenderAoInfT;
+
+  // ao, LRU cache
+  typedef spray::baseline::ShaderAo<LruCacheT> ShaderAoLruT;
+  typedef spray::baseline::ImageTracer<LruCacheT, ScheduleT, ShaderAoLruT>
+      TracerAoLruT;
+  typedef spray::SprayRenderer<TracerAoLruT, SceneLruT> RenderAoLruT;
+
+  // pt, infinite cache
+  typedef spray::baseline::ShaderPt<InfCacheT> ShaderPtInfT;
+  typedef spray::baseline::ImageTracer<InfCacheT, ScheduleT, ShaderPtInfT>
+      TracerPtInfT;
+  typedef spray::SprayRenderer<TracerPtInfT, SceneInfT> RenderPtInfT;
+
+  // pt, LRU cache
+  typedef spray::baseline::ShaderPt<LruCacheT> ShaderPtLruT;
+  typedef spray::baseline::ImageTracer<LruCacheT, ScheduleT, ShaderPtLruT>
+      TracerPtLruT;
+  typedef spray::SprayRenderer<TracerPtLruT, SceneLruT> RenderPtLruT;
+
   spray::Config cfg;
   cfg.parse(argc, argv);
 
   if (cfg.partition == spray::Config::IMAGE) {
     if (cfg.ao_mode) {
       if (cfg.cache_size < 0) {
-        spray::SprayRenderer<
-            spray::baseline::ImageTracer<
-                spray::InfiniteCache, spray::baseline::LoadAnyOnceImageSched,
-                spray::baseline::ShaderAo<spray::InfiniteCache>>,
-            spray::InfiniteCache>
-            render;
+        RenderAoInfT render;
         render.init(cfg);
         render.run();
       } else {
-        spray::SprayRenderer<
-            spray::baseline::ImageTracer<
-                spray::LruCache, spray::baseline::LoadAnyOnceImageSched,
-                spray::baseline::ShaderAo<spray::LruCache>>,
-            spray::LruCache>
-            render;
+        RenderAoLruT render;
         render.init(cfg);
         render.run();
       }
     } else {
       if (cfg.cache_size < 0) {
-        spray::SprayRenderer<
-            spray::baseline::ImageTracer<
-                spray::InfiniteCache, spray::baseline::LoadAnyOnceImageSched,
-                spray::baseline::ShaderPt<spray::InfiniteCache>>,
-            spray::InfiniteCache>
-            render;
+        RenderPtInfT render;
         render.init(cfg);
         render.run();
       } else {
-        spray::SprayRenderer<
-            spray::baseline::ImageTracer<
-                spray::LruCache, spray::baseline::LoadAnyOnceImageSched,
-                spray::baseline::ShaderPt<spray::LruCache>>,
-            spray::LruCache>
-            render;
+        RenderPtLruT render;
         render.init(cfg);
         render.run();
       }

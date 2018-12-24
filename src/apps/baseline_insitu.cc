@@ -51,18 +51,32 @@ int main(int argc, char** argv) {
             << " (world size: " << spray::mpi::worldSize() << ")";
 #endif
 
+  // cache
+  typedef spray::InfiniteCache CacheT;
+
+  // scene
+  typedef spray::Scene<CacheT> SceneT;
+
+  // schedule
+  typedef spray::baseline::LoadAnyOnceInsituSched ScheduleT;
+
+  // ao
+  typedef spray::baseline::ShaderAo<CacheT> ShaderAoT;
+  typedef spray::baseline::InsituTracer<CacheT, ScheduleT, ShaderAoT> TracerAoT;
+  typedef spray::SprayRenderer<TracerAoT, SceneT> RenderAoT;
+
+  // pt
+  typedef spray::baseline::ShaderPt<CacheT> ShaderPtT;
+  typedef spray::baseline::InsituTracer<CacheT, ScheduleT, ShaderPtT> TracerPtT;
+  typedef spray::SprayRenderer<TracerPtT, SceneT> RenderPtT;
+
   spray::Config cfg;
   cfg.parse(argc, argv);
 
   if (cfg.partition == spray::Config::INSITU) {
     if (cfg.ao_mode) {
       if (cfg.cache_size < 0) {
-        spray::SprayRenderer<
-            spray::baseline::InsituTracer<
-                spray::InfiniteCache, spray::baseline::LoadAnyOnceInsituSched,
-                spray::baseline::ShaderAo<spray::InfiniteCache>>,
-            spray::InfiniteCache>
-            render;
+        RenderAoT render;
         render.init(cfg);
         render.run();
       } else {
@@ -70,12 +84,7 @@ int main(int argc, char** argv) {
       }
     } else {
       if (cfg.cache_size < 0) {
-        spray::SprayRenderer<
-            spray::baseline::InsituTracer<
-                spray::InfiniteCache, spray::baseline::LoadAnyOnceInsituSched,
-                spray::baseline::ShaderPt<spray::InfiniteCache>>,
-            spray::InfiniteCache>
-            render;
+        RenderPtT render;
         render.init(cfg);
         render.run();
       } else {
