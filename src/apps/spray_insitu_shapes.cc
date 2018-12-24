@@ -26,9 +26,9 @@
 #include "insitu/insitu_shader_pt.h"
 #include "insitu/insitu_singlethread_tracer.h"
 #include "renderers/config.h"
-#include "renderers/domain_intersector.h"
 #include "renderers/spray.h"
 #include "renderers/spray_renderer.h"
+#include "scene/domain_intersector.h"
 #include "utils/comm.h"
 
 int main(int argc, char** argv) {
