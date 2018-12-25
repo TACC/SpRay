@@ -27,9 +27,9 @@
 #include "baseline/baseline_isector.h"
 #include "baseline/baseline_ray.h"
 #include "partition/arena_queue.h"
+#include "render/light.h"
 #include "render/reflection.h"
-#include "scene/light.h"
-#include "scene/scene.h"
+#include "render/scene.h"
 #include "utils/math.h"
 #include "utils/util.h"
 

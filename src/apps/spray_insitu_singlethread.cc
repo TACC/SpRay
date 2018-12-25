@@ -25,9 +25,9 @@
 #include "insitu/insitu_singlethread_tracer.h"
 #include "render/caches.h"
 #include "render/config.h"
+#include "render/scene.h"
 #include "render/spray.h"
 #include "render/spray_renderer.h"
-#include "scene/scene.h"
 #include "utils/comm.h"
 
 int main(int argc, char** argv) {

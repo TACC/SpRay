@@ -43,11 +43,11 @@
 #include "partition/data_partition.h"
 #include "partition/domain.h"
 #include "partition/qvector.h"
+#include "render/camera.h"
+#include "render/light.h"
 #include "render/reflection.h"
+#include "render/scene.h"
 #include "render/spray.h"
-#include "scene/camera.h"
-#include "scene/light.h"
-#include "scene/scene.h"
 #include "utils/profiler_util.h"
 
 namespace spray {

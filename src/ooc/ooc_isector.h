@@ -27,7 +27,7 @@
 #include "ooc/ooc_domain_stats.h"
 #include "ooc/ooc_ray.h"
 #include "partition/qvector.h"
-#include "scene/scene.h"
+#include "render/scene.h"
 
 namespace spray {
 namespace ooc {

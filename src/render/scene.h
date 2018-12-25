@@ -33,10 +33,10 @@
 #include "partition/domain.h"
 #include "partition/trimesh_buffer.h"
 #include "render/caches.h"
+#include "render/light.h"
 #include "render/rays.h"
 #include "render/spray.h"
 #include "render/wbvh_embree.h"
-#include "scene/light.h"
 #include "utils/comm.h"
 #include "utils/math.h"
 #include "utils/util.h"
@@ -223,6 +223,6 @@ class Scene {
 }  // namespace spray
 
 #define SPRAY_SCENE_INL_
-#include "scene/scene.inl"
+#include "render/scene.inl"
 #undef SPRAY_SCENE_INL_
 

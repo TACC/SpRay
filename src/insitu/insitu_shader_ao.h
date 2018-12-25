@@ -28,10 +28,10 @@
 
 #include "insitu/insitu_ray.h"
 #include "render/config.h"
+#include "render/light.h"
 #include "render/rays.h"
 #include "render/reflection.h"
-#include "scene/light.h"
-#include "scene/scene.h"
+#include "render/scene.h"
 #include "utils/util.h"
 
 namespace spray {
