@@ -18,7 +18,7 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "accelerators/wbvh_embree.h"
+#include "render/wbvh_embree.h"
 
 #include "partition/aabb.h"
 #include "renderers/rays.h"

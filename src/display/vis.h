@@ -22,7 +22,7 @@
 
 #include <stack>
 
-#include "accelerators/wbvh_node.h"
+#include "render/wbvh_node.h"
 #include "display/opengl.h"
 #include "renderers/spray.h"
 

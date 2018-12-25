@@ -222,8 +222,8 @@ set(SPRAY_SRC_LIST
     caches/infinite_cache.cc
     caches/lru_cache.cc
 
-    # accelerators
-    accelerators/wbvh_embree.cc
+    # render
+    render/wbvh_embree.cc
 
     # partition
     partition/aabb.cc
