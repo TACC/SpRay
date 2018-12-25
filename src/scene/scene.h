@@ -27,7 +27,7 @@
 
 #include "glm/glm.hpp"
 
-#include "accelerators/wbvh_embree.h"
+#include "render/wbvh_embree.h"
 #include "caches/caches.h"
 #include "display/opengl.h"
 #include "partition/aabb.h"
