@@ -226,9 +226,11 @@ set(SPRAY_SRC_LIST
     partition/aabb.cc
     partition/block_buffer.cc
     partition/domain.cc
-    partition/ply_loader.cc
     partition/tile.cc
     partition/trimesh_buffer.cc
+
+    # io
+    io/ply_loader.cc
     
     # insitu
     insitu/insitu_comm.cc

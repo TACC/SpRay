@@ -28,7 +28,7 @@
 #include "glm/glm.hpp"
 #include "pbrt/memory.h"
 
-#include "partition/ply_loader.h"
+#include "io/ply_loader.h"
 
 #define NUM_VERTICES_PER_FACE 3  // triangle
 
