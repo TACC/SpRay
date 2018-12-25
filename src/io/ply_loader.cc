@@ -27,7 +27,7 @@
 #include "pbrt/memory.h"
 
 #include "partition/aabb.h"
-#include "partition/ply_loader.h"
+#include "io/ply_loader.h"
 
 #define DEBUG_PLY_LOADER
 #undef DEBUG_PLY_LOADER

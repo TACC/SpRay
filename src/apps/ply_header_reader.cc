@@ -26,8 +26,8 @@
 #include "glm/glm.hpp"
 #include "glog/logging.h"
 
+#include "io/ply_loader.h"
 #include "partition/aabb.h"
-#include "partition/ply_loader.h"
 
 void printUsage(char** argv) {
   printf("Usage: %s <infile> <outfile>\n", argv[0]);

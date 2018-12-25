@@ -28,6 +28,7 @@
 #include "glm/glm.hpp"
 
 #include "display/opengl.h"
+#include "io/scene_loader.h"
 #include "partition/aabb.h"
 #include "partition/data_partition.h"
 #include "partition/domain.h"
