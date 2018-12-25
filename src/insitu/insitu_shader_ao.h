@@ -27,9 +27,9 @@
 #include "pbrt/memory.h"
 
 #include "insitu/insitu_ray.h"
-#include "materials/reflection.h"
 #include "render/config.h"
 #include "render/rays.h"
+#include "render/reflection.h"
 #include "scene/light.h"
 #include "scene/scene.h"
 #include "utils/util.h"

@@ -212,9 +212,6 @@ set(SPRAY_SRC_LIST
     # scene
     scene/camera.cc
 
-    # materials
-    materials/reflection.cc
-
     # display
     display/composite.cc
     
@@ -225,6 +222,7 @@ set(SPRAY_SRC_LIST
     render/config.cc
     render/spray.cc
     render/sampler.cc
+    render/reflection.cc
 
     # partition
     partition/aabb.cc

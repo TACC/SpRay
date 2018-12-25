@@ -25,8 +25,8 @@
 
 #include "glm/glm.hpp"
 
-#include "materials/reflection.h"
 #include "partition/aabb.h"
+#include "render/reflection.h"
 #include "scene/shape.h"
 
 namespace spray {
