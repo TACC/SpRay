@@ -38,7 +38,7 @@
 #include "ooc/ooc_isector.h"
 #include "ooc/ooc_ray.h"
 #include "ooc/ooc_vbuf.h"
-#include "partition/qvector.h"
+#include "render/qvector.h"
 #include "render/rays.h"
 #include "utils/scan.h"
 #include "display/image.h"

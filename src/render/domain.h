@@ -18,35 +18,34 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "partition/tile.h"
+#pragma once
 
-#include <algorithm>
+#include <string>
 
-#include "utils/util.h"
+#include "glm/glm.hpp"
+
+#include "render/aabb.h"
+#include "render/reflection.h"
+#include "scene/shape.h"
 
 namespace spray {
 
-std::ostream& operator<<(std::ostream& os, const Tile& t) {
-  os << "tile(" << t.x << "," << t.y << "," << t.w << "," << t.h << ")";
-  return os;
-}
-
-TileCount::TileCount(int image_w, int image_h, int granularity,
-                     int min_tile_size) {
-  // int granularity = getNumThreads() * g_mpi_comm.size;
-
-  tile_w = std::max(min_tile_size, image_w / granularity);
-  tile_h = std::max(min_tile_size, image_h / granularity);
-
-  int num_tiles_x = (image_w + tile_w - 1) / tile_w;
-  int num_tiles_y = (image_h + tile_h - 1) / tile_h;
-  num_tiles = num_tiles_x * num_tiles_y;
-
-#ifndef NDEBUG
-  printf("[INFO] granularity: %d\n", granularity);
-  printf("[INFO] numer of tiles: %d (%d x %d tiles)\n", num_tiles, num_tiles_x,
-         num_tiles_y);
-#endif
-}
+struct Domain {
+  Domain() : num_vertices(0), num_faces(0), bsdf(nullptr) {}
+  ~Domain() {
+    delete bsdf;
+    for (std::size_t i = 0; i < shapes.size(); ++i) delete shapes[i];
+  }
+  unsigned id;  // single domain id
+  std::size_t num_vertices;
+  std::size_t num_faces;
+  std::string filename;
+  Aabb object_aabb;
+  Aabb world_aabb;
+  glm::mat4 transform;
+  Bsdf* bsdf;
+  std::vector<Shape*> shapes;
+};
 
 }  // namespace spray
+

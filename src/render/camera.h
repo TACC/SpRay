@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "partition/aabb.h"
+#include "render/aabb.h"
 #include "render/spray.h"
 
 namespace spray {

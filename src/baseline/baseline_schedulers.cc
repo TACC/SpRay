@@ -26,7 +26,7 @@
 
 #include "baseline/baseline_comm.h"
 #include "baseline/baseline_qstats.h"
-#include "partition/data_partition.h"
+#include "render/data_partition.h"
 #include "utils/profiler_util.h"
 
 namespace spray {

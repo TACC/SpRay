@@ -18,7 +18,7 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "partition/trimesh_buffer.h"
+#include "render/trimesh_buffer.h"
 
 #include <cmath>
 

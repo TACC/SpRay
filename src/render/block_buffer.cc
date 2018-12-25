@@ -18,12 +18,12 @@
 //                                                                            //
 // ========================================================================== //
 
+#include "render/block_buffer.h"
+
 #include <omp.h>
 #include <numeric>
 
 #include "pbrt/memory3.h"
-
-#include "partition/block_buffer.h"
 
 namespace spray {
 

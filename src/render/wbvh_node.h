@@ -21,7 +21,7 @@
 #pragma once
 
 #include "display/opengl.h"
-#include "partition/aabb.h"
+#include "render/aabb.h"
 
 namespace spray {
 

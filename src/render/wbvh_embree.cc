@@ -20,7 +20,7 @@
 
 #include "render/wbvh_embree.h"
 
-#include "partition/aabb.h"
+#include "render/aabb.h"
 #include "render/rays.h"
 
 #define PRINT_WBVH_BOUNDS

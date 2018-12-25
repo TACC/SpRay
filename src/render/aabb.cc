@@ -18,7 +18,7 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "partition/aabb.h"
+#include "render/aabb.h"
 
 #include <algorithm>
 #include <cfloat>

@@ -26,8 +26,8 @@
 #include "insitu/insitu_ray.h"
 #include "insitu/insitu_vbuf.h"
 #include "insitu/insitu_work_stats.h"
-#include "partition/qvector.h"
 #include "render/config.h"
+#include "render/qvector.h"
 #include "render/scene.h"
 
 namespace spray {

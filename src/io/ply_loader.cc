@@ -18,6 +18,8 @@
 //                                                                            //
 // ========================================================================== //
 
+#include "io/ply_loader.h"
+
 #include <cstddef>
 #include <cstring>
 #include <iostream>
@@ -26,8 +28,7 @@
 #include "glog/logging.h"
 #include "pbrt/memory.h"
 
-#include "partition/aabb.h"
-#include "io/ply_loader.h"
+#include "render/aabb.h"
 
 #define DEBUG_PLY_LOADER
 #undef DEBUG_PLY_LOADER

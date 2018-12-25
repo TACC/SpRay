@@ -221,12 +221,10 @@ set(SPRAY_SRC_LIST
     render/sampler.cc
     render/reflection.cc
     render/camera.cc
-
-    # partition
-    partition/aabb.cc
-    partition/block_buffer.cc
-    partition/tile.cc
-    partition/trimesh_buffer.cc
+    render/aabb.cc
+    render/block_buffer.cc
+    render/tile.cc
+    render/trimesh_buffer.cc
 
     # io
     io/ply_loader.cc

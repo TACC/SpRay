@@ -25,7 +25,7 @@
 
 #include "glm/glm.hpp"
 
-#include "partition/domain.h"
+#include "render/domain.h"
 #include "render/reflection.h"
 
 namespace spray {

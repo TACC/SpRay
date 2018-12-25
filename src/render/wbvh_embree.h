@@ -24,8 +24,8 @@
 
 #include "glog/logging.h"
 
-#include "partition/aabb.h"
-#include "partition/domain.h"
+#include "render/aabb.h"
+#include "render/domain.h"
 #include "render/rays.h"
 
 namespace spray {

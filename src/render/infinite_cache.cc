@@ -23,7 +23,7 @@
 #include "glog/logging.h"
 #include "pbrt/memory.h"
 
-#include "partition/trimesh_buffer.h"
+#include "render/trimesh_buffer.h"
 
 namespace spray {
 
