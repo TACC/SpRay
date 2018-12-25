@@ -58,7 +58,7 @@ struct SceneInfo {
   int cache_block;
 };
 
-template <class CacheT>
+template <typename CacheT, typename SurfaceBufT = TriMeshBuffer>
 class Scene {
  public:
   Scene() {}
@@ -175,6 +175,10 @@ class Scene {
     wbvh_.intersect8(valid, ray);
   }
 
+  void updateIntersection(RTCRayIntersection* isect) const {
+    surface_buf_.updateIntersection(cache_block_, isect);
+  }
+
  public:
   Bsdf* getBsdf(int id) { return domains_[id].bsdf; }
 
@@ -184,10 +188,6 @@ class Scene {
 
   const std::vector<Light*>& getLights() const { return lights_; }
   std::size_t getNumLights() const { return lights_.size(); }
-
- public:
-  void updateIntersection(RTCRayIntersection* isect) const;
-  void updateIntersection(int cache_block, RTCRayIntersection* isect) const;
 
  private:
   void mergeDomainBounds(std::size_t* max_num_vertices,
@@ -205,7 +205,7 @@ class Scene {
   std::string storage_basepath_;
 
   CacheT cache_;
-  TriMeshBuffer trimesh_buf_;
+  SurfaceBufT surface_buf_;
 
   RTCScene scene_;   // current domain's scene
   int cache_block_;  // current cache block

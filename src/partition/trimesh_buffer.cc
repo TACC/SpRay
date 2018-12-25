@@ -26,8 +26,10 @@
 #include "glm/glm.hpp"
 #include "glog/logging.h"
 
+#include "renderers/rays.h"
 #include "scene/shape.h"
 #include "utils/math.h"
+#include "utils/util.h"
 
 #define DEBUG_MESH
 #undef DEBUG_MESH
@@ -471,6 +473,40 @@ void TriMeshBuffer::computeNormals(int cache_block) {
     normals[vid[2] + 1] += n.y;
     normals[vid[2] + 2] += n.z;
   }
+}
+
+void TriMeshBuffer::updateIntersection(int cache_block,
+                                       RTCRayIntersection* isect) const {
+  // cache_block pointing to the current cache block in the mesh buffer
+  // isect->primID, the current primitive intersected
+  // colors: per-vertex colors
+  uint32_t colors[3];
+  getColorTuple(cache_block, isect->primID, colors);
+
+  // interploate color tuple and update isect->color
+  float u = isect->u;
+  float v = isect->v;
+
+  uint32_t rgb[9];
+  util::unpack(colors[0], &rgb[0]);
+  util::unpack(colors[1], &rgb[3]);
+  util::unpack(colors[2], &rgb[6]);
+
+  float w = 1.f - u - v;
+  uint32_t r = (rgb[0] * w) + (rgb[3] * u) + (rgb[6] * v);
+  uint32_t g = (rgb[1] * w) + (rgb[4] * u) + (rgb[7] * v);
+  uint32_t b = (rgb[2] * w) + (rgb[5] * u) + (rgb[8] * v);
+
+  isect->color = util::pack(r, g, b);
+
+  // shading normal
+
+  float ns[9];
+  getNormalTuple(cache_block, isect->primID, ns);
+
+  isect->Ns[0] = (ns[0] * w) + (ns[3] * u) + (ns[6] * v);
+  isect->Ns[1] = (ns[1] * w) + (ns[4] * u) + (ns[7] * v);
+  isect->Ns[2] = (ns[2] * w) + (ns[5] * u) + (ns[8] * v);
 }
 
 }  // namespace spray

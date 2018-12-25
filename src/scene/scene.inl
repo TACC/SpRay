@@ -27,11 +27,12 @@
 
 namespace spray {
 
-template <class CacheT>
-void Scene<CacheT>::init(const std::string& desc_filename,
-                         const std::string& ply_path,
-                         const std::string& storage_basepath, int cache_size,
-                         int view_mode, bool insitu_mode, int num_partitions) {
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::init(const std::string& desc_filename,
+                                      const std::string& ply_path,
+                                      const std::string& storage_basepath,
+                                      int cache_size, int view_mode,
+                                      bool insitu_mode, int num_partitions) {
   // load .domain file
   SceneParser parser;
   parser.parse(desc_filename, ply_path, &domains_, &lights_);
@@ -86,7 +87,7 @@ void Scene<CacheT>::init(const std::string& desc_filename,
     cache_.initialize(domains_.size(), cache_size, insitu_mode);
 
     // initialize mesh buffer
-    trimesh_buf_.initialize(cache_.getCacheSize(), max_num_vertices,
+    surface_buf_.initialize(cache_.getCacheSize(), max_num_vertices,
                             max_num_faces, true /* compute_normals */);
 
     // warm up cache
@@ -106,8 +107,8 @@ void Scene<CacheT>::init(const std::string& desc_filename,
   glfw_domain_idx_ = 0;
 }
 
-template <class CacheT>
-void Scene<CacheT>::buildWbvh() {
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::buildWbvh() {
 #if defined(SPRAY_ISECT_PACKET1)
   wbvh_.build(WbvhEmbree::NORMAL1);
 
@@ -138,8 +139,8 @@ void Scene<CacheT>::buildWbvh() {
 #endif
 }
 
-template <class CacheT>
-void Scene<CacheT>::load(int id) {
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::load(int id) {
   int cache_block;
   if (cache_.load(id, &cache_block)) {
 #ifdef DEBUG_SCENE
@@ -147,7 +148,7 @@ void Scene<CacheT>::load(int id) {
               << cache_block << " $size " << cache_.getSize() << " $capacity "
               << cache_.getCacheSize();
 #endif
-    scene_ = trimesh_buf_.get(cache_block);
+    scene_ = surface_buf_.get(cache_block);
   } else {
 #ifdef DEBUG_SCENE
     LOG(INFO) << "loading uncached domain " << id << " cache block "
@@ -157,7 +158,7 @@ void Scene<CacheT>::load(int id) {
     const glm::mat4& x = domains_[id].transform;
     bool apply_transform = (x != glm::mat4(1.0));
 
-    scene_ = trimesh_buf_.load(domains_[id].filename, cache_block, x,
+    scene_ = surface_buf_.load(domains_[id].filename, cache_block, x,
                                apply_transform, domains_[id].shapes);
 
     // cache_.setLoaded(cache_block);
@@ -165,8 +166,8 @@ void Scene<CacheT>::load(int id) {
   cache_block_ = cache_block;
 }
 
-template <class CacheT>
-void Scene<CacheT>::load(int id, SceneInfo* sinfo) {
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::load(int id, SceneInfo* sinfo) {
   int cache_block;
   if (cache_.load(id, &cache_block)) {
 #ifdef DEBUG_SCENE
@@ -174,7 +175,7 @@ void Scene<CacheT>::load(int id, SceneInfo* sinfo) {
               << cache_block << " $size " << cache_.getSize() << " $capacity "
               << cache_.getCacheSize();
 #endif
-    scene_ = trimesh_buf_.get(cache_block);
+    scene_ = surface_buf_.get(cache_block);
   } else {
 #ifdef DEBUG_SCENE
     LOG(INFO) << "loading uncached domain " << id << " cache block "
@@ -184,7 +185,7 @@ void Scene<CacheT>::load(int id, SceneInfo* sinfo) {
     const glm::mat4& x = domains_[id].transform;
     bool apply_transform = (x != glm::mat4(1.0));
 
-    scene_ = trimesh_buf_.load(domains_[id].filename, cache_block, x,
+    scene_ = surface_buf_.load(domains_[id].filename, cache_block, x,
                                apply_transform, domains_[id].shapes);
 
     // cache_.setLoaded(cache_block);
@@ -193,50 +194,53 @@ void Scene<CacheT>::load(int id, SceneInfo* sinfo) {
   sinfo->cache_block = cache_block;
 }
 
-template <class CacheT>
-bool Scene<CacheT>::intersect(RTCScene rtc_scene, int cache_block,
-                              const float org[3], const float dir[3],
-                              RTCRayIntersection* isect) {
+template <typename CacheT, typename SurfaceBufT>
+bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
+                                           const float org[3],
+                                           const float dir[3],
+                                           RTCRayIntersection* isect) {
   RTCRayUtil::makeRadianceRay(org, dir, isect);
   rtcIntersect(rtc_scene, (RTCRay&)(*isect));
 
   if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    updateIntersection(cache_block, isect);
+    surface_buf_.updateIntersection(cache_block, isect);
     return true;
   }
   return false;
 }
 
-template <class CacheT>
-bool Scene<CacheT>::intersect(RTCScene rtc_scene, int cache_block,
-                              const glm::vec3& org, const float dir[3],
-                              RTCRayIntersection* isect) {
+template <typename CacheT, typename SurfaceBufT>
+bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
+                                           const glm::vec3& org,
+                                           const float dir[3],
+                                           RTCRayIntersection* isect) {
   RTCRayUtil::makeRadianceRay(org, dir, isect);
   rtcIntersect(rtc_scene, (RTCRay&)(*isect));
 
   if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    updateIntersection(cache_block, isect);
+    surface_buf_.updateIntersection(cache_block, isect);
     return true;
   }
   return false;
 }
 
-template <class CacheT>
-bool Scene<CacheT>::intersect(const float org[3], const float dir[3],
-                              RTCRayIntersection* isect) {
+template <typename CacheT, typename SurfaceBufT>
+bool Scene<CacheT, SurfaceBufT>::intersect(const float org[3],
+                                           const float dir[3],
+                                           RTCRayIntersection* isect) {
   RTCRayUtil::makeRadianceRay(org, dir, isect);
   rtcIntersect(scene_, (RTCRay&)(*isect));
 
   if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    updateIntersection(isect);
+    surface_buf_.updateIntersection(cache_block_, isect);
     return true;
   }
   return false;
 }
 
-template <class CacheT>
-bool Scene<CacheT>::occluded(const glm::vec3& org, const glm::vec3& dir,
-                             RTCRay* ray) {
+template <typename CacheT, typename SurfaceBufT>
+bool Scene<CacheT, SurfaceBufT>::occluded(const glm::vec3& org,
+                                          const glm::vec3& dir, RTCRay* ray) {
   RTCRayUtil::makeShadowRay(org, dir, ray);
   rtcOccluded(scene_, *ray);
 
@@ -246,9 +250,10 @@ bool Scene<CacheT>::occluded(const glm::vec3& org, const glm::vec3& dir,
   return false;  // unoccluded
 }
 
-template <class CacheT>
-bool Scene<CacheT>::occluded(RTCScene rtc_scene, const glm::vec3& org,
-                             const glm::vec3& dir, RTCRay* ray) {
+template <typename CacheT, typename SurfaceBufT>
+bool Scene<CacheT, SurfaceBufT>::occluded(RTCScene rtc_scene,
+                                          const glm::vec3& org,
+                                          const glm::vec3& dir, RTCRay* ray) {
   RTCRayUtil::makeShadowRay(org, dir, ray);
   rtcOccluded(rtc_scene, *ray);
 
@@ -258,9 +263,9 @@ bool Scene<CacheT>::occluded(RTCScene rtc_scene, const glm::vec3& org,
   return false;  // unoccluded
 }
 
-template <class CacheT>
-bool Scene<CacheT>::occluded(const float org[3], const float dir[3],
-                             RTCRay* ray) {
+template <typename CacheT, typename SurfaceBufT>
+bool Scene<CacheT, SurfaceBufT>::occluded(const float org[3],
+                                          const float dir[3], RTCRay* ray) {
   RTCRayUtil::makeShadowRay(org, dir, ray);
   rtcOccluded(scene_, *ray);
 
@@ -270,9 +275,10 @@ bool Scene<CacheT>::occluded(const float org[3], const float dir[3],
   return false;  // unoccluded
 }
 
-template <class CacheT>
-bool Scene<CacheT>::occluded(RTCScene rtc_scene, const float org[3],
-                             const float dir[3], RTCRay* ray) {
+template <typename CacheT, typename SurfaceBufT>
+bool Scene<CacheT, SurfaceBufT>::occluded(RTCScene rtc_scene,
+                                          const float org[3],
+                                          const float dir[3], RTCRay* ray) {
   RTCRayUtil::makeShadowRay(org, dir, ray);
   rtcOccluded(rtc_scene, *ray);
 
@@ -280,82 +286,13 @@ bool Scene<CacheT>::occluded(RTCScene rtc_scene, const float org[3],
     return true;
   }
   return false;  // unoccluded
-}
-
-template <class CacheT>
-void Scene<CacheT>::updateIntersection(RTCRayIntersection* isect) const {
-  // cache_block_ pointing to the current cache block in the mesh buffer
-  // isect->primID, the current primitive intersected
-  // colors: per-vertex colors
-  uint32_t colors[3];
-  trimesh_buf_.getColorTuple(cache_block_, isect->primID, colors);
-
-  // interploate color tuple and update isect->color
-  float u = isect->u;
-  float v = isect->v;
-
-  uint32_t rgb[9];
-  util::unpack(colors[0], &rgb[0]);
-  util::unpack(colors[1], &rgb[3]);
-  util::unpack(colors[2], &rgb[6]);
-
-  float w = 1.f - u - v;
-  uint32_t r = (rgb[0] * w) + (rgb[3] * u) + (rgb[6] * v);
-  uint32_t g = (rgb[1] * w) + (rgb[4] * u) + (rgb[7] * v);
-  uint32_t b = (rgb[2] * w) + (rgb[5] * u) + (rgb[8] * v);
-
-  isect->color = util::pack(r, g, b);
-
-  // shading normal
-
-  float ns[9];
-  trimesh_buf_.getNormalTuple(cache_block_, isect->primID, ns);
-
-  isect->Ns[0] = (ns[0] * w) + (ns[3] * u) + (ns[6] * v);
-  isect->Ns[1] = (ns[1] * w) + (ns[4] * u) + (ns[7] * v);
-  isect->Ns[2] = (ns[2] * w) + (ns[5] * u) + (ns[8] * v);
-}
-
-template <class CacheT>
-void Scene<CacheT>::updateIntersection(int cache_block,
-                                       RTCRayIntersection* isect) const {
-  // cache_block pointing to the current cache block in the mesh buffer
-  // isect->primID, the current primitive intersected
-  // colors: per-vertex colors
-  uint32_t colors[3];
-  trimesh_buf_.getColorTuple(cache_block, isect->primID, colors);
-
-  // interploate color tuple and update isect->color
-  float u = isect->u;
-  float v = isect->v;
-
-  uint32_t rgb[9];
-  util::unpack(colors[0], &rgb[0]);
-  util::unpack(colors[1], &rgb[3]);
-  util::unpack(colors[2], &rgb[6]);
-
-  float w = 1.f - u - v;
-  uint32_t r = (rgb[0] * w) + (rgb[3] * u) + (rgb[6] * v);
-  uint32_t g = (rgb[1] * w) + (rgb[4] * u) + (rgb[7] * v);
-  uint32_t b = (rgb[2] * w) + (rgb[5] * u) + (rgb[8] * v);
-
-  isect->color = util::pack(r, g, b);
-
-  // shading normal
-
-  float ns[9];
-  trimesh_buf_.getNormalTuple(cache_block, isect->primID, ns);
-
-  isect->Ns[0] = (ns[0] * w) + (ns[3] * u) + (ns[6] * v);
-  isect->Ns[1] = (ns[1] * w) + (ns[4] * u) + (ns[7] * v);
-  isect->Ns[2] = (ns[2] * w) + (ns[5] * u) + (ns[8] * v);
 }
 
 // copy only those domains mapped to this process.
 // we don't have to copy everything in some cases.
-template <class CacheT>
-void Scene<CacheT>::copyAllDomainsToLocalDisk(const std::string& dest_path,
-                                              bool insitu_mode) {
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::copyAllDomainsToLocalDisk(
+    const std::string& dest_path, bool insitu_mode) {
   // clean up existing folder
 
   // std::string stuff_to_remove = dest_path + "/*";
@@ -420,8 +357,8 @@ void Scene<CacheT>::copyAllDomainsToLocalDisk(const std::string& dest_path,
   }
 }
 
-template <class CacheT>
-void Scene<CacheT>::deleteAllDomainsFromLocalDisk() {
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::deleteAllDomainsFromLocalDisk() {
   CHECK_EQ(storage_basepath_.empty(), false);
   int res;
   for (std::size_t i = 0; i < domains_.size(); ++i) {
@@ -435,9 +372,9 @@ void Scene<CacheT>::deleteAllDomainsFromLocalDisk() {
   }
 }
 
-template <class CacheT>
-void Scene<CacheT>::mergeDomainBounds(std::size_t* max_num_vertices,
-                                      std::size_t* max_num_faces) {
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::mergeDomainBounds(
+    std::size_t* max_num_vertices, std::size_t* max_num_faces) {
   Aabb world_space_bound;
 
   std::size_t num_domains = domains_.size();
@@ -493,8 +430,8 @@ void Scene<CacheT>::mergeDomainBounds(std::size_t* max_num_vertices,
 #endif
 }
 
-template <class CacheT>
-void Scene<CacheT>::drawDomains() {
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::drawDomains() {
   glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT);
   glDisable(GL_LIGHTING);
   glLineWidth(.1);
@@ -526,8 +463,8 @@ void Scene<CacheT>::drawDomains() {
   glPopAttrib();
 }
 
-template <class CacheT>
-void Scene<CacheT>::drawPartitions() {
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::drawPartitions() {
   glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT);
   glDisable(GL_LIGHTING);
   glLineWidth(.1);
