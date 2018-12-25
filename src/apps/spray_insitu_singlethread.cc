@@ -20,10 +20,10 @@
 
 #include "glog/logging.h"
 
-#include "caches/caches.h"
 #include "insitu/insitu_shader_ao.h"
 #include "insitu/insitu_shader_pt.h"
 #include "insitu/insitu_singlethread_tracer.h"
+#include "render/caches.h"
 #include "renderers/config.h"
 #include "renderers/spray.h"
 #include "renderers/spray_renderer.h"

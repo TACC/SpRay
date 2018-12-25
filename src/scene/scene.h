@@ -27,19 +27,19 @@
 
 #include "glm/glm.hpp"
 
-#include "render/wbvh_embree.h"
-#include "caches/caches.h"
 #include "display/opengl.h"
 #include "partition/aabb.h"
 #include "partition/data_partition.h"
 #include "partition/domain.h"
 #include "partition/trimesh_buffer.h"
+#include "render/caches.h"
+#include "render/wbvh_embree.h"
 #include "renderers/rays.h"
 #include "renderers/spray.h"
 #include "scene/light.h"
+#include "utils/comm.h"
 #include "utils/math.h"
 #include "utils/util.h"
-#include "utils/comm.h"
 
 #define PRINT_DOMAIN_BOUNDS
 #undef PRINT_DOMAIN_BOUNDS

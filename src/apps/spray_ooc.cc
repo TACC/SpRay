@@ -20,10 +20,10 @@
 
 #include "glog/logging.h"
 
-#include "caches/caches.h"
 #include "ooc/ooc_shader_ao.h"
 #include "ooc/ooc_shader_pt.h"
 #include "ooc/ooc_tracer.h"
+#include "render/caches.h"
 #include "renderers/config.h"
 #include "renderers/spray.h"
 #include "renderers/spray_renderer.h"

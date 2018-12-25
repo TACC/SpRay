@@ -218,12 +218,10 @@ set(SPRAY_SRC_LIST
     # display
     display/composite.cc
     
-    # caches
-    caches/infinite_cache.cc
-    caches/lru_cache.cc
-
     # render
     render/wbvh_embree.cc
+    render/infinite_cache.cc
+    render/lru_cache.cc
 
     # partition
     partition/aabb.cc

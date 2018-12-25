@@ -18,7 +18,7 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "caches/infinite_cache.h"
+#include "render/infinite_cache.h"
 
 #include "glog/logging.h"
 #include "pbrt/memory.h"
