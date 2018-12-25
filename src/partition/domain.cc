@@ -29,9 +29,9 @@
 
 #include "partition/aabb.h"
 #include "partition/domain.h"
+#include "render/light.h"
 #include "render/reflection.h"
 #include "render/spray.h"
-#include "scene/light.h"
 
 // #define SPRAY_PRINT_LINES
 // #define SPRAY_PRINT_TOKENS

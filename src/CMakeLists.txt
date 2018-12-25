@@ -209,9 +209,6 @@ set(SPRAY_SRC_LIST
     utils/profiler.cc
     utils/comm.cc
 
-    # scene
-    scene/camera.cc
-
     # display
     display/composite.cc
     
@@ -223,6 +220,7 @@ set(SPRAY_SRC_LIST
     render/spray.cc
     render/sampler.cc
     render/reflection.cc
+    render/camera.cc
 
     # partition
     partition/aabb.cc

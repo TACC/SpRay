@@ -18,7 +18,7 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "scene/camera.h"
+#include "render/camera.h"
 
 #include <algorithm>
 #include <cmath>
