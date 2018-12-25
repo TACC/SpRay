@@ -46,7 +46,7 @@ struct Domain {
   Bsdf* bsdf;
 };
 
-class SceneParser {
+class SceneLoader {
  private:
   int domain_id_;
   int light_id_;
@@ -54,8 +54,8 @@ class SceneParser {
   std::vector<Light*>* lights_;
 
  public:
-  void parse(const std::string& filename, const std::string& ply_path,
-             std::vector<Domain>* domains_out, std::vector<Light*>* lights_out);
+  void load(const std::string& filename, const std::string& ply_path,
+            std::vector<Domain>* domains_out, std::vector<Light*>* lights_out);
 
  private:
   enum class DomainTokenType {

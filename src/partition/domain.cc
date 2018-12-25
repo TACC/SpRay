@@ -38,7 +38,7 @@
 
 namespace spray {
 
-SceneParser::DomainTokenType SceneParser::getTokenType(const std::string& tag) {
+SceneLoader::DomainTokenType SceneLoader::getTokenType(const std::string& tag) {
   DomainTokenType type;
   if (tag[0] == '#') {
     type = DomainTokenType::kComment;
@@ -68,14 +68,14 @@ SceneParser::DomainTokenType SceneParser::getTokenType(const std::string& tag) {
   return type;
 }
 
-void SceneParser::parseDomain(const std::vector<std::string>& tokens) {
+void SceneLoader::parseDomain(const std::vector<std::string>& tokens) {
   nextDomain();
   Domain& d = currentDomain();
   d.id = domain_id_;
   d.transform = glm::mat4(1.f);
 }
 
-void SceneParser::parseFile(const std::string& ply_path,
+void SceneLoader::parseFile(const std::string& ply_path,
                             const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
@@ -84,7 +84,7 @@ void SceneParser::parseFile(const std::string& ply_path,
   d.filename = ply_path.empty() ? tokens[1] : ply_path + "/" + tokens[1];
 }
 
-void SceneParser::parseMaterial(const std::vector<std::string>& tokens) {
+void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
   if (tokens[1] == "diffuse") {
@@ -132,7 +132,7 @@ void SceneParser::parseMaterial(const std::vector<std::string>& tokens) {
   }
 }
 
-void SceneParser::parseBound(const std::vector<std::string>& tokens) {
+void SceneLoader::parseBound(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
   CHECK_EQ(tokens.size(), 7);
@@ -145,7 +145,7 @@ void SceneParser::parseBound(const std::vector<std::string>& tokens) {
   d.object_aabb.bounds[1] = max;
 }
 
-void SceneParser::parseScale(const std::vector<std::string>& tokens) {
+void SceneLoader::parseScale(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
   CHECK_EQ(tokens.size(), 4);
@@ -155,7 +155,7 @@ void SceneParser::parseScale(const std::vector<std::string>& tokens) {
                              atof(tokens[3].c_str())));
 }
 
-void SceneParser::parseRotate(const std::vector<std::string>& tokens) {
+void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
   CHECK_EQ(tokens.size(), 3);
@@ -174,7 +174,7 @@ void SceneParser::parseRotate(const std::vector<std::string>& tokens) {
                             (float)glm::radians(atof(tokens[2].c_str())), axis);
 }
 
-void SceneParser::parseTranslate(const std::vector<std::string>& tokens) {
+void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
   CHECK_EQ(tokens.size(), 4);
@@ -184,7 +184,7 @@ void SceneParser::parseTranslate(const std::vector<std::string>& tokens) {
                              atof(tokens[3].c_str())));
 }
 
-void SceneParser::parseFace(const std::vector<std::string>& tokens) {
+void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
   CHECK_EQ(tokens.size(), 2);
@@ -192,7 +192,7 @@ void SceneParser::parseFace(const std::vector<std::string>& tokens) {
   d.num_faces = std::stoul(tokens[1]);
 }
 
-void SceneParser::parseVertex(const std::vector<std::string>& tokens) {
+void SceneLoader::parseVertex(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
   CHECK_EQ(tokens.size(), 2);
@@ -200,7 +200,7 @@ void SceneParser::parseVertex(const std::vector<std::string>& tokens) {
   d.num_vertices = std::stoul(tokens[1]);
 }
 
-void SceneParser::parseLight(const std::vector<std::string>& tokens) {
+void SceneLoader::parseLight(const std::vector<std::string>& tokens) {
   if (tokens[1] == "point") {
     CHECK_EQ(tokens.size(), 8);
     glm::vec3 position, radiance;
@@ -230,7 +230,7 @@ void SceneParser::parseLight(const std::vector<std::string>& tokens) {
   }
 }
 
-void SceneParser::parseLineTokens(const std::string& ply_path,
+void SceneLoader::parseLineTokens(const std::string& ply_path,
                                   const std::vector<std::string>& tokens) {
   DomainTokenType type = getTokenType(tokens[0]);
   switch (type) {
@@ -269,7 +269,7 @@ void SceneParser::parseLineTokens(const std::string& ply_path,
   }
 }
 
-void SceneParser::countAndAllocate(std::ifstream& infile) {
+void SceneLoader::countAndAllocate(std::ifstream& infile) {
   int ndomains = 0;
   int nlights = 0;
 
@@ -311,10 +311,9 @@ void SceneParser::countAndAllocate(std::ifstream& infile) {
 // # domain 1
 // # tbd
 
-void SceneParser::parse(const std::string& filename,
-                        const std::string& ply_path,
-                        std::vector<Domain>* domains_out,
-                        std::vector<Light*>* lights_out) {
+void SceneLoader::load(const std::string& filename, const std::string& ply_path,
+                       std::vector<Domain>* domains_out,
+                       std::vector<Light*>* lights_out) {
   reset(domains_out, lights_out);
 
   std::ifstream infile(filename);
