@@ -41,7 +41,7 @@
 #include "ooc/ooc_tcontext.h"
 #include "partition/qvector.h"
 #include "partition/tile.h"
-#include "renderers/rays.h"
+#include "render/rays.h"
 #include "utils/profiler_util.h"
 #include "utils/scan.h"
 

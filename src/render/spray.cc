@@ -18,7 +18,7 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "renderers/spray.h"
+#include "render/spray.h"
 
 namespace spray {
 

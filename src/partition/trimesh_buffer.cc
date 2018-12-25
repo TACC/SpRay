@@ -24,7 +24,7 @@
 
 #include "glog/logging.h"
 
-#include "renderers/rays.h"
+#include "render/rays.h"
 #include "utils/util.h"
 
 #define DEBUG_MESH

@@ -32,7 +32,7 @@
 #include <string>
 #include <thread>
 
-#include "renderers/spray.h"
+#include "render/spray.h"
 
 #define DEFAULT_NUM_HARDWARE_THREADS 4
 

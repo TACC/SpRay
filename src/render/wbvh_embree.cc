@@ -21,7 +21,7 @@
 #include "render/wbvh_embree.h"
 
 #include "partition/aabb.h"
-#include "renderers/rays.h"
+#include "render/rays.h"
 
 #define PRINT_WBVH_BOUNDS
 #undef PRINT_WBVH_BOUNDS

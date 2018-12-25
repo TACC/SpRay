@@ -26,7 +26,7 @@
 #include <vector>
 
 #include "insitu/insitu_tcontext.h"
-#include "renderers/spray.h"
+#include "render/spray.h"
 #include "utils/comm.h"
 
 namespace spray {

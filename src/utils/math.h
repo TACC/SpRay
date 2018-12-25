@@ -24,8 +24,6 @@
 
 #include "glm/glm.hpp"
 
-#include "renderers/spray.h"
-
 namespace spray {
 
 inline glm::vec3 neg(const glm::vec3& v) { return -v; }

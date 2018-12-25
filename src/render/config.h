@@ -18,45 +18,81 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "renderers/sampler.h"
+#pragma once
+
+#include <string>
+#include <vector>
+
+#include "glm/glm.hpp"
+
+#include "render/spray.h"
 
 namespace spray {
 
-void createCoordSystem(const glm::vec3& n, glm::mat3* obj2world) {
-  glm::vec3 z = glm::vec3(n.x, n.y, n.z);
-  glm::vec3 h = z;
-  if (fabs(h.x) <= fabs(h.y) && fabs(h.x) <= fabs(h.z))
-    h.x = 1.0;
-  else if (fabs(h.y) <= fabs(h.x) && fabs(h.y) <= fabs(h.z))
-    h.y = 1.0;
-  else
-    h.z = 1.0;
+class Light;
 
-  z = glm::normalize(z);
-  glm::vec3 y = glm::cross(h, z);
-  y = glm::normalize(y);
-  glm::vec3 x = glm::cross(z, y);
-  x = glm::normalize(x);
+class Config {
+  void printUsage(char** argv);
 
-  (*obj2world)[0] = x;
-  (*obj2world)[1] = y;
-  (*obj2world)[2] = z;
-}
+ public:
+  Config();
 
-void getCosineHemisphereSample(float u1, float u2, const glm::vec3& N,
-                               Sample3* s) {
-  glm::vec3 v = cosineHemisphereSample(u1, u2);  // v in local space
-  v = glm::normalize(v);
-  s->dir = glm::normalize(localToWorld(N, v));  // s->v in world space
-  s->pdf = cosineHemispherePdf(v);
-}
+  void parse(int argc, char** argv);
 
-void getCosineHemisphereSample(float u1, float u2, const glm::vec3& N,
-                               glm::vec3* wi, float* pdf) {
-  glm::vec3 v = cosineHemisphereSample(u1, u2);  // v in local space
-  v = glm::normalize(v);
-  *wi = glm::normalize(localToWorld(N, v));  // s->v in world space
-  *pdf = cosineHemispherePdf(v);
-}
+  // image
+  int image_w;
+  int image_h;
+
+  // model
+  std::string model_descriptor_filename;
+  std::string ply_path;
+
+  // camera
+  bool has_camera_config;
+  glm::vec3 camera_pos;
+  glm::vec3 camera_lookat;
+  glm::vec3 camera_up;
+  float znear;
+  float zfar;
+  float fov;
+
+  // render
+  int nframes;
+  std::string output_filename;
+  int light_samples;
+  int bounces;
+
+  // schedule
+  enum Partition { IMAGE, HYBRID, INSITU };
+  int partition;
+  int num_partitions;  // effective when VIEW_MODE_PARTITION used
+
+  // view mode
+  ViewMode view_mode;
+
+  // cache
+  int cache_size;
+
+  // ao settings
+  int ao_samples;
+  int ao_mode;
+
+  // pt settings
+  int pixel_samples;
+
+  int num_tiles;
+  int min_tile_size;
+
+  std::string local_disk_path;
+  int nthreads;
+
+  enum Shading { SPRAY_SHADING_LAMBERT, SPRAY_SHADING_BLINN };
+  int shading;
+  float shininess;
+  glm::vec3 ks;
+
+  enum DevMode { DEVMODE_NORMAL, DEVMODE_DEV };
+  int dev_mode;
+};
 
 }  // namespace spray

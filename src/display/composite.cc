@@ -22,7 +22,7 @@
 
 #include <cstddef>
 
-#include "renderers/spray.h"
+#include "render/spray.h"
 #include "utils/comm.h"
 #include "utils/math.h"
 

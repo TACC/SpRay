@@ -21,7 +21,7 @@
 #pragma once
 
 #include "partition/aabb.h"
-#include "renderers/spray.h"
+#include "render/spray.h"
 
 namespace spray {
 

@@ -29,7 +29,7 @@
 #include "display/image.h"
 #include "insitu/insitu_ray.h"
 #include "insitu/insitu_tiler.h"
-#include "renderers/spray.h"
+#include "render/spray.h"
 #include "utils/profiler_util.h"
 
 namespace spray {

@@ -22,9 +22,9 @@
 
 #include <stack>
 
-#include "render/wbvh_node.h"
 #include "display/opengl.h"
-#include "renderers/spray.h"
+#include "render/spray.h"
+#include "render/wbvh_node.h"
 
 namespace spray {
 

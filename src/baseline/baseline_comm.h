@@ -35,7 +35,7 @@
 #include "baseline/baseline_schedulers.h"
 #include "partition/arena_queue.h"
 #include "partition/block_buffer.h"
-#include "renderers/spray.h"
+#include "render/spray.h"
 #include "utils/comm.h"
 #include "utils/profiler_util.h"
 #include "utils/util.h"

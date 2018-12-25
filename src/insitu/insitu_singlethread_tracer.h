@@ -44,7 +44,7 @@
 #include "partition/data_partition.h"
 #include "partition/domain.h"
 #include "partition/qvector.h"
-#include "renderers/spray.h"
+#include "render/spray.h"
 #include "scene/camera.h"
 #include "scene/light.h"
 #include "scene/scene.h"

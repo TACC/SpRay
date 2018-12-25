@@ -24,7 +24,7 @@
 #include "glog/logging.h"
 #include "glm/glm.hpp"
 
-#include "renderers/sampler.h"
+#include "render/sampler.h"
 
 namespace spray {
 

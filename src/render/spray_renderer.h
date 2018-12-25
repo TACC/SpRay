@@ -20,79 +20,61 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
+#include "GLFW/glfw3.h"
 #include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
-#include "renderers/spray.h"
+#include "display/composite.h"
+#include "display/image.h"
+#include "display/spray_glfw.h"
+#include "display/vis.h"
+#include "partition/aabb.h"
+#include "partition/domain.h"
+#include "render/config.h"
+#include "render/spray.h"
+#include "scene/camera.h"
+#include "scene/scene.h"
+#include "utils/comm.h"
+#include "utils/profiler.h"
+#include "utils/profiler_util.h"
+#include "utils/timer.h"
 
 namespace spray {
 
-class Light;
-
-class Config {
-  void printUsage(char** argv);
-
+template <class TracerT, class SceneT>
+class SprayRenderer {
  public:
-  Config();
+  SprayRenderer() : cfg_(nullptr) {}
 
-  void parse(int argc, char** argv);
+  void init(const Config& cfg);
+  void run();
 
-  // image
-  int image_w;
-  int image_h;
+ private:
+  void run_normal();
+  void run_dev();
+  void renderFilm();
+  void renderGlfwSingleTask();
+  void renderGlfwRootTask();
+  void renderGlfwChildTask();
+  void renderGlfwDomainBounds(int view_mode);
 
-  // model
-  std::string model_descriptor_filename;
-  std::string ply_path;
+  void renderFilmInOmp();
+  void renderGlfwInOmp();
 
-  // camera
-  bool has_camera_config;
-  glm::vec3 camera_pos;
-  glm::vec3 camera_lookat;
-  glm::vec3 camera_up;
-  float znear;
-  float zfar;
-  float fov;
+ private:
+  const Config* cfg_;
 
-  // render
-  int nframes;
-  std::string output_filename;
-  int light_samples;
-  int bounces;
+  MessageCommand msgcmd_;
 
-  // schedule
-  enum Partition { IMAGE, HYBRID, INSITU };
-  int partition;
-  int num_partitions;  // effective when VIEW_MODE_PARTITION used
-
-  // view mode
-  ViewMode view_mode;
-
-  // cache
-  int cache_size;
-
-  // ao settings
-  int ao_samples;
-  int ao_mode;
-
-  // pt settings
-  int pixel_samples;
-
-  int num_tiles;
-  int min_tile_size;
-
-  std::string local_disk_path;
-  int nthreads;
-
-  enum Shading { SPRAY_SHADING_LAMBERT, SPRAY_SHADING_BLINN };
-  int shading;
-  float shininess;
-  glm::vec3 ks;
-
-  enum DevMode { DEVMODE_NORMAL, DEVMODE_DEV };
-  int dev_mode;
+  SceneT scene_;
+  Camera camera_;
+  TracerT tracer_;
+  HdrImage image_;
 };
 
 }  // namespace spray
+
+#define SPRAY_SPRAY_RENDERER_INL_
+#include "render/spray_renderer.inl"
+#undef SPRAY_SPRAY_RENDERER_INL_

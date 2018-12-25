@@ -29,7 +29,7 @@
 
 #include "cmake_config.h"
 
-#include "renderers/spray.h"
+#include "render/spray.h"
 #include "utils/comm.h"
 
 namespace spray {
