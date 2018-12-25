@@ -34,6 +34,8 @@
 
 namespace spray {
 
+struct RTCRayIntersection;
+
 class TriMeshBuffer {
  public:
   TriMeshBuffer();
@@ -47,13 +49,16 @@ class TriMeshBuffer {
                 const glm::mat4& transform, bool apply_transform);
   RTCScene get(int cache_block) { return scenes_[cache_block]; }
 
+  void updateIntersection(RTCRayIntersection* isect) const;
+  void updateIntersection(int cache_block, RTCRayIntersection* isect) const;
+
+ private:
   void getColorTuple(int cache_block, uint32_t primID,
                      uint32_t colors[3]) const;
 
   void getNormalTuple(int cache_block, uint32_t primID,
                       float normals_out[9]) const;
 
- private:
   void computeNormals(int cache_block);
 
   std::size_t vertexBaseIndex(int cache_block) const {

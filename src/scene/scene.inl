@@ -195,7 +195,7 @@ bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
   rtcIntersect(rtc_scene, (RTCRay&)(*isect));
 
   if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    updateIntersection(cache_block, isect);
+    surface_buf_.updateIntersection(cache_block, isect);
     return true;
   }
   return false;
@@ -210,7 +210,7 @@ bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
   rtcIntersect(rtc_scene, (RTCRay&)(*isect));
 
   if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    updateIntersection(cache_block, isect);
+    surface_buf_.updateIntersection(cache_block, isect);
     return true;
   }
   return false;
@@ -224,7 +224,7 @@ bool Scene<CacheT, SurfaceBufT>::intersect(const float org[3],
   rtcIntersect(scene_, (RTCRay&)(*isect));
 
   if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    updateIntersection(isect);
+    surface_buf_.updateIntersection(cache_block_, isect);
     return true;
   }
   return false;
@@ -278,76 +278,6 @@ bool Scene<CacheT, SurfaceBufT>::occluded(RTCScene rtc_scene,
     return true;
   }
   return false;  // unoccluded
-}
-
-template <typename CacheT, typename SurfaceBufT>
-void Scene<CacheT, SurfaceBufT>::updateIntersection(
-    RTCRayIntersection* isect) const {
-  // cache_block_ pointing to the current cache block in the mesh buffer
-  // isect->primID, the current primitive intersected
-  // colors: per-vertex colors
-  uint32_t colors[3];
-  surface_buf_.getColorTuple(cache_block_, isect->primID, colors);
-
-  // interploate color tuple and update isect->color
-  float u = isect->u;
-  float v = isect->v;
-
-  uint32_t rgb[9];
-  util::unpack(colors[0], &rgb[0]);
-  util::unpack(colors[1], &rgb[3]);
-  util::unpack(colors[2], &rgb[6]);
-
-  float w = 1.f - u - v;
-  uint32_t r = (rgb[0] * w) + (rgb[3] * u) + (rgb[6] * v);
-  uint32_t g = (rgb[1] * w) + (rgb[4] * u) + (rgb[7] * v);
-  uint32_t b = (rgb[2] * w) + (rgb[5] * u) + (rgb[8] * v);
-
-  isect->color = util::pack(r, g, b);
-
-  // shading normal
-
-  float ns[9];
-  surface_buf_.getNormalTuple(cache_block_, isect->primID, ns);
-
-  isect->Ns[0] = (ns[0] * w) + (ns[3] * u) + (ns[6] * v);
-  isect->Ns[1] = (ns[1] * w) + (ns[4] * u) + (ns[7] * v);
-  isect->Ns[2] = (ns[2] * w) + (ns[5] * u) + (ns[8] * v);
-}
-
-template <typename CacheT, typename SurfaceBufT>
-void Scene<CacheT, SurfaceBufT>::updateIntersection(
-    int cache_block, RTCRayIntersection* isect) const {
-  // cache_block pointing to the current cache block in the mesh buffer
-  // isect->primID, the current primitive intersected
-  // colors: per-vertex colors
-  uint32_t colors[3];
-  surface_buf_.getColorTuple(cache_block, isect->primID, colors);
-
-  // interploate color tuple and update isect->color
-  float u = isect->u;
-  float v = isect->v;
-
-  uint32_t rgb[9];
-  util::unpack(colors[0], &rgb[0]);
-  util::unpack(colors[1], &rgb[3]);
-  util::unpack(colors[2], &rgb[6]);
-
-  float w = 1.f - u - v;
-  uint32_t r = (rgb[0] * w) + (rgb[3] * u) + (rgb[6] * v);
-  uint32_t g = (rgb[1] * w) + (rgb[4] * u) + (rgb[7] * v);
-  uint32_t b = (rgb[2] * w) + (rgb[5] * u) + (rgb[8] * v);
-
-  isect->color = util::pack(r, g, b);
-
-  // shading normal
-
-  float ns[9];
-  surface_buf_.getNormalTuple(cache_block, isect->primID, ns);
-
-  isect->Ns[0] = (ns[0] * w) + (ns[3] * u) + (ns[6] * v);
-  isect->Ns[1] = (ns[1] * w) + (ns[4] * u) + (ns[7] * v);
-  isect->Ns[2] = (ns[2] * w) + (ns[5] * u) + (ns[8] * v);
 }
 
 // copy only those domains mapped to this process.
