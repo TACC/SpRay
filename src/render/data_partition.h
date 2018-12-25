@@ -29,9 +29,9 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-#include "partition/aabb.h"
-#include "partition/domain.h"
-#include "partition/morton.h"
+#include "render/aabb.h"
+#include "render/domain.h"
+#include "render/morton.h"
 
 #undef GROUP_CLOSE_DOMAINS
 #define GROUP_CLOSE_DOMAINS

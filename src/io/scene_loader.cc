@@ -29,7 +29,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glog/logging.h"
 
-#include "partition/aabb.h"
+#include "render/aabb.h"
 #include "render/light.h"
 #include "render/reflection.h"
 #include "render/spray.h"

@@ -26,8 +26,8 @@
 
 #include "glog/logging.h"
 
-#include "partition/tile.h"
 #include "render/config.h"
+#include "render/tile.h"
 
 namespace spray {
 namespace baseline {
