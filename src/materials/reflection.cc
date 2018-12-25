@@ -47,7 +47,7 @@
 #include "glog/logging.h"
 
 #include "utils/math.h"
-#include "renderers/spray.h"
+#include "render/spray.h"
 
 namespace spray {
 

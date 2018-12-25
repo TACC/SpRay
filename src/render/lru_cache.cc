@@ -18,7 +18,7 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "caches/lru_cache.h"
+#include "render/lru_cache.h"
 
 #include "glog/logging.h"
 

@@ -18,46 +18,63 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "caches/infinite_cache.h"
+#pragma once
 
-#include "glog/logging.h"
-#include "pbrt/memory.h"
+#include "GLFW/glfw3.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
-#include "partition/trimesh_buffer.h"
+#include "display/composite.h"
+#include "display/image.h"
+#include "display/spray_glfw.h"
+#include "display/vis.h"
+#include "partition/aabb.h"
+#include "partition/domain.h"
+#include "render/config.h"
+#include "render/spray.h"
+#include "scene/camera.h"
+#include "scene/scene.h"
+#include "utils/comm.h"
+#include "utils/profiler.h"
+#include "utils/profiler_util.h"
+#include "utils/timer.h"
 
 namespace spray {
 
-InfiniteCache::InfiniteCache() : capacity_(0), status_(nullptr) {}
-InfiniteCache::~InfiniteCache() { FreeAligned(status_); }
+template <class TracerT, class SceneT>
+class SprayRenderer {
+ public:
+  SprayRenderer() : cfg_(nullptr) {}
 
-// max_aceh_size_ndomains is a don't care
-void InfiniteCache::initialize(int num_domains, int cache_size,
-                               bool insitu_mode) {
-  //
-  CHECK(cache_size < 0 || cache_size >= num_domains || insitu_mode);
-  capacity_ = num_domains;
+  void init(const Config& cfg);
+  void run();
 
-  status_ = AllocAligned<int>(capacity_);
-  CHECK_NOTNULL(status_);
+ private:
+  void run_normal();
+  void run_dev();
+  void renderFilm();
+  void renderGlfwSingleTask();
+  void renderGlfwRootTask();
+  void renderGlfwChildTask();
+  void renderGlfwDomainBounds(int view_mode);
 
-  for (int i = 0; i < capacity_; ++i) {
-    status_[i] = MISS;
-  }
-}
+  void renderFilmInOmp();
+  void renderGlfwInOmp();
 
-bool InfiniteCache::load(int domid, int* cache_block_id) {
-#ifdef SPRAY_GLOG_CHECK
-  CHECK_LT(domid, capacity_);
-#endif
-  *cache_block_id = domid;
-  if (status_[domid] == HIT) {
-    return true;
-  }
-#ifdef SPRAY_GLOG_CHECK
-  CHECK_LT(domid, capacity_);
-#endif
-  status_[domid] = HIT;
-  return false;
-}
+ private:
+  const Config* cfg_;
+
+  MessageCommand msgcmd_;
+
+  SceneT scene_;
+  Camera camera_;
+  TracerT tracer_;
+  HdrImage image_;
+};
 
 }  // namespace spray
+
+#define SPRAY_SPRAY_RENDERER_INL_
+#include "render/spray_renderer.inl"
+#undef SPRAY_SPRAY_RENDERER_INL_

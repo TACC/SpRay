@@ -25,8 +25,8 @@
 #include "glm/glm.hpp"
 #include "glog/logging.h"
 
-#include "renderers/rays.h"
-#include "renderers/spray.h"
+#include "render/rays.h"
+#include "render/spray.h"
 
 namespace spray {
 namespace baseline {

@@ -18,63 +18,45 @@
 //                                                                            //
 // ========================================================================== //
 
-#pragma once
-
-#include "GLFW/glfw3.h"
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
-
-#include "display/composite.h"
-#include "display/image.h"
-#include "display/spray_glfw.h"
-#include "display/vis.h"
-#include "partition/aabb.h"
-#include "partition/domain.h"
-#include "renderers/config.h"
-#include "renderers/spray.h"
-#include "scene/camera.h"
-#include "scene/scene.h"
-#include "utils/comm.h"
-#include "utils/profiler.h"
-#include "utils/profiler_util.h"
-#include "utils/timer.h"
+#include "render/sampler.h"
 
 namespace spray {
 
-template <class TracerT, class SceneT>
-class SprayRenderer {
- public:
-  SprayRenderer() : cfg_(nullptr) {}
+void createCoordSystem(const glm::vec3& n, glm::mat3* obj2world) {
+  glm::vec3 z = glm::vec3(n.x, n.y, n.z);
+  glm::vec3 h = z;
+  if (fabs(h.x) <= fabs(h.y) && fabs(h.x) <= fabs(h.z))
+    h.x = 1.0;
+  else if (fabs(h.y) <= fabs(h.x) && fabs(h.y) <= fabs(h.z))
+    h.y = 1.0;
+  else
+    h.z = 1.0;
 
-  void init(const Config& cfg);
-  void run();
+  z = glm::normalize(z);
+  glm::vec3 y = glm::cross(h, z);
+  y = glm::normalize(y);
+  glm::vec3 x = glm::cross(z, y);
+  x = glm::normalize(x);
 
- private:
-  void run_normal();
-  void run_dev();
-  void renderFilm();
-  void renderGlfwSingleTask();
-  void renderGlfwRootTask();
-  void renderGlfwChildTask();
-  void renderGlfwDomainBounds(int view_mode);
+  (*obj2world)[0] = x;
+  (*obj2world)[1] = y;
+  (*obj2world)[2] = z;
+}
 
-  void renderFilmInOmp();
-  void renderGlfwInOmp();
+void getCosineHemisphereSample(float u1, float u2, const glm::vec3& N,
+                               Sample3* s) {
+  glm::vec3 v = cosineHemisphereSample(u1, u2);  // v in local space
+  v = glm::normalize(v);
+  s->dir = glm::normalize(localToWorld(N, v));  // s->v in world space
+  s->pdf = cosineHemispherePdf(v);
+}
 
- private:
-  const Config* cfg_;
-
-  MessageCommand msgcmd_;
-
-  SceneT scene_;
-  Camera camera_;
-  TracerT tracer_;
-  HdrImage image_;
-};
+void getCosineHemisphereSample(float u1, float u2, const glm::vec3& N,
+                               glm::vec3* wi, float* pdf) {
+  glm::vec3 v = cosineHemisphereSample(u1, u2);  // v in local space
+  v = glm::normalize(v);
+  *wi = glm::normalize(localToWorld(N, v));  // s->v in world space
+  *pdf = cosineHemispherePdf(v);
+}
 
 }  // namespace spray
-
-#define SPRAY_SPRAY_RENDERER_INL_
-#include "renderers/spray_renderer.inl"
-#undef SPRAY_SPRAY_RENDERER_INL_

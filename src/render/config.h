@@ -18,15 +18,81 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "renderers/spray.h"
+#pragma once
+
+#include <string>
+#include <vector>
+
+#include "glm/glm.hpp"
+
+#include "render/spray.h"
 
 namespace spray {
 
-MpiComm global_mpi_comm;
-Profiler global_profiler;
+class Light;
 
-int global_num_active_frames;
-int global_num_warmup_frames;
-unsigned global_num_frames;
+class Config {
+  void printUsage(char** argv);
+
+ public:
+  Config();
+
+  void parse(int argc, char** argv);
+
+  // image
+  int image_w;
+  int image_h;
+
+  // model
+  std::string model_descriptor_filename;
+  std::string ply_path;
+
+  // camera
+  bool has_camera_config;
+  glm::vec3 camera_pos;
+  glm::vec3 camera_lookat;
+  glm::vec3 camera_up;
+  float znear;
+  float zfar;
+  float fov;
+
+  // render
+  int nframes;
+  std::string output_filename;
+  int light_samples;
+  int bounces;
+
+  // schedule
+  enum Partition { IMAGE, HYBRID, INSITU };
+  int partition;
+  int num_partitions;  // effective when VIEW_MODE_PARTITION used
+
+  // view mode
+  ViewMode view_mode;
+
+  // cache
+  int cache_size;
+
+  // ao settings
+  int ao_samples;
+  int ao_mode;
+
+  // pt settings
+  int pixel_samples;
+
+  int num_tiles;
+  int min_tile_size;
+
+  std::string local_disk_path;
+  int nthreads;
+
+  enum Shading { SPRAY_SHADING_LAMBERT, SPRAY_SHADING_BLINN };
+  int shading;
+  float shininess;
+  glm::vec3 ks;
+
+  enum DevMode { DEVMODE_NORMAL, DEVMODE_DEV };
+  int dev_mode;
+};
 
 }  // namespace spray

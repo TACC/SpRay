@@ -24,11 +24,11 @@
 #include "baseline/baseline_schedulers.h"
 #include "baseline/baseline_shader_ao.h"
 #include "baseline/baseline_shader_pt.h"
-#include "caches/caches.h"
 #include "partition/data_partition.h"
-#include "renderers/config.h"
-#include "renderers/spray.h"
-#include "renderers/spray_renderer.h"
+#include "render/caches.h"
+#include "render/config.h"
+#include "render/spray.h"
+#include "render/spray_renderer.h"
 #include "utils/comm.h"
 
 int main(int argc, char** argv) {

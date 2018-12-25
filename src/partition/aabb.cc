@@ -26,7 +26,7 @@
 #include <iomanip>
 
 #include "display/opengl.h"
-#include "renderers/spray.h"
+#include "render/spray.h"
 
 namespace spray {
 

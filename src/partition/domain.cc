@@ -30,7 +30,7 @@
 #include "materials/reflection.h"
 #include "partition/aabb.h"
 #include "partition/domain.h"
-#include "renderers/spray.h"
+#include "render/spray.h"
 #include "scene/light.h"
 
 // #define SPRAY_PRINT_LINES

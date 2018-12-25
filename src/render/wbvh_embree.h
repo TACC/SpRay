@@ -26,7 +26,7 @@
 
 #include "partition/aabb.h"
 #include "partition/domain.h"
-#include "renderers/rays.h"
+#include "render/rays.h"
 
 namespace spray {
 

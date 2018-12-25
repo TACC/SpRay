@@ -18,81 +18,46 @@
 //                                                                            //
 // ========================================================================== //
 
-#pragma once
+#include "render/infinite_cache.h"
 
-#include <string>
-#include <vector>
+#include "glog/logging.h"
+#include "pbrt/memory.h"
 
-#include "glm/glm.hpp"
-
-#include "renderers/spray.h"
+#include "partition/trimesh_buffer.h"
 
 namespace spray {
 
-class Light;
+InfiniteCache::InfiniteCache() : capacity_(0), status_(nullptr) {}
+InfiniteCache::~InfiniteCache() { FreeAligned(status_); }
 
-class Config {
-  void printUsage(char** argv);
+// max_aceh_size_ndomains is a don't care
+void InfiniteCache::initialize(int num_domains, int cache_size,
+                               bool insitu_mode) {
+  //
+  CHECK(cache_size < 0 || cache_size >= num_domains || insitu_mode);
+  capacity_ = num_domains;
 
- public:
-  Config();
+  status_ = AllocAligned<int>(capacity_);
+  CHECK_NOTNULL(status_);
 
-  void parse(int argc, char** argv);
+  for (int i = 0; i < capacity_; ++i) {
+    status_[i] = MISS;
+  }
+}
 
-  // image
-  int image_w;
-  int image_h;
-
-  // model
-  std::string model_descriptor_filename;
-  std::string ply_path;
-
-  // camera
-  bool has_camera_config;
-  glm::vec3 camera_pos;
-  glm::vec3 camera_lookat;
-  glm::vec3 camera_up;
-  float znear;
-  float zfar;
-  float fov;
-
-  // render
-  int nframes;
-  std::string output_filename;
-  int light_samples;
-  int bounces;
-
-  // schedule
-  enum Partition { IMAGE, HYBRID, INSITU };
-  int partition;
-  int num_partitions;  // effective when VIEW_MODE_PARTITION used
-
-  // view mode
-  ViewMode view_mode;
-
-  // cache
-  int cache_size;
-
-  // ao settings
-  int ao_samples;
-  int ao_mode;
-
-  // pt settings
-  int pixel_samples;
-
-  int num_tiles;
-  int min_tile_size;
-
-  std::string local_disk_path;
-  int nthreads;
-
-  enum Shading { SPRAY_SHADING_LAMBERT, SPRAY_SHADING_BLINN };
-  int shading;
-  float shininess;
-  glm::vec3 ks;
-
-  enum DevMode { DEVMODE_NORMAL, DEVMODE_DEV };
-  int dev_mode;
-};
+bool InfiniteCache::load(int domid, int* cache_block_id) {
+#ifdef SPRAY_GLOG_CHECK
+  CHECK_LT(domid, capacity_);
+#endif
+  *cache_block_id = domid;
+  if (status_[domid] == HIT) {
+    return true;
+  }
+#ifdef SPRAY_GLOG_CHECK
+  CHECK_LT(domid, capacity_);
+#endif
+  status_[domid] = HIT;
+  return false;
+}
 
 }  // namespace spray

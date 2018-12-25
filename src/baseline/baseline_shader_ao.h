@@ -28,7 +28,7 @@
 #include "baseline/baseline_ray.h"
 #include "materials/reflection.h"
 #include "partition/arena_queue.h"
-#include "renderers/config.h"
+#include "render/config.h"
 #include "scene/light.h"
 #include "scene/scene.h"
 #include "utils/util.h"

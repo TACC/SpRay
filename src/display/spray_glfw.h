@@ -25,8 +25,8 @@
 #include "glog/logging.h"
 
 #include "display/vis.h"
-#include "renderers/config.h"
-#include "renderers/spray.h"
+#include "render/config.h"
+#include "render/spray.h"
 #include "scene/camera.h"
 
 namespace spray {

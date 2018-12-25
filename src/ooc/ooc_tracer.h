@@ -40,7 +40,7 @@
 #include "ooc/ooc_tcontext.h"
 #include "ooc/ooc_tiler.h"
 #include "partition/domain.h"
-#include "renderers/spray.h"
+#include "render/spray.h"
 #include "scene/camera.h"
 #include "scene/light.h"
 #include "scene/scene.h"

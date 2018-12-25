@@ -3,3 +3,4 @@ icet_build/
 benchmarks/run
 *.swp
 *.ppm
+examples/wavelet/wavelet.spray

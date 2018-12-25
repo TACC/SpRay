@@ -18,7 +18,15 @@
 //                                                                            //
 // ========================================================================== //
 
-#pragma once
+#include "render/spray.h"
 
-#include "caches/infinite_cache.h"
-#include "caches/lru_cache.h"
+namespace spray {
+
+MpiComm global_mpi_comm;
+Profiler global_profiler;
+
+int global_num_active_frames;
+int global_num_warmup_frames;
+unsigned global_num_frames;
+
+}  // namespace spray

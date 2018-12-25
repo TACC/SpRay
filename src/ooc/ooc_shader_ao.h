@@ -28,8 +28,8 @@
 
 #include "materials/reflection.h"
 #include "ooc/ooc_ray.h"
-#include "renderers/config.h"
-#include "renderers/rays.h"
+#include "render/config.h"
+#include "render/rays.h"
 #include "scene/light.h"
 #include "scene/scene.h"
 #include "utils/util.h"

@@ -26,7 +26,7 @@
 #include "glm/glm.hpp"
 #include "glog/logging.h"
 
-#include "renderers/rays.h"
+#include "render/rays.h"
 #include "scene/shape.h"
 #include "utils/math.h"
 #include "utils/util.h"

@@ -29,7 +29,7 @@
 #include "baseline/baseline_ray.h"
 #include "partition/arena_queue.h"
 #include "partition/data_partition.h"
-#include "renderers/spray.h"
+#include "render/spray.h"
 #include "scene/scene.h"
 
 namespace spray {

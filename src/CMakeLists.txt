@@ -218,12 +218,13 @@ set(SPRAY_SRC_LIST
     # display
     display/composite.cc
     
-    # caches
-    caches/infinite_cache.cc
-    caches/lru_cache.cc
-
     # render
     render/wbvh_embree.cc
+    render/infinite_cache.cc
+    render/lru_cache.cc
+    render/config.cc
+    render/spray.cc
+    render/sampler.cc
 
     # partition
     partition/aabb.cc
@@ -233,17 +234,6 @@ set(SPRAY_SRC_LIST
     partition/tile.cc
     partition/trimesh_buffer.cc
     
-    # renderers
-    renderers/config.cc
-    # renderers/rays.cc
-    renderers/spray.cc
-    renderers/sampler.cc
-    # renderers/visibility_buffer.cc
-    # renderers/scheduler.cc
-    # renderers/async_comm_shared.cc
-    # renderers/async_comm_insitu.cc
-    # renderers/tile_context.cc
-
     # insitu
     insitu/insitu_comm.cc
     insitu/insitu_tiler.cc

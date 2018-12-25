@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "renderers/spray.h"
+#include "render/spray.h"
 
 namespace spray {
 namespace ooc {

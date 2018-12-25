@@ -24,7 +24,7 @@
 #include <omp.h>
 #include <cstdint>
 
-#include "renderers/spray.h"
+#include "render/spray.h"
 #include "utils/profiler.h"
 
 namespace spray {

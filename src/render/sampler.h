@@ -23,7 +23,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "renderers/spray.h"
+#include "render/spray.h"
 #include "utils/math.h"
 
 namespace spray {

@@ -27,7 +27,7 @@
 
 #include "glm/glm.hpp"
 
-#include "renderers/rays.h"
+#include "render/rays.h"
 
 #define EPS_F 0.00001f
 

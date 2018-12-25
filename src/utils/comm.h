@@ -23,7 +23,7 @@
 #include <mpi.h>
 #include <queue>
 
-#include "renderers/spray.h"
+#include "render/spray.h"
 
 namespace spray {
 

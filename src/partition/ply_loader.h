@@ -29,7 +29,7 @@
 
 #include "glog/logging.h"
 
-#include "renderers/spray.h"
+#include "render/spray.h"
 
 namespace spray {
 

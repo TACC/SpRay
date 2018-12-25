@@ -26,7 +26,7 @@
 #include "display/image.h"
 #include "ooc/ooc_ray.h"
 #include "ooc/ooc_tiler.h"
-#include "renderers/spray.h"
+#include "render/spray.h"
 
 namespace spray {
 namespace ooc {

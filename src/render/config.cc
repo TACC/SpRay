@@ -18,13 +18,13 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "renderers/config.h"
+#include "render/config.h"
 
 #include <getopt.h>
 
 #include "glog/logging.h"
 
-#include "renderers/spray.h"
+#include "render/spray.h"
 #include "scene/light.h"
 #include "utils/util.h"
 
