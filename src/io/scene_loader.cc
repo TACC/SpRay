@@ -18,6 +18,8 @@
 //                                                                            //
 // ========================================================================== //
 
+#include "io/scene_loader.h"
+
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -28,7 +30,6 @@
 #include "glog/logging.h"
 
 #include "partition/aabb.h"
-#include "partition/domain.h"
 #include "render/light.h"
 #include "render/reflection.h"
 #include "render/spray.h"
