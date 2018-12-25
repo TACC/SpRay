@@ -34,12 +34,12 @@
 #include "glog/logging.h"
 
 #include "display/image.h"
-#include "materials/reflection.h"
 #include "ooc/ooc_pcontext.h"
 #include "ooc/ooc_ray.h"
 #include "ooc/ooc_tcontext.h"
 #include "ooc/ooc_tiler.h"
 #include "partition/domain.h"
+#include "render/reflection.h"
 #include "render/spray.h"
 #include "scene/camera.h"
 #include "scene/light.h"

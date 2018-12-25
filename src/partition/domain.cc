@@ -27,9 +27,9 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glog/logging.h"
 
-#include "materials/reflection.h"
 #include "partition/aabb.h"
 #include "partition/domain.h"
+#include "render/reflection.h"
 #include "render/spray.h"
 #include "scene/light.h"
 

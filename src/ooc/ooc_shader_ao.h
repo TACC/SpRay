@@ -26,10 +26,10 @@
 #include "glog/logging.h"
 #include "pbrt/memory.h"
 
-#include "materials/reflection.h"
 #include "ooc/ooc_ray.h"
 #include "render/config.h"
 #include "render/rays.h"
+#include "render/reflection.h"
 #include "scene/light.h"
 #include "scene/scene.h"
 #include "utils/util.h"
