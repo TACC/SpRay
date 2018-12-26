@@ -31,9 +31,6 @@
 #include "utils/math.h"
 #include "utils/util.h"
 
-#define DEBUG_MESH
-#undef DEBUG_MESH
-
 namespace spray {
 
 ShapeBuffer::ShapeBuffer()
@@ -58,14 +55,6 @@ void ShapeBuffer::initialize(int max_cache_size_ndomains,
   // TODO: colors
   // colors_ = arena_.Alloc<uint32_t>(cache_size * max_nvertices, false);
   // CHECK_NOTNULL(colors_);
-
-  // // embree mesh created
-  // embree_mesh_created_ = arena_.Alloc<int>(cache_size);
-  // CHECK_NOTNULL(embree_mesh_created_);
-
-  // for (std::size_t i = 0; i < cache_size; ++i) {
-  //   embree_mesh_created_[i] = DESTROYED;
-  // }
 
   // embree device
   device_ = rtcNewDevice(nullptr);
