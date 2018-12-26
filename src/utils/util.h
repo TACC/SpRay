@@ -111,6 +111,13 @@ inline unsigned int getNumThreads() {
   return (concurrency == 0) ? DEFAULT_NUM_HARDWARE_THREADS : concurrency;
 }
 
+/**
+ * A helper taking a string of bytes to evaluate the number of items in type T.
+ *
+ * \param base A pointer to the string.
+ * \param bytes A string size in byte.
+ * \return The number of items in type T.
+ */
 template <class T>
 std::size_t getNumOfItems(void* base, std::size_t bytes) {
   uint8_t* end = ((uint8_t*)base) + bytes;
