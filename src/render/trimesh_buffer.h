@@ -49,7 +49,6 @@ class TriMeshBuffer {
                 const glm::mat4& transform, bool apply_transform);
   RTCScene get(int cache_block) { return scenes_[cache_block]; }
 
-  void updateIntersection(RTCRayIntersection* isect) const;
   void updateIntersection(int cache_block, RTCRayIntersection* isect) const;
 
  private:
