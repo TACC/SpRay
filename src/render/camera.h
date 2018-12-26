@@ -41,8 +41,8 @@ class Camera {
   Camera(const Aabb& scene_aabb, unsigned int image_w, unsigned int image_h,
          float znear, float zfar, float vfov);
 
-  void initialize(const Aabb& scene_aabb, unsigned int image_w,
-                  unsigned int image_h, float znear, float zfar, float vfov);
+  void init(const Aabb& scene_aabb, unsigned int image_w, unsigned int image_h,
+            float znear, float zfar, float vfov);
 
   void resetPosition(const glm::vec3& pos, const glm::vec3& center,
                      const glm::vec3& up);

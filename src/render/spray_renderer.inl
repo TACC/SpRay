@@ -50,8 +50,8 @@ void SprayRenderer<TracerT, SceneT>::init(const Config &cfg) {
   image_.resize(cfg.image_w, cfg.image_h);
 
   // camera
-  camera_.initialize(scene_.getBound(), cfg.image_w, cfg.image_h, cfg.znear,
-                     cfg.zfar, cfg.fov);
+  camera_.init(scene_.getBound(), cfg.image_w, cfg.image_h, cfg.znear, cfg.zfar,
+               cfg.fov);
 
   if (cfg.has_camera_config) {
     camera_.resetPosition(cfg.camera_pos, cfg.camera_lookat, cfg.camera_up);
@@ -67,7 +67,7 @@ void SprayRenderer<TracerT, SceneT>::init(const Config &cfg) {
   WbvhObj<WbvhEmbree> wobj;
   wobj.ptr = nullptr;
 
-  Vis<WbvhEmbree>::initialize(wobj);
+  Vis<WbvhEmbree>::init(wobj);
 
   // mpi command
   msgcmd_.done = 0;
@@ -78,9 +78,8 @@ void SprayRenderer<TracerT, SceneT>::init(const Config &cfg) {
 
   // glfw
   if (cfg.view_mode != VIEW_MODE_FILM) {
-    Glfw<WbvhEmbree, SceneT>::initialize(cfg, mpi::isRootProcess(), cfg.image_w,
-                                         cfg.image_h, &camera_, &msgcmd_,
-                                         &scene_);
+    Glfw<WbvhEmbree, SceneT>::init(cfg, mpi::isRootProcess(), cfg.image_w,
+                                   cfg.image_h, &camera_, &msgcmd_, &scene_);
   }
 
 #ifdef SPRAY_GLOG_CHECK

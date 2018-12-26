@@ -28,7 +28,7 @@
 
 namespace spray {
 
-void ImgCompGatherByte::initialize(void* buf, MPI_Comm comm) {
+void ImgCompGatherByte::init(void* buf, MPI_Comm comm) {
   buf_ = (unsigned char*)buf;
   mpi_comm_ = comm;
 }
@@ -73,7 +73,7 @@ void* ImgCompGatherByte::run(int image_w, int image_h) {
   return (void*)buf_;
 }
 
-void ImgCompGatherFloat::initialize(void* buf, MPI_Comm comm) {
+void ImgCompGatherFloat::init(void* buf, MPI_Comm comm) {
   buf_ = (float*)buf;
   // size_ = size;
   mpi_comm_ = comm;
@@ -118,8 +118,7 @@ void* ImgCompGatherFloat::run(int image_w, int image_h) {
   return (void*)buf_;
 }
 
-void ImgCompIceTFloat::initialize(void* buf, MPI_Comm comm,
-                                  const IceTConfig& cfg) {
+void ImgCompIceTFloat::init(void* buf, MPI_Comm comm, const IceTConfig& cfg) {
   mpi_comm_ = comm;
 
   buf_ = (float*)buf;
@@ -168,8 +167,7 @@ void* ImgCompIceTFloat::run(int image_w, int image_h) {
   return (void*)icet_buf;
 }
 
-void ImgCompIceTByte::initialize(void* buf, MPI_Comm comm,
-                                 const IceTConfig& cfg) {
+void ImgCompIceTByte::init(void* buf, MPI_Comm comm, const IceTConfig& cfg) {
   mpi_comm_ = comm;
 
   buf_ = (unsigned char*)buf;

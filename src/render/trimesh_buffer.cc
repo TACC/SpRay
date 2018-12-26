@@ -53,9 +53,8 @@ TriMeshBuffer::TriMeshBuffer()
 
 TriMeshBuffer::~TriMeshBuffer() { cleanup(); }
 
-void TriMeshBuffer::initialize(int max_cache_size_ndomains,
-                               std::size_t max_nvertices,
-                               std::size_t max_nfaces, bool compute_normals) {
+void TriMeshBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
+                         std::size_t max_nfaces, bool compute_normals) {
   // cleanup
   cleanup();
 

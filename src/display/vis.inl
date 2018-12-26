@@ -34,12 +34,12 @@ template <class WbvhT>
 WbvhNode* Vis<WbvhT>::wbvh_root_ = nullptr;
 
 template <class WbvhT>
-void Vis<WbvhT>::initialize(const WbvhObj<WbvhT>& wobj) {
+void Vis<WbvhT>::init(const WbvhObj<WbvhT>& wobj) {
   wbvh_ = wobj;
 }
 
 template <class WbvhT>
-bool Vis<WbvhT>::initializeTraversal() {
+bool Vis<WbvhT>::initTraversal() {
   enum { FAIL = 0, SUCCESS = 1 };
 
   if (!wbvh_.ptr) return (bool)FAIL;

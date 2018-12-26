@@ -42,9 +42,9 @@ struct MouseState {
 template <class WbvhT, class SceneT>
 class Glfw {
  public:
-  static void initialize(const Config& cfg, bool is_root_process,
-                         unsigned image_w, unsigned image_h, Camera* camera,
-                         MessageCommand* cmd, SceneT* scene);
+  static void init(const Config& cfg, bool is_root_process, unsigned image_w,
+                   unsigned image_h, Camera* camera, MessageCommand* cmd,
+                   SceneT* scene);
 
   static void setShouldClose() {
     glfwSetWindowShouldClose(glfw_window_, GL_TRUE);

@@ -32,7 +32,7 @@ class InfiniteCache {
   ~InfiniteCache();
 
   // max_aceh_size_ndomains is a don't care
-  void initialize(int num_domains, int cache_size, bool insitu_mode = false);
+  void init(int num_domains, int cache_size, bool insitu_mode = false);
 
   // returns true if hit, false if miss
   bool load(int domid, int* cache_block_id);

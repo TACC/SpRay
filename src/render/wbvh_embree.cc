@@ -28,8 +28,7 @@
 
 namespace spray {
 
-void WbvhEmbree::initialize(const Aabb& bound,
-                            const std::vector<Domain>& domains) {
+void WbvhEmbree::init(const Aabb& bound, const std::vector<Domain>& domains) {
   // populate wbvh primitives
   prims_.resize(domains.size());
 

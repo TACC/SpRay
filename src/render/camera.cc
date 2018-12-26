@@ -35,12 +35,11 @@ namespace spray {
 
 Camera::Camera(const Aabb& scene_aabb, unsigned int image_w,
                unsigned int image_h, float znear, float zfar, float vfov) {
-  initialize(scene_aabb, image_w, image_h, znear, zfar, vfov);
+  init(scene_aabb, image_w, image_h, znear, zfar, vfov);
 }
 
-void Camera::initialize(const Aabb& scene_aabb, unsigned int image_w,
-                        unsigned int image_h, float znear, float zfar,
-                        float vfov) {
+void Camera::init(const Aabb& scene_aabb, unsigned int image_w,
+                  unsigned int image_h, float znear, float zfar, float vfov) {
   scene_aabb_ = scene_aabb;
 
   // image size
