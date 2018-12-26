@@ -39,8 +39,8 @@ class ShapeBuffer {
   ~ShapeBuffer();
 
  public:
-  void initialize(int max_cache_size_ndomains, std::size_t max_nvertices,
-                  std::size_t max_nfaces, bool compute_normals);
+  void init(int max_cache_size_ndomains, std::size_t max_nvertices,
+            std::size_t max_nfaces, bool compute_normals);
 
   RTCScene load(int cache_block, const glm::mat4& transform,
                 bool apply_transform, std::vector<Shape*>& shapes);
@@ -72,26 +72,13 @@ class ShapeBuffer {
 
  private:
   int max_cache_size_;  // in number of domains
-  // std::size_t max_nvertices_;
-  // std::size_t max_nfaces_;
 
-  // float* vertices_;  //!< per-cache-block vertices. 1d array as 2d.
-  // float* normals_;   //!< per-cache-block normals. unnormalized. 1d array as 2d.
-  // uint32_t* faces_;  //!< per-cache-block faces. 1d array as 2d.
   uint32_t* colors_;  //!< per-cache-block packed rgb colors. 1d array as 2d.
-
-  // std::size_t* num_vertices_;
-  // std::size_t* num_faces_;
 
   RTCDevice device_;
   RTCScene* scenes_;  //!< 1D array of per-cache-block Embree scenes.
 
-  // int* embree_mesh_created_;  // -1: initialized, 0: not initialized
-
   MemoryArena arena_;
-  // PlyLoader loader_;
-
-  // bool compute_normals_;
 };
 
 }  // namespace spray

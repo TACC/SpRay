@@ -41,9 +41,8 @@ ShapeBuffer::ShapeBuffer()
 
 ShapeBuffer::~ShapeBuffer() { cleanup(); }
 
-void ShapeBuffer::initialize(int max_cache_size_ndomains,
-                             std::size_t max_nvertices, std::size_t max_nfaces,
-                             bool compute_normals) {
+void ShapeBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
+                       std::size_t max_nfaces, bool compute_normals) {
   // cleanup
   cleanup();
 
