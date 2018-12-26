@@ -196,10 +196,7 @@ void Scene<CacheT, SurfaceBufT>::load(int id, SceneInfo* sinfo) {
 
 template <typename CacheT, typename SurfaceBufT>
 bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
-                                           const float org[3],
-                                           const float dir[3],
                                            RTCRayIntersection* isect) {
-  RTCRayUtil::makeRadianceRay(org, dir, isect);
   rtcIntersect(rtc_scene, (RTCRay&)(*isect));
 
   if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
@@ -210,78 +207,8 @@ bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
 }
 
 template <typename CacheT, typename SurfaceBufT>
-bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
-                                           const glm::vec3& org,
-                                           const float dir[3],
-                                           RTCRayIntersection* isect) {
-  RTCRayUtil::makeRadianceRay(org, dir, isect);
-  rtcIntersect(rtc_scene, (RTCRay&)(*isect));
-
-  if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    surface_buf_.updateIntersection(cache_block, isect);
-    return true;
-  }
-  return false;
-}
-
-template <typename CacheT, typename SurfaceBufT>
-bool Scene<CacheT, SurfaceBufT>::intersect(const float org[3],
-                                           const float dir[3],
-                                           RTCRayIntersection* isect) {
-  RTCRayUtil::makeRadianceRay(org, dir, isect);
-  rtcIntersect(scene_, (RTCRay&)(*isect));
-
-  if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    surface_buf_.updateIntersection(cache_block_, isect);
-    return true;
-  }
-  return false;
-}
-
-template <typename CacheT, typename SurfaceBufT>
-bool Scene<CacheT, SurfaceBufT>::occluded(const glm::vec3& org,
-                                          const glm::vec3& dir, RTCRay* ray) {
-  RTCRayUtil::makeShadowRay(org, dir, ray);
-  rtcOccluded(scene_, *ray);
-
-  if (ray->geomID != RTC_INVALID_GEOMETRY_ID) {  // occluded
-    return true;
-  }
-  return false;  // unoccluded
-}
-
-template <typename CacheT, typename SurfaceBufT>
-bool Scene<CacheT, SurfaceBufT>::occluded(RTCScene rtc_scene,
-                                          const glm::vec3& org,
-                                          const glm::vec3& dir, RTCRay* ray) {
-  RTCRayUtil::makeShadowRay(org, dir, ray);
+bool Scene<CacheT, SurfaceBufT>::occluded(RTCScene rtc_scene, RTCRay* ray) {
   rtcOccluded(rtc_scene, *ray);
-
-  if (ray->geomID != RTC_INVALID_GEOMETRY_ID) {  // occluded
-    return true;
-  }
-  return false;  // unoccluded
-}
-
-template <typename CacheT, typename SurfaceBufT>
-bool Scene<CacheT, SurfaceBufT>::occluded(const float org[3],
-                                          const float dir[3], RTCRay* ray) {
-  RTCRayUtil::makeShadowRay(org, dir, ray);
-  rtcOccluded(scene_, *ray);
-
-  if (ray->geomID != RTC_INVALID_GEOMETRY_ID) {  // occluded
-    return true;
-  }
-  return false;  // unoccluded
-}
-
-template <typename CacheT, typename SurfaceBufT>
-bool Scene<CacheT, SurfaceBufT>::occluded(RTCScene rtc_scene,
-                                          const float org[3],
-                                          const float dir[3], RTCRay* ray) {
-  RTCRayUtil::makeShadowRay(org, dir, ray);
-  rtcOccluded(rtc_scene, *ray);
-
   if (ray->geomID != RTC_INVALID_GEOMETRY_ID) {  // occluded
     return true;
   }
