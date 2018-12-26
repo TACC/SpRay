@@ -155,20 +155,44 @@ class Scene {
   void load(int id, SceneInfo* sinfo);
 
   bool intersect(RTCScene rtc_scene, int cache_block, const float org[3],
-                 const float dir[3], RTCRayIntersection* isect);
+                 const float dir[3], RTCRayIntersection* isect) {
+    RTCRayUtil::makeRadianceRay(org, dir, isect);
+    return intersect(rtc_scene, cache_block, isect);
+  }
+
   bool intersect(RTCScene rtc_scene, int cache_block, const glm::vec3& org,
-                 const float dir[3], RTCRayIntersection* isect);
+                 const float dir[3], RTCRayIntersection* isect) {
+    RTCRayUtil::makeRadianceRay(org, dir, isect);
+    return intersect(rtc_scene, cache_block, isect);
+  }
 
   bool intersect(const float org[3], const float dir[3],
-                 RTCRayIntersection* isect);
+                 RTCRayIntersection* isect) {
+    RTCRayUtil::makeRadianceRay(org, dir, isect);
+    return intersect(scene_, cache_block_, isect);
+  }
 
-  bool occluded(const glm::vec3& org, const glm::vec3& dir, RTCRay* ray);
+  bool occluded(const glm::vec3& org, const glm::vec3& dir, RTCRay* ray) {
+    RTCRayUtil::makeShadowRay(org, dir, ray);
+    return occluded(scene_, ray);
+  }
+
   bool occluded(RTCScene rtc_scene, const glm::vec3& org, const glm::vec3& dir,
-                RTCRay* ray);
+                RTCRay* ray) {
+    RTCRayUtil::makeShadowRay(org, dir, ray);
+    return occluded(rtc_scene, ray);
+  }
 
-  bool occluded(const float org[3], const float dir[3], RTCRay* ray);
+  bool occluded(const float org[3], const float dir[3], RTCRay* ray) {
+    RTCRayUtil::makeShadowRay(org, dir, ray);
+    return occluded(scene_, ray);
+  }
+
   bool occluded(RTCScene rtc_scene, const float org[3], const float dir[3],
-                RTCRay* ray);
+                RTCRay* ray) {
+    RTCRayUtil::makeShadowRay(org, dir, ray);
+    return occluded(rtc_scene, ray);
+  }
 
   void intersectDomains(RTCRayExt& ray) { wbvh_.intersect(ray); }
 
@@ -179,6 +203,11 @@ class Scene {
   void updateIntersection(RTCRayIntersection* isect) const {
     surface_buf_.updateIntersection(cache_block_, isect);
   }
+
+ private:
+  bool intersect(RTCScene rtc_scene, int cache_block,
+                 RTCRayIntersection* isect);
+  bool occluded(RTCScene rtc_scene, RTCRay* ray);
 
  public:
   Bsdf* getBsdf(int id) { return domains_[id].bsdf; }
