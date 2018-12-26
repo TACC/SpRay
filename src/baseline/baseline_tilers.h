@@ -36,7 +36,7 @@ namespace baseline {
 class ImgSchedNop {
  public:
   void terminate() {}
-  void initialize(unsigned image_w, unsigned image_h) {
+  void init(unsigned image_w, unsigned image_h) {
     tile_.x = 0;
     tile_.y = 0;
     tile_.w = image_w;
@@ -54,7 +54,7 @@ class ImgSchedNop {
 class ImgSchedSingle {
  public:
   void terminate() {}
-  void initialize(unsigned image_w, unsigned image_h) {
+  void init(unsigned image_w, unsigned image_h) {
     done_ = false;
     unsigned h = image_h / mpi::size();
 

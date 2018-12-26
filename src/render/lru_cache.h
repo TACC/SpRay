@@ -41,7 +41,7 @@ class LruCache {
  public:
   LruCache();
   // max_aceh_size_ndomains is a don't care
-  void initialize(int num_domains, int cache_size, bool insitu_mode = false);
+  void init(int num_domains, int cache_size, bool insitu_mode = false);
 
   // returns true if hit, false if miss
   bool load(int domid, int* cache_block_id);
@@ -77,7 +77,7 @@ class LruCache {
   // cache blocks, front (lru) --- back (mru)
   std::list<CacheBlock> blocks_;
   std::map<int, BlockIter> id_to_block_;  ///< domain ID-to-LRU_iterator map
-  std::vector<int> status_;               ///< per-domain loaded status (-1 or 0)
+  std::vector<int> status_;  ///< per-domain loaded status (-1 or 0)
 };
 
 }  // namespace spray

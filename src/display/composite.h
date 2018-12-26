@@ -30,7 +30,7 @@ namespace spray {
 
 class ImgCompGatherByte {
  public:
-  void initialize(void* buf, MPI_Comm comm = MPI_COMM_WORLD);
+  void init(void* buf, MPI_Comm comm = MPI_COMM_WORLD);
   void* run(int image_w, int image_h);
 
  private:
@@ -40,7 +40,7 @@ class ImgCompGatherByte {
 
 class ImgCompGatherFloat {
  public:
-  void initialize(void* buf, MPI_Comm comm = MPI_COMM_WORLD);
+  void init(void* buf, MPI_Comm comm = MPI_COMM_WORLD);
   void* run(int image_w, int image_h);
 
  private:
@@ -60,8 +60,8 @@ struct IceTConfig {
 
 class ImgCompIceTFloat {
  public:
-  void initialize(void* buf, MPI_Comm comm = MPI_COMM_WORLD,
-                  const IceTConfig& cfg = IceTConfig());
+  void init(void* buf, MPI_Comm comm = MPI_COMM_WORLD,
+            const IceTConfig& cfg = IceTConfig());
 
   void* run(int image_w, int image_h);
 
@@ -74,8 +74,8 @@ class ImgCompIceTFloat {
 
 class ImgCompIceTByte {
  public:
-  void initialize(void* buf, MPI_Comm comm = MPI_COMM_WORLD,
-                  const IceTConfig& cfg = IceTConfig());
+  void init(void* buf, MPI_Comm comm = MPI_COMM_WORLD,
+            const IceTConfig& cfg = IceTConfig());
 
   void* run(int image_w, int image_h);
 
@@ -88,8 +88,8 @@ class ImgCompIceTByte {
 
 class ImgCompBypass {
  public:
-  void initialize(void* buf, MPI_Comm comm = MPI_COMM_WORLD,
-                  const IceTConfig& cfg = IceTConfig()) {
+  void init(void* buf, MPI_Comm comm = MPI_COMM_WORLD,
+            const IceTConfig& cfg = IceTConfig()) {
     buf_ = buf;
   }
 

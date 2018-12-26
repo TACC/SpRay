@@ -31,8 +31,7 @@ InfiniteCache::InfiniteCache() : capacity_(0), status_(nullptr) {}
 InfiniteCache::~InfiniteCache() { FreeAligned(status_); }
 
 // max_aceh_size_ndomains is a don't care
-void InfiniteCache::initialize(int num_domains, int cache_size,
-                               bool insitu_mode) {
+void InfiniteCache::init(int num_domains, int cache_size, bool insitu_mode) {
   //
   CHECK(cache_size < 0 || cache_size >= num_domains || insitu_mode);
   capacity_ = num_domains;

@@ -46,7 +46,7 @@ class WbvhEmbree {
   WbvhEmbree() : device_(nullptr), scene_(nullptr) {}
   ~WbvhEmbree() { cleanup(); }
 
-  void initialize(const Aabb &bound, const std::vector<Domain> &domains);
+  void init(const Aabb &bound, const std::vector<Domain> &domains);
 
   void runBuilder() { LOG(FATAL) << "unsupported method"; }
 

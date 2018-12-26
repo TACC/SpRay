@@ -39,9 +39,9 @@ struct WbvhObj {
 template <class WbvhT>
 class Vis {
  public:
-  static void initialize(const WbvhObj<WbvhT>& wobj);
+  static void init(const WbvhObj<WbvhT>& wobj);
 
-  static bool initializeTraversal();
+  static bool initTraversal();
 
   static bool isWbvhStackEmpty();
   static WbvhNode* wbvhStackTop();

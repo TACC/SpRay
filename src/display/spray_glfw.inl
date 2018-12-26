@@ -49,10 +49,10 @@ template <class WbvhT, class SceneT>
 SceneT* Glfw<WbvhT, SceneT>::scene_ = nullptr;
 
 template <class WbvhT, class SceneT>
-void Glfw<WbvhT, SceneT>::initialize(const Config& cfg, bool is_root_process,
-                                     unsigned image_w, unsigned image_h,
-                                     Camera* camera, MessageCommand* cmd,
-                                     SceneT* scene) {
+void Glfw<WbvhT, SceneT>::init(const Config& cfg, bool is_root_process,
+                               unsigned image_w, unsigned image_h,
+                               Camera* camera, MessageCommand* cmd,
+                               SceneT* scene) {
   cfg_ = &cfg;
 
   camera_ = camera;
@@ -170,7 +170,7 @@ void Glfw<WbvhT, SceneT>::keyCallback(GLFWwindow* window, int key, int scancode,
         //   break;
 
       case GLFW_KEY_W: {  // wbvh
-        bool success = Vis<WbvhT>::initializeTraversal();
+        bool success = Vis<WbvhT>::initTraversal();
         std::cout << "wbvh initialization done " << success << "\n";
         if (success) {
           std::cout << "Switching view mode to WBVH" << std::endl;
@@ -182,7 +182,7 @@ void Glfw<WbvhT, SceneT>::keyCallback(GLFWwindow* window, int key, int scancode,
       } break;
 
       case GLFW_KEY_E: {  // wbvh with overlay
-        bool success = Vis<WbvhT>::initializeTraversal();
+        bool success = Vis<WbvhT>::initTraversal();
         if (success) {
           std::cout << "Switching view mode to WBVH_OVERLAY" << std::endl;
           msgcmd_->view_mode = VIEW_MODE_WBVH_OVERLAY;

@@ -70,7 +70,7 @@ void InsituTracer<CacheT, ScheduleT, ShaderT>::initCommon(const Config &cfg,
   qstats_.init(ndomains);
 
   // image scheduler
-  img_sched_.initialize(cfg.image_w, cfg.image_h);
+  img_sched_.init(cfg.image_w, cfg.image_h);
 
   // locks
   domain_locks_.resize(ndomains);

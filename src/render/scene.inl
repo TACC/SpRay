@@ -76,11 +76,11 @@ void Scene<CacheT, SurfaceBufT>::init(const std::string& desc_filename,
 
   // initialize cache
   if (!(view_mode == VIEW_MODE_DOMAIN || view_mode == VIEW_MODE_PARTITION)) {
-    cache_.initialize(domains_.size(), cache_size, insitu_mode);
+    cache_.init(domains_.size(), cache_size, insitu_mode);
 
     // initialize mesh buffer
-    surface_buf_.initialize(cache_.getCacheSize(), max_num_vertices,
-                            max_num_faces, true /* compute_normals */);
+    surface_buf_.init(cache_.getCacheSize(), max_num_vertices, max_num_faces,
+                      true /* compute_normals */);
 
     // warm up cache
     if (view_mode == VIEW_MODE_FILM || view_mode == VIEW_MODE_GLFW) {
@@ -93,7 +93,7 @@ void Scene<CacheT, SurfaceBufT>::init(const std::string& desc_filename,
     }
   }
 
-  wbvh_.initialize(getBound(), getDomains());
+  wbvh_.init(getBound(), getDomains());
 
   // for domain vis.
   glfw_domain_idx_ = 0;
