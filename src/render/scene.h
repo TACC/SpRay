@@ -59,27 +59,6 @@ struct SceneInfo {
   int cache_block;
 };
 
-template <typename SurfaceBufT>
-inline bool intersect(const SurfaceBufT& sbuf, RTCScene rtc_scene,
-                      int cache_block, RTCRayIntersection* isect) {
-  rtcIntersect(rtc_scene, (RTCRay&)(*isect));
-
-  if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    sbuf.updateIntersection(cache_block, isect);
-    return true;
-  }
-  return false;
-}
-
-template <typename SurfaceBufT>
-inline bool occluded(RTCScene rtc_scene, RTCRay* ray) {
-  rtcOccluded(rtc_scene, *ray);
-  if (ray->geomID != RTC_INVALID_GEOMETRY_ID) {  // occluded
-    return true;
-  }
-  return false;  // unoccluded
-}
-
 template <typename CacheT, typename SurfaceBufT = TriMeshBuffer>
 class Scene {
  public:
@@ -178,41 +157,41 @@ class Scene {
   bool intersect(RTCScene rtc_scene, int cache_block, const float org[3],
                  const float dir[3], RTCRayIntersection* isect) {
     RTCRayUtil::makeRadianceRay(org, dir, isect);
-    return spray::intersect(surface_buf_, rtc_scene, cache_block, isect);
+    return intersect(rtc_scene, cache_block, isect);
   }
 
   bool intersect(RTCScene rtc_scene, int cache_block, const glm::vec3& org,
                  const float dir[3], RTCRayIntersection* isect) {
     RTCRayUtil::makeRadianceRay(org, dir, isect);
-    return spray::intersect(surface_buf_, rtc_scene, cache_block, isect);
+    return intersect(rtc_scene, cache_block, isect);
   }
 
   bool intersect(const float org[3], const float dir[3],
                  RTCRayIntersection* isect) {
     RTCRayUtil::makeRadianceRay(org, dir, isect);
-    return spray::intersect(surface_buf_, scene_, cache_block_, isect);
+    return intersect(scene_, cache_block_, isect);
   }
 
   bool occluded(const glm::vec3& org, const glm::vec3& dir, RTCRay* ray) {
     RTCRayUtil::makeShadowRay(org, dir, ray);
-    return spray::occluded<SurfaceBufT>(scene_, ray);
+    return occluded(scene_, ray);
   }
 
   bool occluded(RTCScene rtc_scene, const glm::vec3& org, const glm::vec3& dir,
                 RTCRay* ray) {
     RTCRayUtil::makeShadowRay(org, dir, ray);
-    return spray::occluded<SurfaceBufT>(rtc_scene, ray);
+    return occluded(rtc_scene, ray);
   }
 
   bool occluded(const float org[3], const float dir[3], RTCRay* ray) {
     RTCRayUtil::makeShadowRay(org, dir, ray);
-    return spray::occluded<SurfaceBufT>(scene_, ray);
+    return occluded(scene_, ray);
   }
 
   bool occluded(RTCScene rtc_scene, const float org[3], const float dir[3],
                 RTCRay* ray) {
     RTCRayUtil::makeShadowRay(org, dir, ray);
-    return spray::occluded<SurfaceBufT>(rtc_scene, ray);
+    return occluded(rtc_scene, ray);
   }
 
   void intersectDomains(RTCRayExt& ray) { wbvh_.intersect(ray); }
@@ -224,6 +203,11 @@ class Scene {
   void updateIntersection(RTCRayIntersection* isect) const {
     surface_buf_.updateIntersection(cache_block_, isect);
   }
+
+ private:
+  bool intersect(RTCScene rtc_scene, int cache_block,
+                 RTCRayIntersection* isect);
+  bool occluded(RTCScene rtc_scene, RTCRay* ray);
 
  public:
   Bsdf* getBsdf(int id) { return domains_[id].bsdf; }
