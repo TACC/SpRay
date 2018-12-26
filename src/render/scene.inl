@@ -194,27 +194,6 @@ void Scene<CacheT, SurfaceBufT>::load(int id, SceneInfo* sinfo) {
   sinfo->cache_block = cache_block;
 }
 
-template <typename CacheT, typename SurfaceBufT>
-bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
-                                           RTCRayIntersection* isect) {
-  rtcIntersect(rtc_scene, (RTCRay&)(*isect));
-
-  if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    surface_buf_.updateIntersection(cache_block, isect);
-    return true;
-  }
-  return false;
-}
-
-template <typename CacheT, typename SurfaceBufT>
-bool Scene<CacheT, SurfaceBufT>::occluded(RTCScene rtc_scene, RTCRay* ray) {
-  rtcOccluded(rtc_scene, *ray);
-  if (ray->geomID != RTC_INVALID_GEOMETRY_ID) {  // occluded
-    return true;
-  }
-  return false;  // unoccluded
-}
-
 // copy only those domains mapped to this process.
 // we don't have to copy everything in some cases.
 template <typename CacheT, typename SurfaceBufT>
