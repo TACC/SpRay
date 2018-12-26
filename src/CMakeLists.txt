@@ -225,6 +225,7 @@ set(SPRAY_SRC_LIST
     render/block_buffer.cc
     render/tile.cc
     render/trimesh_buffer.cc
+    render/shape_buffer.cc
 
     # io
     io/ply_loader.cc
