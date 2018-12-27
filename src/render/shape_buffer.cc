@@ -236,13 +236,11 @@ void ShapeBuffer::sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
   // root0 between tnear and tfar
   if (root0 > ray.tnear && root0 < ray.tfar) {
     ray.geomID = 0;  // 0 means occluded
-    std::cout << "0\n";
   }
 
   // root1 between tnear and tfar
   if (root1 > ray.tnear && root1 < ray.tfar) {
     ray.geomID = 0;  // 0 means occluded
-    std::cout << "1\n";
   }
 }
 
