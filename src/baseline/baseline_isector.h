@@ -29,16 +29,15 @@
 #include "baseline/baseline_ray.h"
 #include "render/arena_queue.h"
 #include "render/data_partition.h"
-#include "render/scene.h"
 #include "render/spray.h"
 
 namespace spray {
 namespace baseline {
 
-template <typename CacheT>
+template <typename CacheT, typename SceneT>
 class DomainIntersector {
  public:
-  DomainIntersector(int ndomains, spray::Scene<CacheT>* scene)
+  DomainIntersector(int ndomains, SceneT* scene)
       : ndomains_(ndomains), scene_(scene) {}
 
   void intersect(int current_id, DRay* ray, ArenaQs<DRayQItem>* qs) {
@@ -98,7 +97,7 @@ class DomainIntersector {
   DRayQItem ray_data_;
 
   int ndomains_;
-  spray::Scene<CacheT>* scene_;
+  SceneT* scene_;
 };
 
 }  // namespace baseline

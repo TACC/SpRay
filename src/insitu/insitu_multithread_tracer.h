@@ -48,7 +48,6 @@
 #include "render/light.h"
 #include "render/qvector.h"
 #include "render/reflection.h"
-#include "render/scene.h"
 #include "render/spray.h"
 #include "render/tile.h"
 #include "utils/comm.h"
@@ -58,7 +57,7 @@
 namespace spray {
 namespace insitu {
 
-template <typename CacheT, typename ShaderT>
+template <typename CacheT, typename ShaderT, typename SceneT>
 class MultiThreadTracer {
  public:
   void trace();
@@ -66,11 +65,11 @@ class MultiThreadTracer {
   int type() const { return TRACER_TYPE_SPRAY_INSITU_N_THREADS; }
 
  public:
-  void init(const Config &cfg, const Camera &camera, Scene<CacheT> *scene,
+  void init(const Config &cfg, const Camera &camera, SceneT *scene,
             HdrImage *image);
 
  private:
-  typedef TContext<CacheT, ShaderT> TContextType;
+  typedef TContext<CacheT, ShaderT, SceneT> TContextType;
 
   std::vector<TContextType> tcontexts_;
 
@@ -107,7 +106,7 @@ class MultiThreadTracer {
   const spray::Camera *camera_;
   const spray::InsituPartition *partition_;
   std::vector<spray::Light *> lights_;  // copied lights
-  Scene<CacheT> *scene_;
+  SceneT *scene_;
   spray::HdrImage *image_;
 
   std::queue<msg_word_t *> recv_rq_;

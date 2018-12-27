@@ -29,12 +29,12 @@
 
 #include "insitu/insitu_ray.h"
 #include "render/qvector.h"
-#include "render/scene.h"
+#include "render/rays.h"
 
 namespace spray {
 namespace insitu {
 
-template <typename CacheT>
+template <typename CacheT, typename SceneT>
 class Isector {
  private:
   DomainList domains_;
@@ -44,7 +44,7 @@ class Isector {
 
  public:
   // used for parallel ray queuing
-  void intersect(int ndomains, Scene<CacheT>* scene, Ray* ray,
+  void intersect(int ndomains, SceneT* scene, Ray* ray,
                  spray::QVector<Ray*>* qs) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
                                              &eray_);
@@ -69,7 +69,7 @@ class Isector {
   }
 
   // for processing eye rays
-  void intersect(int ndomains, Scene<CacheT>* scene, RayBuf<Ray> ray_buf,
+  void intersect(int ndomains, SceneT* scene, RayBuf<Ray> ray_buf,
                  spray::QVector<Ray*>* qs) {
     Ray* rays = ray_buf.rays;
 
@@ -95,7 +95,7 @@ class Isector {
     }
   }
 
-  void intersect(int exclude_id, int ndomains, Scene<CacheT>* scene, Ray* ray,
+  void intersect(int exclude_id, int ndomains, SceneT* scene, Ray* ray,
                  spray::QVector<Ray*>* qs) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
                                              &eray_);
@@ -117,8 +117,8 @@ class Isector {
     }
   }
 
-  void intersect(int exclude_id, float t, int ndomains, Scene<CacheT>* scene,
-                 Ray* ray, spray::QVector<Ray*>* qs) {
+  void intersect(int exclude_id, float t, int ndomains, SceneT* scene, Ray* ray,
+                 spray::QVector<Ray*>* qs) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
                                              &eray_);
 

@@ -42,14 +42,13 @@
 #include "render/domain.h"
 #include "render/light.h"
 #include "render/reflection.h"
-#include "render/scene.h"
 #include "render/spray.h"
 #include "utils/profiler_util.h"
 
 namespace spray {
 namespace ooc {
 
-template <typename CacheT, typename ShaderT>
+template <typename CacheT, typename ShaderT, typename SceneT>
 class Tracer {
  public:
   void trace();
@@ -57,11 +56,11 @@ class Tracer {
   int type() const { return TRACER_TYPE_SPRAY_OOC; }
 
  public:
-  void init(const Config &cfg, const Camera &camera, Scene<CacheT> *scene,
+  void init(const Config &cfg, const Camera &camera, SceneT *scene,
             HdrImage *image);
 
  private:
-  typedef TContext<CacheT, ShaderT> TContextType;
+  typedef TContext<CacheT, ShaderT, SceneT> TContextType;
 
   ShaderT shader_;
   PContext pcontext_;
@@ -79,7 +78,7 @@ class Tracer {
  private:
   const spray::Camera *camera_;
   std::vector<spray::Light *> lights_;  // copied lights
-  Scene<CacheT> *scene_;
+  SceneT *scene_;
   spray::HdrImage *image_;
 
   Tile image_tile_;

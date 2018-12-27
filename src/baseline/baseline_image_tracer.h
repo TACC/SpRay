@@ -25,10 +25,11 @@
 namespace spray {
 namespace baseline {
 
-template <typename CacheT, typename ScheduleT, typename ShaderT>
-class ImageTracer : public InsituTracer<CacheT, ScheduleT, ShaderT> {
+template <typename CacheT, typename ScheduleT, typename ShaderT,
+          typename SceneT>
+class ImageTracer : public InsituTracer<CacheT, ScheduleT, ShaderT, SceneT> {
  public:
-  typedef InsituTracer<CacheT, ScheduleT, ShaderT> Base;
+  typedef InsituTracer<CacheT, ScheduleT, ShaderT, SceneT> Base;
   void trace();
   int type() const { return TRACER_TYPE_BASELINE_IMAGE; }
 

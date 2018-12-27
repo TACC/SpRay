@@ -74,8 +74,9 @@ void ShapeBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
   }
 }
 
-RTCScene ShapeBuffer::load(int cache_block, const glm::mat4& transform,
-                           bool apply_transform, std::vector<Shape*>& shapes) {
+RTCScene ShapeBuffer::load(const std::string& filename, int cache_block,
+                           const glm::mat4& transform, bool apply_transform,
+                           std::vector<Shape*>& shapes) {
   // TODO: transform
   // TODO: can we somehow not delete geometry? i.e. something similar to how we
   // handle triangles using rtcSetBuffer2?

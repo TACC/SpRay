@@ -85,14 +85,14 @@ class PContext {
   spray::SceneInfo sinfo_;
 
  public:
-  template <typename CacheT, typename ShaderT>
-  void isectPrims(Scene<CacheT>* scene, ShaderT& shader,
-                  TContext<CacheT, ShaderT>* tcontext);
+  template <typename CacheT, typename ShaderT, typename SceneT>
+  void isectPrims(SceneT* scene, ShaderT& shader,
+                  TContext<CacheT, ShaderT, SceneT>* tcontext);
 };
 
-template <typename CacheT, typename ShaderT>
-void PContext::isectPrims(Scene<CacheT>* scene, ShaderT& shader,
-                          TContext<CacheT, ShaderT>* tcontext) {
+template <typename CacheT, typename ShaderT, typename SceneT>
+void PContext::isectPrims(SceneT* scene, ShaderT& shader,
+                          TContext<CacheT, ShaderT, SceneT>* tcontext) {
   int tid = omp_get_thread_num();
   int ray_depth = 0;
 

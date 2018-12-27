@@ -25,7 +25,7 @@
 
 namespace spray {
 
-template <typename CacheT, typename RayT>
+template <typename CacheT, typename RayT, typename SceneT>
 class DomainIntersector {
  public:
   /**
@@ -37,7 +37,7 @@ class DomainIntersector {
    * \param qs A set of ray queues used to save ray pointers as a result of
    * intersection tests.
    */
-  void intersect(int ndomains, Scene<CacheT>* scene, RayBuf<RayT> ray_buf,
+  void intersect(int ndomains, SceneT* scene, RayBuf<RayT> ray_buf,
                  spray::QVector<RayT*>* qs) {
     RayT* rays = ray_buf.rays;
 
@@ -76,7 +76,7 @@ class DomainIntersector {
    * \param qs A set of ray queues used to save ray pointers as a result of
    * intersection tests.
    */
-  void intersect(int exclude_id, int ndomains, Scene<CacheT>* scene, RayT* ray,
+  void intersect(int exclude_id, int ndomains, SceneT* scene, RayT* ray,
                  spray::QVector<RayT*>* qs) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
                                              &eray_);
@@ -114,7 +114,7 @@ class DomainIntersector {
    * \param qs A set of ray queues used to save ray pointers as a result of
    * intersection tests.
    */
-  void intersect(int exclude_id, float t, int ndomains, Scene<CacheT>* scene,
+  void intersect(int exclude_id, float t, int ndomains, SceneT* scene,
                  RayT* ray, spray::QVector<RayT*>* qs) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
                                              &eray_);

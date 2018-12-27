@@ -36,7 +36,6 @@
 #include "render/light.h"
 #include "render/rays.h"
 #include "render/spray.h"
-#include "render/trimesh_buffer.h"
 #include "render/wbvh_embree.h"
 #include "utils/comm.h"
 #include "utils/math.h"
@@ -59,7 +58,7 @@ struct SceneInfo {
   int cache_block;
 };
 
-template <typename CacheT, typename SurfaceBufT = TriMeshBuffer>
+template <typename CacheT, typename SurfaceBufT>
 class Scene {
  public:
   Scene() {}

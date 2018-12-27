@@ -51,7 +51,6 @@
 #include "render/domain.h"
 #include "render/light.h"
 #include "render/reflection.h"
-#include "render/scene.h"
 #include "render/spray.h"
 #include "render/tile.h"
 #include "utils/comm.h"
@@ -61,7 +60,8 @@
 namespace spray {
 namespace baseline {
 
-template <typename CacheT, typename ScheduleT, typename ShaderT>
+template <typename CacheT, typename ScheduleT, typename ShaderT,
+          typename SceneT>
 class InsituTracer {
  public:
   virtual ~InsituTracer() {
@@ -70,7 +70,7 @@ class InsituTracer {
     }
   }
 
-  void init(const Config &cfg, const Camera &camera, Scene<CacheT> *scene,
+  void init(const Config &cfg, const Camera &camera, SceneT *scene,
             HdrImage *image);
 
   void trace();
@@ -82,7 +82,7 @@ class InsituTracer {
   void terminate() { img_sched_.terminate(); }
 
  protected:
-  void initCommon(const Config &cfg, const Camera &camera, Scene<CacheT> *scene,
+  void initCommon(const Config &cfg, const Camera &camera, SceneT *scene,
                   HdrImage *image);
 
  protected:
@@ -123,19 +123,19 @@ class InsituTracer {
   void processRays(int tid, int id, int ndomains, int nbounces,
                    ArenaQs<DRayQItem> *qs, ArenaQs<DRayQItem> *sqs,
                    MemoryArena *arena,
-                   DomainIntersector<CacheT> *domain_isector, RTCRay *rtc_ray,
-                   RTCRayIntersection *isect, CommitBufferB *retire_buf,
-                   DRayQ *temp_q);
+                   DomainIntersector<CacheT, SceneT> *domain_isector,
+                   RTCRay *rtc_ray, RTCRayIntersection *isect,
+                   CommitBufferB *retire_buf, DRayQ *temp_q);
 
   void processRay2(int id, int ndomains, DRay *data, RTCRay *rtc_ray,
                    RTCRayIntersection *isect, ArenaQs<DRayQItem> *qs,
                    ArenaQs<DRayQItem> *sqs, MemoryArena *arena,
-                   DomainIntersector<CacheT> *domain_isector,
+                   DomainIntersector<CacheT, SceneT> *domain_isector,
                    CommitBufferB *retire_buf, DRayQ *temp_q);
 
   void processShadow(int id, int ndomains, DRay *data, RTCRay *rtc_ray,
                      ArenaQs<DRayQItem> *sqs, MemoryArena *arena,
-                     DomainIntersector<CacheT> *domain_isector,
+                     DomainIntersector<CacheT, SceneT> *domain_isector,
                      CommitBufferB *retire_buf);
 
   void resetSentQs(int ndomains, const std::vector<RayCount> &sched,
@@ -166,7 +166,7 @@ class InsituTracer {
   // pointers
   std::vector<Light *> lights_;  // copied lights
   const Camera *camera_;
-  Scene<CacheT> *scene_;
+  SceneT *scene_;
   HdrImage *image_;
 
   // parameters

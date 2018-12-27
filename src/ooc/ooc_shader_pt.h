@@ -31,16 +31,15 @@
 #include "render/light.h"
 #include "render/rays.h"
 #include "render/reflection.h"
-#include "render/scene.h"
 #include "utils/util.h"
 
 namespace spray {
 namespace ooc {
 
-template <typename CacheT>
+template <typename CacheT, typename SceneT>
 class ShaderPt {
  public:
-  void init(const spray::Config &cfg, spray::Scene<CacheT> *scene) {
+  void init(const spray::Config &cfg, SceneT *scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;  // number of samples for area lights
     ks_ = cfg.ks;
@@ -50,7 +49,7 @@ class ShaderPt {
   }
 
  private:
-  Scene<CacheT> *scene_;
+  SceneT *scene_;
   std::vector<Light *> lights_;
   int bounces_;
   int samples_;
@@ -88,12 +87,11 @@ class ShaderPt {
   }
 };
 
-template <typename CacheT>
-void ShaderPt<CacheT>::operator()(int domain_id, const Ray &rayin,
-                                  const spray::RTCRayIntersection &isect,
-                                  spray::MemoryArena *mem,
-                                  std::queue<Ray *> *sq, std::queue<Ray *> *rq,
-                                  std::queue<Ray *> *pending_q, int ray_depth) {
+template <typename CacheT, typename SceneT>
+void ShaderPt<CacheT, SceneT>::operator()(
+    int domain_id, const Ray &rayin, const spray::RTCRayIntersection &isect,
+    spray::MemoryArena *mem, std::queue<Ray *> *sq, std::queue<Ray *> *rq,
+    std::queue<Ray *> *pending_q, int ray_depth) {
   glm::vec3 pos = RTCRayUtil::hitPosition(rayin.org, rayin.dir, isect.tfar);
   glm::vec3 surf_radiance;
   util::unpack(isect.color, surf_radiance);

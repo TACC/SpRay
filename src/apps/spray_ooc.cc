@@ -25,8 +25,10 @@
 #include "ooc/ooc_tracer.h"
 #include "render/caches.h"
 #include "render/config.h"
+#include "render/scene.h"
 #include "render/spray.h"
 #include "render/spray_renderer.h"
+#include "render/trimesh_buffer.h"
 #include "utils/comm.h"
 
 int main(int argc, char** argv) {
@@ -49,32 +51,35 @@ int main(int argc, char** argv) {
             << " (world size: " << spray::mpi::worldSize() << ")";
 #endif
 
+  // surface buffer
+  typedef spray::TriMeshBuffer SurfaceBufT;
+
   // caches
   typedef spray::InfiniteCache InfCacheT;
   typedef spray::LruCache LruCacheT;
 
   // scenes
-  typedef spray::Scene<InfCacheT> SceneInfT;
-  typedef spray::Scene<LruCacheT> SceneLruT;
+  typedef spray::Scene<InfCacheT, SurfaceBufT> SceneInfT;
+  typedef spray::Scene<LruCacheT, SurfaceBufT> SceneLruT;
 
   // ao, infinite cache
-  typedef spray::ooc::ShaderAo<InfCacheT> ShaderAoInfT;
-  typedef spray::ooc::Tracer<InfCacheT, ShaderAoInfT> TracerAoInfT;
+  typedef spray::ooc::ShaderAo<InfCacheT, SceneInfT> ShaderAoInfT;
+  typedef spray::ooc::Tracer<InfCacheT, ShaderAoInfT, SceneInfT> TracerAoInfT;
   typedef spray::SprayRenderer<TracerAoInfT, SceneInfT> RenderAoInfT;
 
   // ao, LRU cache
-  typedef spray::ooc::ShaderAo<LruCacheT> ShaderAoLruT;
-  typedef spray::ooc::Tracer<LruCacheT, ShaderAoLruT> TracerAoLruT;
+  typedef spray::ooc::ShaderAo<LruCacheT, SceneLruT> ShaderAoLruT;
+  typedef spray::ooc::Tracer<LruCacheT, ShaderAoLruT, SceneLruT> TracerAoLruT;
   typedef spray::SprayRenderer<TracerAoLruT, SceneLruT> RenderAoLruT;
 
   // pt, infinite cache
-  typedef spray::ooc::ShaderPt<InfCacheT> ShaderPtInfT;
-  typedef spray::ooc::Tracer<InfCacheT, ShaderPtInfT> TracerPtInfT;
+  typedef spray::ooc::ShaderPt<InfCacheT, SceneInfT> ShaderPtInfT;
+  typedef spray::ooc::Tracer<InfCacheT, ShaderPtInfT, SceneInfT> TracerPtInfT;
   typedef spray::SprayRenderer<TracerPtInfT, SceneInfT> RenderPtInfT;
 
   // pt, LRU cache
-  typedef spray::ooc::ShaderPt<LruCacheT> ShaderPtLruT;
-  typedef spray::ooc::Tracer<LruCacheT, ShaderPtLruT> TracerPtLruT;
+  typedef spray::ooc::ShaderPt<LruCacheT, SceneLruT> ShaderPtLruT;
+  typedef spray::ooc::Tracer<LruCacheT, ShaderPtLruT, SceneLruT> TracerPtLruT;
   typedef spray::SprayRenderer<TracerPtLruT, SceneLruT> RenderPtLruT;
 
   spray::Config cfg;

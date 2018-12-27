@@ -29,6 +29,7 @@
 #include "render/data_partition.h"
 #include "render/spray.h"
 #include "render/spray_renderer.h"
+#include "render/trimesh_buffer.h"
 #include "utils/comm.h"
 
 int main(int argc, char** argv) {
@@ -54,20 +55,25 @@ int main(int argc, char** argv) {
   // cache
   typedef spray::InfiniteCache CacheT;
 
+  // surface buffer
+  typedef spray::TriMeshBuffer SurfaceBufT;
+
   // scene
-  typedef spray::Scene<CacheT> SceneT;
+  typedef spray::Scene<CacheT, SurfaceBufT> SceneT;
 
   // schedule
   typedef spray::baseline::LoadAnyOnceInsituSched ScheduleT;
 
   // ao
-  typedef spray::baseline::ShaderAo<CacheT> ShaderAoT;
-  typedef spray::baseline::InsituTracer<CacheT, ScheduleT, ShaderAoT> TracerAoT;
+  typedef spray::baseline::ShaderAo<CacheT, SceneT> ShaderAoT;
+  typedef spray::baseline::InsituTracer<CacheT, ScheduleT, ShaderAoT, SceneT>
+      TracerAoT;
   typedef spray::SprayRenderer<TracerAoT, SceneT> RenderAoT;
 
   // pt
-  typedef spray::baseline::ShaderPt<CacheT> ShaderPtT;
-  typedef spray::baseline::InsituTracer<CacheT, ScheduleT, ShaderPtT> TracerPtT;
+  typedef spray::baseline::ShaderPt<CacheT, SceneT> ShaderPtT;
+  typedef spray::baseline::InsituTracer<CacheT, ScheduleT, ShaderPtT, SceneT>
+      TracerPtT;
   typedef spray::SprayRenderer<TracerPtT, SceneT> RenderPtT;
 
   spray::Config cfg;

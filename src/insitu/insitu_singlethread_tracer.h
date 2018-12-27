@@ -46,15 +46,13 @@
 #include "render/light.h"
 #include "render/qvector.h"
 #include "render/reflection.h"
-#include "render/scene.h"
 #include "render/spray.h"
 #include "utils/profiler_util.h"
 
 namespace spray {
 namespace insitu {
 
-template <typename CacheT, typename ShaderT,
-          typename SceneT = Scene<CacheT, TriMeshBuffer>>
+template <typename CacheT, typename ShaderT, typename SceneT>
 class SingleThreadTracer {
  public:
   void trace();
@@ -109,7 +107,7 @@ class SingleThreadTracer {
   std::vector<spray::Light *> lights_;
   SceneT *scene_;
   spray::HdrImage *image_;
-  Isector<CacheT> isector_;
+  Isector<CacheT, SceneT> isector_;
 
   spray::QVector<Ray *> rqs_;
   spray::QVector<Ray *> sqs_;

@@ -25,9 +25,10 @@
 namespace spray {
 namespace ooc {
 
-template <typename CacheT, typename ShaderT>
-void Tracer<CacheT, ShaderT>::init(const Config &cfg, const Camera &camera,
-                                   Scene<CacheT> *scene, HdrImage *image) {
+template <typename CacheT, typename ShaderT, typename SceneT>
+void Tracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
+                                           const Camera &camera, SceneT *scene,
+                                           HdrImage *image) {
   int ndomains = static_cast<int>(scene->getNumDomains());
   CHECK_LT(scene->getNumDomains(), std::numeric_limits<int>::max());
 
@@ -87,10 +88,11 @@ void Tracer<CacheT, ShaderT>::init(const Config &cfg, const Camera &camera,
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void Tracer<CacheT, ShaderT>::genSingleEyes(int image_w, float orgx, float orgy,
-                                            float orgz, Tile tile,
-                                            RayBuf<Ray> *ray_buf) {
+template <typename CacheT, typename ShaderT, typename SceneT>
+void Tracer<CacheT, ShaderT, SceneT>::genSingleEyes(int image_w, float orgx,
+                                                    float orgy, float orgz,
+                                                    Tile tile,
+                                                    RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
 #pragma omp for collapse(2) schedule(static, 1)
   for (int y = tile.y; y < tile.y + tile.h; ++y) {
@@ -127,10 +129,11 @@ void Tracer<CacheT, ShaderT>::genSingleEyes(int image_w, float orgx, float orgy,
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void Tracer<CacheT, ShaderT>::genMultiEyes(int image_w, float orgx, float orgy,
-                                           float orgz, Tile tile,
-                                           RayBuf<Ray> *ray_buf) {
+template <typename CacheT, typename ShaderT, typename SceneT>
+void Tracer<CacheT, ShaderT, SceneT>::genMultiEyes(int image_w, float orgx,
+                                                   float orgy, float orgz,
+                                                   Tile tile,
+                                                   RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
 
   int nsamples = num_pixel_samples_;
@@ -177,8 +180,9 @@ void Tracer<CacheT, ShaderT>::genMultiEyes(int image_w, float orgx, float orgy,
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void Tracer<CacheT, ShaderT>::isectDomsRads(RayBuf<Ray> buf, TContextType *tc) {
+template <typename CacheT, typename ShaderT, typename SceneT>
+void Tracer<CacheT, ShaderT, SceneT>::isectDomsRads(RayBuf<Ray> buf,
+                                                    TContextType *tc) {
   tc->resetRstats();
 #pragma omp for schedule(static, 1)
   for (std::size_t i = 0; i < buf.num; ++i) {
@@ -187,8 +191,8 @@ void Tracer<CacheT, ShaderT>::isectDomsRads(RayBuf<Ray> buf, TContextType *tc) {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void Tracer<CacheT, ShaderT>::trace() {
+template <typename CacheT, typename ShaderT, typename SceneT>
+void Tracer<CacheT, ShaderT, SceneT>::trace() {
   RayBuf<Ray> shared_eyes;
 
 #pragma omp parallel
@@ -226,12 +230,12 @@ void Tracer<CacheT, ShaderT>::trace() {
 #pragma omp barrier
     }
 
-    pcontext_.isectPrims<CacheT, ShaderT>(scene_, shader_, tcontext);
+    pcontext_.isectPrims<CacheT, ShaderT, SceneT>(scene_, shader_, tcontext);
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void Tracer<CacheT, ShaderT>::traceInOmp() {
+template <typename CacheT, typename ShaderT, typename SceneT>
+void Tracer<CacheT, ShaderT, SceneT>::traceInOmp() {
   TContextType *tcontext = &tcontexts_[omp_get_thread_num()];
   tcontext->resetMems();
 
@@ -265,7 +269,7 @@ void Tracer<CacheT, ShaderT>::traceInOmp() {
 #pragma omp barrier
   }
 
-  pcontext_.isectPrims<CacheT, ShaderT>(scene_, shader_, tcontext);
+  pcontext_.isectPrims<CacheT, ShaderT, SceneT>(scene_, shader_, tcontext);
 }
 
 }  // namespace ooc
