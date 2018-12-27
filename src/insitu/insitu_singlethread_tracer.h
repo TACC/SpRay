@@ -154,6 +154,7 @@ class SingleThreadTracer {
   int num_ranks_;
   int num_domains_;
   int num_pixel_samples_;
+  double one_over_num_pixel_samples_;
   int num_bounces_;
   int num_threads_;
   int num_lights_;

@@ -106,10 +106,10 @@ class TriMeshBuffer {
   std::size_t max_nvertices_;
   std::size_t max_nfaces_;
 
-  float* vertices_;  //!< per-cache-block vertices. 1d array as 2d.
-  float* normals_;   //!< per-cache-block normals. unnormalized. 1d array as 2d.
-  uint32_t* faces_;  //!< per-cache-block faces. 1d array as 2d.
-  uint32_t* colors_;  //!< per-cache-block packed rgb colors. 1d array as 2d.
+  float* vertices_;  //!< per-cache-block vertices. 2d array.
+  float* normals_;   //!< per-cache-block normals. unnormalized. 2d array.
+  uint32_t* faces_;  //!< per-cache-block faces. 2d array.
+  uint32_t* colors_;  //!< per-cache-block packed rgb colors. 2d array.
 
   std::size_t* num_vertices_;
   std::size_t* num_faces_;
