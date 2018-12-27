@@ -511,6 +511,7 @@ void SingleThreadTracer<CacheT, ShaderT>::trace() {
     work_stats_.reduce();
 
     if (work_stats_.allDone()) {
+      procRetireQ();
       comm_.waitForSend();
       break;
     }
