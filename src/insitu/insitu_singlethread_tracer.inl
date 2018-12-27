@@ -47,6 +47,7 @@ void SingleThreadTracer<CacheT, ShaderT>::init(const Config &cfg,
   num_ranks_ = nranks;
   num_domains_ = ndomains;
   num_pixel_samples_ = cfg.pixel_samples;
+  one_over_num_pixel_samples_ = 1.0 / (double)num_pixel_samples_;
   num_bounces_ = cfg.bounces;
   num_threads_ = cfg.nthreads;
   image_w_ = cfg.image_w;
@@ -466,13 +467,12 @@ void SingleThreadTracer<CacheT, ShaderT>::procCachedRq() {
 
 template <typename CacheT, typename ShaderT>
 void SingleThreadTracer<CacheT, ShaderT>::procRetireQ() {
-  double scale = 1.0 / (double)num_pixel_samples_;
   while (!retire_q_.empty()) {
     auto *ray = retire_q_.front();
     retire_q_.pop();
 
     if (!vbuf_.occluded(ray->samid, ray->light)) {
-      image_->add(ray->pixid, ray->w, scale);
+      image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
     }
   }
 }
