@@ -74,12 +74,17 @@ class ShapeBuffer {
  private:
   int max_cache_size_;  // in number of domains
 
-  uint32_t* colors_;  //!< per-cache-block packed rgb colors. 1d array as 2d.
+  // uint32_t* colors_;  //!< per-cache-block packed rgb colors. 2d array organized as 1d
 
   RTCDevice device_;
-  RTCScene* scenes_;  //!< 1D array of per-cache-block Embree scenes.
 
-  MemoryArena arena_;
+  std::vector<RTCScene>
+      scenes_;  //!< 1D array of per-cache-block Embree scenes.
+
+  // MemoryArena arena_;
+
+  bool loaded_;
+  std::vector<std::vector<Shape*>*> shapes_;
 };
 
 }  // namespace spray

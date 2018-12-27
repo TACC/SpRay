@@ -1,2 +1,6 @@
+light diffuse .1 .1 .1 
+
 domain
-sphere 0 0 -1 0.2
+sphere 0 0 0 1
+mtl diffuse 1 1 1
+bound -1 -1 -1 1 1 1

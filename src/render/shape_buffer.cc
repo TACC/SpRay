@@ -35,9 +35,9 @@ namespace spray {
 
 ShapeBuffer::ShapeBuffer()
     : max_cache_size_(0),
-      colors_(nullptr),
+      // colors_(nullptr),
       device_(nullptr),
-      scenes_(nullptr) {}
+      loaded_(false) {}
 
 ShapeBuffer::~ShapeBuffer() { cleanup(); }
 
@@ -60,8 +60,9 @@ void ShapeBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
   CHECK_NOTNULL(device_);
 
   // embree scenes
-  scenes_ = arena_.Alloc<RTCScene>(cache_size, false);
-  CHECK_NOTNULL(scenes_);
+  // scenes_ = arena_.Alloc<RTCScene>(cache_size, false);
+  // CHECK_NOTNULL(scenes_);
+  scenes_.resize(cache_size);
 
   RTCSceneFlags sflags = RTC_SCENE_STATIC | RTC_SCENE_HIGH_QUALITY;
   RTCAlgorithmFlags aflags = RTC_INTERSECT1;
@@ -72,11 +73,23 @@ void ShapeBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
     scenes_[i] = rtcDeviceNewScene(device_, sflags, aflags);
     CHECK_NOTNULL(scenes_[i]);
   }
+
+  shapes_.resize(cache_size);
+  for (std::size_t i = 0; i < cache_size; ++i) {
+    shapes_[i] = nullptr;
+  }
 }
 
 RTCScene ShapeBuffer::load(const std::string& filename, int cache_block,
                            const glm::mat4& transform, bool apply_transform,
                            std::vector<Shape*>& shapes) {
+  CHECK(!loaded_);
+  loaded_ = true;
+
+  CHECK_LT(cache_block, shapes_.size());
+  CHECK(shapes_[cache_block] == nullptr);
+  shapes_[cache_block] = &shapes;
+
   // TODO: transform
   // TODO: can we somehow not delete geometry? i.e. something similar to how we
   // handle triangles using rtcSetBuffer2?
@@ -127,7 +140,7 @@ void ShapeBuffer::cleanup() {
   device_ = nullptr;
 
   // arena
-  arena_.Reset();
+  // arena_.Reset();
 
   // sizes
   max_cache_size_ = 0;
@@ -223,11 +236,13 @@ void ShapeBuffer::sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
   // root0 between tnear and tfar
   if (root0 > ray.tnear && root0 < ray.tfar) {
     ray.geomID = 0;  // 0 means occluded
+    std::cout << "0\n";
   }
 
   // root1 between tnear and tfar
   if (root1 > ray.tnear && root1 < ray.tfar) {
     ray.geomID = 0;  // 0 means occluded
+    std::cout << "1\n";
   }
 }
 
@@ -243,42 +258,18 @@ void ShapeBuffer::sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
 //   colors[2] = c[faces[fid + 2]];
 // }
 
-
 void ShapeBuffer::updateIntersection(int cache_block,
                                      RTCRayIntersection* isect) const {
-
-/*
-  // cache_block pointing to the current cache block in the mesh buffer
-  // isect->primID, the current primitive intersected
-  // colors: per-vertex colors
-  uint32_t colors[3];
-  getColorTuple(cache_block, isect->primID, colors);
-
-  // interploate color tuple and update isect->color
-  float u = isect->u;
-  float v = isect->v;
-
-  uint32_t rgb[9];
-  util::unpack(colors[0], &rgb[0]);
-  util::unpack(colors[1], &rgb[3]);
-  util::unpack(colors[2], &rgb[6]);
-
-  float w = 1.f - u - v;
-  uint32_t r = (rgb[0] * w) + (rgb[3] * u) + (rgb[6] * v);
-  uint32_t g = (rgb[1] * w) + (rgb[4] * u) + (rgb[7] * v);
-  uint32_t b = (rgb[2] * w) + (rgb[5] * u) + (rgb[8] * v);
-
+  // TODO: color
+  uint32_t r = 128;
+  uint32_t g = 128;
+  uint32_t b = 128;
   isect->color = util::pack(r, g, b);
 
   // shading normal
-
-  float ns[9];
-  getNormalTuple(cache_block, isect->primID, ns);
-
-  isect->Ns[0] = (ns[0] * w) + (ns[3] * u) + (ns[6] * v);
-  isect->Ns[1] = (ns[1] * w) + (ns[4] * u) + (ns[7] * v);
-  isect->Ns[2] = (ns[2] * w) + (ns[5] * u) + (ns[8] * v);
-*/
+  isect->Ns[0] = isect->Ng[0];
+  isect->Ns[1] = isect->Ng[1];
+  isect->Ns[2] = isect->Ng[2];
 }
 
 }  // namespace spray
