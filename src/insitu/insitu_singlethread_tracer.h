@@ -135,6 +135,7 @@ class SingleThreadTracer {
   std::queue<OcclInfo> fsq2_;
 
   std::queue<Ray *> retire_q_;
+  std::queue<Ray *> bg_retire_q_;  ///< Retire queue for background colors.
 
   WorkStats work_stats_;
 

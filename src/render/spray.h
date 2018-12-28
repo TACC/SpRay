@@ -90,6 +90,12 @@
 #define SPRAY_BACKGROUND_COLOR_R 0.5f
 #define SPRAY_BACKGROUND_COLOR_G 0.7f
 #define SPRAY_BACKGROUND_COLOR_B 1.0f
+#elif SPRAY_BACKGROUND_COLOR_WHITE
+#define SPRAY_BACKGROUND_COLOR_R 1.0f
+#define SPRAY_BACKGROUND_COLOR_G 1.0f
+#define SPRAY_BACKGROUND_COLOR_B 1.0f
+#else
+#error undefined background color
 #endif
 
 namespace spray {

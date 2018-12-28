@@ -95,6 +95,36 @@ class Isector {
     }
   }
 
+  // for processing eye rays (with background support)
+  void intersect(int ndomains, SceneT* scene, RayBuf<Ray> ray_buf,
+                 spray::QVector<Ray*>* qs, std::queue<Ray*>* background_q) {
+    Ray* rays = ray_buf.rays;
+
+    for (std::size_t i = 0; i < ray_buf.num; ++i) {
+      Ray* ray = &rays[i];
+
+      RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
+                                               &eray_);
+
+      scene->intersectDomains(eray_);
+
+      if (domains_.count) {
+        RTCRayUtil::sortDomains(domains_, hits_);
+
+        for (int d = 0; d < domains_.count; ++d) {
+          int id = hits_[d].id;
+#ifdef SPRAY_GLOG_CHECK
+          CHECK_LT(id, ndomains);
+#endif
+          qs->push(id, ray);
+        }
+      } else {
+        RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
+        background_q->push(ray);
+      }
+    }
+  }
+
   void intersect(int exclude_id, int ndomains, SceneT* scene, Ray* ray,
                  spray::QVector<Ray*>* qs) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,

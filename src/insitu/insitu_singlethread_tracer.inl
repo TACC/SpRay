@@ -464,23 +464,23 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procCachedRq() {
 
 template <typename CacheT, typename ShaderT, typename SceneT>
 void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRetireQ() {
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+  while (!bg_retire_q_.empty()) {
+    auto *ray = bg_retire_q_.front();
+    bg_retire_q_.pop();
+    int oflag = ray->occluded;
+    if (oflag == RayUtil::OFLAG_BACKGROUND) {
+      glm::vec3 bgcolor = RayUtil::computeBackGroundColor(*ray);
+      image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
+    }
+  }
+#endif
   while (!retire_q_.empty()) {
     auto *ray = retire_q_.front();
     retire_q_.pop();
-#ifdef SPRAY_BACKGROUND_COLOR_BLACK
     if (!vbuf_.occluded(ray->samid, ray->light)) {
       image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
     }
-#else
-    if (RayUtil::isEyeRay(*ray)) {
-      float bgcolor[3];
-      RayUtil::computeBackGroundColor(*ray, bgcolor);
-      image_->add(ray->pixid, bgcolor, one_over_num_pixel_samples_);
-
-    } else if (!vbuf_.occluded(ray->samid, ray->light)) {
-      image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
-    }
-#endif
   }
 }
 
@@ -507,7 +507,11 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
                     mytile_, &shared_eyes);
     }
 
+#ifdef SPRAY_BACKGROUND_COLOR_BLACK
     isector_.intersect(num_domains_, scene_, shared_eyes, &rqs_);
+#else
+    isector_.intersect(num_domains_, scene_, shared_eyes, &rqs_, &bg_retire_q_);
+#endif
 
     populateRadWorkStats();
   }
@@ -562,6 +566,9 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
 
     ++ray_depth_;
   }
+#ifdef SPRAY_GLOG_CHECK
+  CHECK(background_q_.empty());
+#endif
 }
 
 }  // namespace insitu
