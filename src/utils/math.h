@@ -85,5 +85,9 @@ inline float maxComponent(const glm::vec3 v) {
   return glm::max(glm::max(v.x, v.y), v.z);
 }
 
+inline glm::vec3 normalize(const float v[3]) {
+  return glm::normalize(glm::vec3(v[0], v[1], v[2]));
+}
+
 }  // namespace spray
 

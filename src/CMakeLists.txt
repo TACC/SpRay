@@ -175,6 +175,16 @@ if(SPRAY_TIMING)
   add_definitions(-DSPRAY_TIMING)
 endif(SPRAY_TIMING)
 
+# background color
+set(SPRAY_BACKGROUND_COLOR "Black" CACHE STRING "Select a background color.")
+set_property(CACHE SPRAY_BACKGROUND_COLOR PROPERTY STRINGS "Black" "Sky")
+
+if (${SPRAY_BACKGROUND_COLOR} STREQUAL "Black")
+  add_definitions(-DSPRAY_BACKGROUND_COLOR_BLACK)
+elseif (${SPRAY_BACKGROUND_COLOR} STREQUAL "Sky")
+  add_definitions(-DSPRAY_BACKGROUND_COLOR_SKY)
+endif()
+
 ########################################
 # intersection mode (based on embree)
 ########################################

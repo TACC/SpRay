@@ -23,19 +23,20 @@
 #include "glm/glm.hpp"
 
 #include "render/spray.h"
+#include "utils/math.h"
 
 namespace spray {
 namespace insitu {
 
 struct SPRAY_ALIGN(16) Ray {
-  float org[3];
-  int pixid;
-  float dir[3];
-  int samid;
-  float w[3];
-  float t;
-  int light;
-  int occluded;
+  float org[3];  ///< Ray origin.
+  int pixid;     ///< Pixel ID.
+  float dir[3];  ///< Ray direction.
+  int samid;     ///< Sample ID of the image plane
+  float w[3];    ///< Color weight.
+  float t;       ///< Distance to the hit point.
+  int light;     ///< Light ID.
+  int occluded;  ///< -1: eye ray, 0: unoccluded, 1: occluded
 };
 
 struct RayData {
@@ -45,6 +46,8 @@ struct RayData {
 };
 
 struct RayUtil {
+  enum Flags { EYE_RAY_FLAG = -1 };
+
   inline static void makeShadow(const Ray& ray, int light, const glm::vec3& pos,
                                 const glm::vec3& dir, const glm::vec3& w,
                                 float t, Ray* shadow) {
@@ -89,6 +92,18 @@ struct RayUtil {
     rayout->w[2] = w[2];
 
     rayout->t = t;
+  }
+
+  inline static bool isEyeRay(const Ray& ray) {
+    return (ray.occluded == EYE_RAY_FLAG);
+  }
+
+  inline static glm::vec3 computeBackGroundColor(const Ray& ray,
+                                                 float color[3]) {
+    float a = 0.5f * (spray::normalize(ray.dir).y + 1.0);
+    return ((1.0f - a) * glm::vec3(1.0f)) +
+           (a * glm::vec3(SPRAY_BACKGROUND_COLOR_R, SPRAY_BACKGROUND_COLOR_G,
+                          SPRAY_BACKGROUND_COLOR_B));
   }
 };
 

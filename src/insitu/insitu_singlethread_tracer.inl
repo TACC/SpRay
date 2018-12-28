@@ -467,10 +467,20 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRetireQ() {
   while (!retire_q_.empty()) {
     auto *ray = retire_q_.front();
     retire_q_.pop();
-
+#ifdef SPRAY_BACKGROUND_COLOR_BLACK
     if (!vbuf_.occluded(ray->samid, ray->light)) {
       image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
     }
+#else
+    if (RayUtil::isEyeRay(*ray)) {
+      float bgcolor[3];
+      RayUtil::computeBackGroundColor(*ray, bgcolor);
+      image_->add(ray->pixid, bgcolor, one_over_num_pixel_samples_);
+
+    } else if (!vbuf_.occluded(ray->samid, ray->light)) {
+      image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
+    }
+#endif
   }
 }
 
