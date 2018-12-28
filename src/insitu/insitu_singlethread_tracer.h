@@ -97,6 +97,7 @@ class SingleThreadTracer {
   void procFsq2();
   void procCachedRq();
   void procRetireQ();
+  void retireBackground();
 
   void populateRadWorkStats();
   void populateWorkStats();

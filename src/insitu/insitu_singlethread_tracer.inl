@@ -142,6 +142,7 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::genSingleEyes(
       ray->w[2] = 1.f;
 
       ray->t = SPRAY_FLOAT_INF;
+      RayUtil::setOccluded(RayUtil::OFLAG_UNDEFINED, ray);
     }
   }
 }
@@ -191,6 +192,8 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::genMultiEyes(
         ray->w[2] = 1.f;
 
         ray->t = SPRAY_FLOAT_INF;
+
+        RayUtil::setOccluded(RayUtil::OFLAG_UNDEFINED, ray);
       }
     }
   }
@@ -360,9 +363,6 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRad(int id, Ray *ray) {
 // #ifndef SPRAY_BACKGROUND_COLOR_BLACK
 //   else if (ray_depth_ == 0) {
 //     RayUtil::setOccluded(RayUtil::OFLAG_POSSIBLY_BACKGROUND, ray);
-// #ifdef SPRAY_GLOG_CHECK
-//     CHECK_LT(ray->samid, vbuf_.getTBufSize());
-// #endif
 //   }
 // #endif
 }
@@ -478,7 +478,17 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procCachedRq() {
 
 template <typename CacheT, typename ShaderT, typename SceneT>
 void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRetireQ() {
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+  while (!retire_q_.empty()) {
+    auto *ray = retire_q_.front();
+    retire_q_.pop();
+    if (!vbuf_.occluded(ray->samid, ray->light)) {
+      image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
+    }
+  }
+}
+
+template <typename CacheT, typename ShaderT, typename SceneT>
+void SingleThreadTracer<CacheT, ShaderT, SceneT>::retireBackground() {
   glm::vec3 bgcolor;
   while (!bg_retire_q_.empty()) {
     auto *ray = bg_retire_q_.front();
@@ -489,14 +499,6 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRetireQ() {
          vbuf_.isMiss(ray->samid))) {
       bgcolor = RayUtil::computeBackGroundColor(*ray);
       image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
-    }
-  }
-#endif
-  while (!retire_q_.empty()) {
-    auto *ray = retire_q_.front();
-    retire_q_.pop();
-    if (!vbuf_.occluded(ray->samid, ray->light)) {
-      image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
     }
   }
 }
@@ -575,6 +577,10 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
 
     procFrq2();
     procFsq2();
+
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+    if (ray_depth_ == 0) retireBackground();
+#endif
 
     populateWorkStats();
 
