@@ -360,11 +360,6 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRad(int id, Ray *ray) {
       filterRq2(id);
     }
   }
-// #ifndef SPRAY_BACKGROUND_COLOR_BLACK
-//   else if (ray_depth_ == 0) {
-//     RayUtil::setOccluded(RayUtil::OFLAG_POSSIBLY_BACKGROUND, ray);
-//   }
-// #endif
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
@@ -494,9 +489,7 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::retireBackground() {
     auto *ray = bg_retire_q_.front();
     bg_retire_q_.pop();
     int oflag = ray->occluded;
-    if ((oflag == RayUtil::OFLAG_BACKGROUND) ||
-        (oflag == RayUtil::OFLAG_POSSIBLY_BACKGROUND &&
-         vbuf_.isMiss(ray->samid))) {
+    if (oflag == RayUtil::OFLAG_BACKGROUND || vbuf_.tbufOutMiss(ray->samid)) {
       bgcolor = RayUtil::computeBackGroundColor(*ray);
       image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
     }
@@ -571,16 +564,17 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
       procRetireQ();
       vbuf_.resetOBuf();
     }
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+    else {
+      retireBackground();
+    }
+#endif
 
     vbuf_.resetTBufIn();
     vbuf_.swapTBufs();
 
     procFrq2();
     procFsq2();
-
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
-    if (ray_depth_ == 0) retireBackground();
-#endif
 
     populateWorkStats();
 

@@ -55,7 +55,6 @@ struct RayUtil {
   enum ValuesForOccluded {
     OFLAG_UNDEFINED = -3,
     OFLAG_BACKGROUND = -2,
-    OFLAG_POSSIBLY_BACKGROUND = -1,
     OFLAG_UNOCCLUDED = 0,
     OFLAG_OCCLUDED = 1
   };

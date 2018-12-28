@@ -121,11 +121,11 @@ class VBuf {
     return (t == tbuf_in_[samid]);
   }
 
-  bool isMiss(int samid) {
+  bool tbufOutMiss(int samid) {
 #ifdef SPRAY_GLOG_CHECK
     CHECK_LT(samid, tbuf_size_);
 #endif
-    return std::isinf(tbuf_in_[samid]);
+    return std::isinf(tbuf_out_[samid]);
   }
 
   std::size_t getTBufSize() const { return tbuf_size_; }
