@@ -108,10 +108,14 @@ struct RayUtil {
   }
 
   inline static glm::vec3 computeBackGroundColor(const Ray& ray) {
-    float a = 0.5f * (spray::normalize(ray.dir).y + 1.0);
-    return ((1.0f - a) * glm::vec3(1.0f)) +
-           (a * glm::vec3(SPRAY_BACKGROUND_COLOR_R, SPRAY_BACKGROUND_COLOR_G,
-                          SPRAY_BACKGROUND_COLOR_B));
+#if 0
+     float a = 0.5f * (spray::normalize(ray.dir).y + 1.0);
+     return ((1.0f - a) * glm::vec3(1.0f)) +
+            (a * glm::vec3(SPRAY_BACKGROUND_COLOR_R, SPRAY_BACKGROUND_COLOR_G,
+                           SPRAY_BACKGROUND_COLOR_B));
+#endif
+    return glm::vec3(SPRAY_BACKGROUND_COLOR_R, SPRAY_BACKGROUND_COLOR_G,
+                     SPRAY_BACKGROUND_COLOR_B);
   }
 };
 

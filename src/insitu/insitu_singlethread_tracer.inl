@@ -357,14 +357,14 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRad(int id, Ray *ray) {
       filterRq2(id);
     }
   }
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
-  else if (ray_depth_ == 0) {
-    RayUtil::setOccluded(RayUtil::OFLAG_POSSIBLY_BACKGROUND, ray);
-#ifdef SPRAY_GLOG_CHECK
-    CHECK_LT(ray->samid, vbuf_.getTBufSize());
-#endif
-  }
-#endif
+// #ifndef SPRAY_BACKGROUND_COLOR_BLACK
+//   else if (ray_depth_ == 0) {
+//     RayUtil::setOccluded(RayUtil::OFLAG_POSSIBLY_BACKGROUND, ray);
+// #ifdef SPRAY_GLOG_CHECK
+//     CHECK_LT(ray->samid, vbuf_.getTBufSize());
+// #endif
+//   }
+// #endif
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
