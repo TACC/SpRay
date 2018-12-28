@@ -115,10 +115,20 @@ class VBuf {
  public:
   bool correct(int samid, float t) {
 #ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(samid, tbuf_size_);
     CHECK_LE(tbuf_in_[samid], t);
 #endif
     return (t == tbuf_in_[samid]);
   }
+
+  bool isMiss(int samid) {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(samid, tbuf_size_);
+#endif
+    return std::isinf(tbuf_in_[samid]);
+  }
+
+  std::size_t getTBufSize() const { return tbuf_size_; }
 
   void setOBuf(int samid, int light);
 

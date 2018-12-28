@@ -120,8 +120,8 @@ class Isector {
         }
       } else {
         RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
-        background_q->push(ray);
       }
+      background_q->push(ray);
     }
   }
 

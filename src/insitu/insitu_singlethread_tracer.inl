@@ -133,6 +133,9 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::genSingleEyes(
       camera_->generateRay((float)x, (float)y, ray->dir);
 
       ray->samid = bufid + samid_offset;
+#ifdef SPRAY_GLOG_CHECK
+      CHECK_LT(ray->samid, vbuf_.getTBufSize());
+#endif
 
       ray->w[0] = 1.f;
       ray->w[1] = 1.f;
@@ -179,6 +182,9 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::genMultiEyes(
         camera_->generateRay(fx, fy, ray->dir);
 
         ray->samid = bufid + samid_offset;
+#ifdef SPRAY_GLOG_CHECK
+        CHECK_LT(ray->samid, vbuf_.getTBufSize());
+#endif
 
         ray->w[0] = 1.f;
         ray->w[1] = 1.f;
@@ -351,6 +357,14 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRad(int id, Ray *ray) {
       filterRq2(id);
     }
   }
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+  else if (ray_depth_ == 0) {
+    RayUtil::setOccluded(RayUtil::OFLAG_POSSIBLY_BACKGROUND, ray);
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(ray->samid, vbuf_.getTBufSize());
+#endif
+  }
+#endif
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
@@ -465,12 +479,15 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procCachedRq() {
 template <typename CacheT, typename ShaderT, typename SceneT>
 void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRetireQ() {
 #ifndef SPRAY_BACKGROUND_COLOR_BLACK
+  glm::vec3 bgcolor;
   while (!bg_retire_q_.empty()) {
     auto *ray = bg_retire_q_.front();
     bg_retire_q_.pop();
     int oflag = ray->occluded;
-    if (oflag == RayUtil::OFLAG_BACKGROUND) {
-      glm::vec3 bgcolor = RayUtil::computeBackGroundColor(*ray);
+    if ((oflag == RayUtil::OFLAG_BACKGROUND) ||
+        (oflag == RayUtil::OFLAG_POSSIBLY_BACKGROUND &&
+         vbuf_.isMiss(ray->samid))) {
+      bgcolor = RayUtil::computeBackGroundColor(*ray);
       image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
     }
   }
@@ -567,7 +584,7 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
     ++ray_depth_;
   }
 #ifdef SPRAY_GLOG_CHECK
-  CHECK(background_q_.empty());
+  CHECK(bg_retire_q_.empty());
 #endif
 }
 
