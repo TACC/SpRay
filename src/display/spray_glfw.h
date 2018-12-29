@@ -84,7 +84,6 @@ class Glfw {
     msgcmd_->rotate_pan_dy = dy;
   }
 
-  static void reset() { msgcmd_->camera_cmd = CAM_RESET; }
   static void resetToCfg() { msgcmd_->camera_cmd = CAM_RESET_TO_CFG; }
 
   static MessageCommand* msgcmd_;
@@ -95,6 +94,10 @@ class Glfw {
   static MouseState mouse_state_;
   static GLFWwindow* glfw_window_;
   static SceneT* scene_;
+
+  static glm::vec3 default_camera_pos_;
+  static glm::vec3 default_camera_lookat_;
+  static glm::vec3 default_camera_upvec_;
 };
 
 }  // namespace spray

@@ -50,12 +50,7 @@ void SprayRenderer<TracerT, SceneT>::init(const Config &cfg) {
   image_.resize(cfg.image_w, cfg.image_h);
 
   // camera
-  camera_.init(scene_.getBound(), cfg.image_w, cfg.image_h, cfg.znear, cfg.zfar,
-               cfg.fov);
-
-  if (cfg.has_camera_config) {
-    camera_.resetPosition(cfg.camera_pos, cfg.camera_lookat, cfg.camera_up);
-  }
+  initCamera(cfg);
 
   // tracer
   if (!(cfg.view_mode == VIEW_MODE_DOMAIN ||
@@ -86,6 +81,27 @@ void SprayRenderer<TracerT, SceneT>::init(const Config &cfg) {
   int ndomains = scene_.getNumDomains();
   LOG_IF(INFO, mpi::rank() == 0) << "number of domains: " << ndomains;
 #endif
+}
+
+template <class TracerT, class SceneT>
+void SprayRenderer<TracerT, SceneT>::initCamera(const Config &cfg) {
+  glm::vec3 campos, lookat, upvec;
+
+  if (cfg.has_camera_config) {
+    campos = cfg.camera_pos;
+    lookat = cfg.camera_lookat;
+    upvec = cfg.camera_up;
+
+  } else {
+    Aabb aabb = scene_.getBound();
+    glm::vec3 extent = aabb.getExtent();
+    lookat = aabb.getCenter();
+    campos =
+        lookat + (glm::length(extent) * 0.5f * glm::vec3(0.0f, 0.0f, 1.0f));
+    upvec = glm::vec3(0.0f, 1.0f, 0.0f);
+  }
+
+  camera_.init(campos, lookat, upvec, cfg.fov, cfg.image_w, cfg.image_h);
 }
 
 template <class TracerT, class SceneT>
@@ -410,14 +426,13 @@ void SprayRenderer<TracerT, SceneT>::renderGlfwDomainBounds(int view_mode) {
          msgcmd_.view_mode == VIEW_MODE_PARTITION) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 proj =
-        glm::perspective(camera_.getVfov(), camera_.getAspectRatio(),
-                         camera_.getZnear(), camera_.getZfar());
+    glm::mat4 proj = glm::perspective(
+        camera_.getVfov(), camera_.getAspectRatio(), cfg_->znear, cfg_->zfar);
 
     glMatrixMode(GL_PROJECTION);
     glLoadMatrixf(glm::value_ptr(proj));
 
-    glm::mat4 lookat = glm::lookAt(camera_.getPosition(), camera_.getCenter(),
+    glm::mat4 lookat = glm::lookAt(camera_.getPosition(), camera_.getLookAt(),
                                    camera_.getUp());
 
     glMatrixMode(GL_MODELVIEW);

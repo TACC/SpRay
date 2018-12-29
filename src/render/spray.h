@@ -108,7 +108,6 @@ enum CameraCommand {
   CAM_ZOOM,
   CAM_ROTATE,
   CAM_PAN,
-  CAM_RESET,
   CAM_RESET_TO_CFG
 };
 

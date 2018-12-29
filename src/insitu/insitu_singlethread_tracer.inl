@@ -141,6 +141,11 @@ void SingleThreadTracer<CacheT, ShaderT>::genSingleEyes(int image_w, float orgx,
       ray->w[2] = 1.f;
 
       ray->t = SPRAY_FLOAT_INF;
+#if 0
+      std::cout << x << "," << y << "," << orgx << "," << orgy << "," << orgz
+                << "," << ray->dir[0] << "," << ray->dir[1] << ","
+                << ray->dir[2] << "\n";
+#endif
     }
   }
 }
