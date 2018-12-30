@@ -23,36 +23,24 @@
 #include "glm/glm.hpp"
 #include "glog/logging.h"
 
-#include "render/material.h"
-
 namespace spray {
 
-class Shape {
+class Material {
  public:
-  enum ShapeType { UNDEFINED, SPHERE };
-
-  Shape(Material* m) : material(m) {}
-  ~Shape() { delete material; }
-
-  virtual int type() const {
-    LOG(FATAL) << "undefined";
-    return UNDEFINED;
+  Material() {}
+  virtual glm::vec3 getAlbedo() const {
+    CHECK(false) << "undefined\n";
+    return glm::vec3(1.0f);
   }
-  virtual void setGeomId(int id) { LOG(FATAL) << "undefined"; }
-  Material* material;
 };
 
-class Sphere : public Shape {
+class Matte : public Material {
  public:
-  Sphere(const glm::vec3& center, float radius, Material* m)
-      : Shape(m), center(center), radius(radius) {}
+  Matte(const glm::vec3& albedo) : albedo_(albedo) {}
+  glm::vec3 getAlbedo() const override { return albedo_; }
 
-  int type() const override { return Shape::SPHERE; }
-  void setGeomId(int id) override { geom_id = id; }
-
-  const glm::vec3 center;
-  const float radius;
-  unsigned int geom_id;
+ private:
+  glm::vec3 albedo_;
 };
 
 }  // namespace spray

@@ -31,6 +31,7 @@
 
 #include "render/aabb.h"
 #include "render/light.h"
+#include "render/material.h"
 #include "render/reflection.h"
 #include "render/spray.h"
 
@@ -235,7 +236,7 @@ void SceneLoader::parseLight(const std::vector<std::string>& tokens) {
 
 // sphere <center_x> <center_y> <center_z> <radius>
 void SceneLoader::parseSphere(const std::vector<std::string>& tokens) {
-  CHECK_EQ(tokens.size(), 5);
+  CHECK_GT(tokens.size(), 6);
   Domain& d = currentDomain();
 
   glm::vec3 center;
@@ -247,7 +248,22 @@ void SceneLoader::parseSphere(const std::vector<std::string>& tokens) {
 
   radius = atof(tokens[4].c_str());
 
-  d.shapes.push_back(new Sphere(center, radius));
+  Material* m = nullptr;
+
+  if (tokens[5] == "matte") {
+    CHECK_EQ(tokens.size(), 9);
+
+    glm::vec3 albedo;
+    albedo[0] = atof(tokens[6].c_str());
+    albedo[1] = atof(tokens[7].c_str());
+    albedo[2] = atof(tokens[8].c_str());
+
+    m = new Matte(albedo);
+  }
+
+  CHECK_NOTNULL(m);
+
+  d.shapes.push_back(new Sphere(center, radius, m));
 
   // vertices, faces
   d.num_vertices = 0;

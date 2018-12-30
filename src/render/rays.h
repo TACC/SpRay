@@ -35,6 +35,8 @@
 
 namespace spray {
 
+class Material;
+
 template <unsigned PACKET_SIZE>
 struct DomainHitN {
   int num;                                            //!< Number of hits.
@@ -210,6 +212,7 @@ struct SPRAY_ALIGN(16) RTCRayIntersection {
   unsigned instID;  //!< instance ID
 
   float Ns[3];
+  Material* material;
 };
 
 struct RTCRayUtil {

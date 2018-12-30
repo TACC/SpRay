@@ -28,10 +28,12 @@
 #include "glm/glm.hpp"
 #include "pbrt/memory.h"
 
+#include "render/shape.h"
+
 namespace spray {
 
-class Shape;
 struct RTCRayIntersection;
+class Material;
 
 class ShapeBuffer {
  public:
@@ -67,6 +69,11 @@ class ShapeBuffer {
                                        std::size_t item);
   static void sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
                                       std::size_t item);
+
+  Material* getMaterial(int cache_block, int prim_id) const {
+    Shape* shape = shapes_[cache_block]->at(prim_id);
+    return shape->material;
+  }
 
  private:
   enum MeshStatus { CREATED = -1, DESTROYED = 0 };

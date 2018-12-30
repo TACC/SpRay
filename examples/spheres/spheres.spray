@@ -1,7 +1,7 @@
 # light point 0 10 0 0.5 0.5 0.5
 # light point 0 0 -10 0.5 0.5 0.5
-light point 10 10 5 1 1 1
-# light diffuse .1 .1 .1 
+# light point 10 10 5 1 1 1
+light diffuse .1 .1 .1 
 
 # domain
 # sphere 0 0 0 1
@@ -9,7 +9,9 @@ light point 10 10 5 1 1 1
 # bound -1 -1 -1 1 1 1
 
 domain
-sphere 0 0 0 1
-sphere 0 -201 0 200
+sphere -2 0 0 1 matte 1 0 0
+sphere 0 0 0 1 matte 0 1 0
+sphere 2 0 0 1 matte 0 0 1
+sphere 0 -201 0 200 matte 0.5 0.5 0.5
 mtl diffuse 1 1 1
 bound -200 -401 -200 200 1 200

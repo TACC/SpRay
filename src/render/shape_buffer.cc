@@ -258,16 +258,16 @@ void ShapeBuffer::sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
 
 void ShapeBuffer::updateIntersection(int cache_block,
                                      RTCRayIntersection* isect) const {
-  // TODO: color
-  uint32_t r = 128;
-  uint32_t g = 128;
-  uint32_t b = 128;
-  isect->color = util::pack(r, g, b);
+  // uint32_t r = 128;
+  // uint32_t g = 128;
+  // uint32_t b = 128;
+  // isect->color = util::pack(r, g, b);
+  isect->material = getMaterial(cache_block, isect->primID);
 
   // shading normal
-  isect->Ns[0] = isect->Ng[0];
-  isect->Ns[1] = isect->Ng[1];
-  isect->Ns[2] = isect->Ng[2];
+  // isect->Ns[0] = isect->Ng[0];
+  // isect->Ns[1] = isect->Ng[1];
+  // isect->Ns[2] = isect->Ng[2];
 }
 
 }  // namespace spray

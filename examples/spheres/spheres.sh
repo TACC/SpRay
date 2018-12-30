@@ -15,7 +15,8 @@ MPI_BIN="mpirun -n"
 
 echo "Choose a setup (1-2):"
 echo "1. simple diffuse, glfw" 
-echo "2. simple diffuse, antialiasing, film"
+echo "2. simple diffuse, antialiasing, glfw"
+echo "3. simple diffuse, antialiasing, film"
 
 read APP
 
@@ -26,25 +27,52 @@ WIDTH=400
 HEIGHT=300
 NUM_THREADS=1
 
+# common settings
+CACHE_SIZE=-1
+PARTITION=insitu
+CAMERA="0 0 5 0 0 0"
+NUM_BOUNCES=1
+BLINN_PHONG="0.4 0.4 0.4 10"
+NUM_PARTITIONS=1
+
 if [ $APP == "1" ] # simple diffuse, glfw
 then
   MODE=glfw
   NUM_FRAMES=-1
   NUM_PIXEL_SAMPLES=1
-  cmd="$SHAPES_APP --nthreads $NUM_THREADS -w $WIDTH -h $HEIGHT --frames $NUM_FRAMES --mode $MODE --cache-size -1 --partition insitu --camera 0 0 5 0 0 0 --pixel-samples $NUM_PIXEL_SAMPLES --ao-samples 1 --bounces 1 --blinn 0.4 0.4 0.4 10 --num-partitions 1 $SCENE"
-  
-elif [ $APP == "2" ] # simple diffuse, antialiasing
+
+elif [ $APP == "2" ] # simple diffuse, antialiasing, glfw
 then
-  # simple diffuse, antialiasing, film
+  MODE=glfw
+  NUM_FRAMES=-1
+  NUM_PIXEL_SAMPLES=8
+  NUM_AO_SAMPLES=4
+
+elif [ $APP == "3" ] # simple diffuse, antialiasing, film
+then
   MODE=film
   NUM_FRAMES=1
-  NUM_PIXEL_SAMPLES=16
-  cmd="$SHAPES_APP --nthreads $NUM_THREADS -w $WIDTH -h $HEIGHT --frames $NUM_FRAMES --mode $MODE --cache-size -1 --partition insitu --camera 0 0 5 0 0 0 --pixel-samples $NUM_PIXEL_SAMPLES --ao-samples 1 --bounces 1 --blinn 0.4 0.4 0.4 10 --num-partitions 1 $SCENE"
+  NUM_PIXEL_SAMPLES=8
+  NUM_AO_SAMPLES=4
 
 else # undefined
   echo "[error] invalid input"
   return
 fi
+
+cmd="$SHAPES_APP --nthreads $NUM_THREADS \
+                 -w $WIDTH -h $HEIGHT \
+                 --frames $NUM_FRAMES \
+                 --mode $MODE \
+                 --cache-size $CACHE_SIZE \
+                 --partition $PARTITION \
+                 --camera $CAMERA \
+                 --pixel-samples $NUM_PIXEL_SAMPLES \
+                 --ao-samples $NUM_AO_SAMPLES \
+                 --bounces $NUM_BOUNCES \
+                 --blinn $BLINN_PHONG \
+                 --num-partitions $NUM_PARTITIONS \
+                 $SCENE"
 
 echo $cmd
 $cmd
