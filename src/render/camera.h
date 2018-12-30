@@ -23,6 +23,7 @@
 #include <cmath>
 
 #include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 #include "render/aabb.h"
 
@@ -109,6 +110,9 @@ class Camera {
   float camera_vfov_degrees_;  ///< Vertical field of view in degrees.
   float camera_vfov_radians_;  ///< Vertical field of view in radians.
 
+  glm::vec3 u_vec_;
+  glm::vec3 v_vec_;
+
   /** Position of lower-left corner of the image plane.*/
   glm::vec3 image_lowerleft_pos_;
   glm::vec3 image_w_vec_;  ///< x-axis in the image plane
@@ -152,6 +156,9 @@ inline void Camera::init(const glm::vec3 campos, const glm::vec3 lookat,
   image_aspect_ratio_ = aspect_ratio;
   image_half_w_ = image_half_w;
   image_half_h_ = image_half_h;
+
+  u_vec_ = u;
+  v_vec_ = v;
 }
 
 inline void Camera::reset(const glm::vec3 campos, const glm::vec3 lookat,
@@ -208,11 +215,29 @@ inline void Camera::zoom(float offset) {
 }
 
 inline void Camera::rotate(float mouse_dx, float mouse_dy) {
-  // TODO
+  float dtheta = mouse_dx * (M_PI / image_w_);
+  float dphi = mouse_dy * (M_PI / image_h_);
+
+  glm::vec3 p = camera_pos_ - camera_lookat_;
+
+  glm::mat4 mv = glm::rotate(glm::mat4(1.0f), dtheta, v_vec_);
+  glm::mat4 mu = glm::rotate(glm::mat4(1.0f), dphi, u_vec_);
+  glm::vec4 p2 = mu * (mv * glm::vec4(p, 1.0f));
+
+  glm::vec3 pos = glm::vec3(p2) + camera_lookat_;
+
+  reset(pos, camera_lookat_, camera_up_);
 }
 
 inline void Camera::pan(float mouse_dx, float mouse_dy) {
-  // TODO
+  float dx = 0.001f * mouse_dx;
+  float dy = -0.001f * mouse_dy;
+
+  glm::vec3 offset = (dx * u_vec_) + (dy * v_vec_);
+  glm::vec3 pos = camera_pos_ + offset;
+  glm::vec3 lookat = camera_lookat_ + offset;
+
+  reset(pos, lookat, camera_up_);
 }
 
 }  // namespace spray
