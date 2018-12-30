@@ -27,7 +27,7 @@
 #include "glog/logging.h"
 
 #include "render/rays.h"
-#include "scene/shape.h"
+#include "render/shape.h"
 #include "utils/math.h"
 #include "utils/util.h"
 

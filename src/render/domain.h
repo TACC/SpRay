@@ -26,7 +26,7 @@
 
 #include "render/aabb.h"
 #include "render/reflection.h"
-#include "scene/shape.h"
+#include "render/shape.h"
 
 namespace spray {
 

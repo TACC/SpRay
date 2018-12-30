@@ -26,10 +26,10 @@
 #include "insitu/insitu_singlethread_tracer.h"
 #include "render/caches.h"
 #include "render/config.h"
+#include "render/domain_intersector.h"
 #include "render/shape_buffer.h"
 #include "render/spray.h"
 #include "render/spray_renderer.h"
-#include "scene/domain_intersector.h"
 #include "utils/comm.h"
 
 int main(int argc, char** argv) {
