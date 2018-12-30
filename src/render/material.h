@@ -27,20 +27,29 @@ namespace spray {
 
 class Material {
  public:
-  Material() {}
-  virtual glm::vec3 getAlbedo() const {
-    CHECK(false) << "undefined\n";
-    return glm::vec3(1.0f);
+  enum { UNDEFINED, MATTE, METAL };
+
+  virtual int type() const {
+    CHECK(false);
+    return UNDEFINED;
   }
 };
 
 class Matte : public Material {
  public:
-  Matte(const glm::vec3& albedo) : albedo_(albedo) {}
-  glm::vec3 getAlbedo() const override { return albedo_; }
+  Matte(const glm::vec3& albedo) : albedo(albedo) {}
+  int type() const override { return MATTE; }
 
- private:
-  glm::vec3 albedo_;
+  glm::vec3 albedo;
+};
+
+class Metal : public Material {
+ public:
+  Metal(const glm::vec3& albedo, float fuzz) : albedo(albedo), fuzz(fuzz) {}
+  int type() const override { return METAL; }
+
+  const glm::vec3 albedo;
+  const float fuzz;
 };
 
 }  // namespace spray

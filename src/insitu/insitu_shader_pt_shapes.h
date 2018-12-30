@@ -84,7 +84,12 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
     spray::MemoryArena *mem, std::queue<Ray *> *sq, std::queue<Ray *> *rq,
     int ray_depth) {
   glm::vec3 pos = RTCRayUtil::hitPosition(rayin.org, rayin.dir, isect.tfar);
-  glm::vec3 surf_radiance = isect.material->getAlbedo();
+
+  glm::vec3 surf_radiance;
+
+  if (isect.material->type() == Material::MATTE) {
+    surf_radiance = static_cast<Matte *>(isect.material)->albedo;
+  }
   // glm::vec3 surf_radiance;
   // util::unpack(isect.color, surf_radiance);
 
