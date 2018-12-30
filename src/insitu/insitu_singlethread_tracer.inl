@@ -141,11 +141,6 @@ void SingleThreadTracer<CacheT, ShaderT>::genSingleEyes(int image_w, float orgx,
       ray->w[2] = 1.f;
 
       ray->t = SPRAY_FLOAT_INF;
-#if 0
-      std::cout << x << "," << y << "," << orgx << "," << orgy << "," << orgz
-                << "," << ray->dir[0] << "," << ray->dir[1] << ","
-                << ray->dir[2] << "\n";
-#endif
     }
   }
 }
@@ -430,10 +425,6 @@ void SingleThreadTracer<CacheT, ShaderT>::procFsq2() {
 
 template <typename CacheT, typename ShaderT>
 void SingleThreadTracer<CacheT, ShaderT>::procFrq2() {
-  //
-  // DEBUG
-  // std::cout << "frq2.size()" << frq2_.size() << "\n";
-  //
   while (!frq2_.empty()) {
     auto &info = frq2_.front();
     auto *ray = info.ray;
