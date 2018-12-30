@@ -431,10 +431,6 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procFsq2() {
 
 template <typename CacheT, typename ShaderT, typename SceneT>
 void SingleThreadTracer<CacheT, ShaderT, SceneT>::procFrq2() {
-  //
-  // DEBUG
-  // std::cout << "frq2.size()" << frq2_.size() << "\n";
-  //
   while (!frq2_.empty()) {
     auto &info = frq2_.front();
     auto *ray = info.ray;

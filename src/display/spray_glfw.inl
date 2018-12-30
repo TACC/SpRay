@@ -49,6 +49,15 @@ template <class WbvhT, class SceneT>
 SceneT* Glfw<WbvhT, SceneT>::scene_ = nullptr;
 
 template <class WbvhT, class SceneT>
+glm::vec3 Glfw<WbvhT, SceneT>::default_camera_pos_;
+
+template <class WbvhT, class SceneT>
+glm::vec3 Glfw<WbvhT, SceneT>::default_camera_lookat_;
+
+template <class WbvhT, class SceneT>
+glm::vec3 Glfw<WbvhT, SceneT>::default_camera_upvec_;
+
+template <class WbvhT, class SceneT>
 void Glfw<WbvhT, SceneT>::init(const Config& cfg, bool is_root_process,
                                unsigned image_w, unsigned image_h,
                                Camera* camera, MessageCommand* cmd,
@@ -63,6 +72,10 @@ void Glfw<WbvhT, SceneT>::init(const Config& cfg, bool is_root_process,
   mouse_state_.left = false;
   mouse_state_.right = false;
   mouse_state_.middle = false;
+
+  default_camera_pos_ = camera->getPosition();
+  default_camera_lookat_ = camera->getLookAt();
+  default_camera_upvec_ = camera->getUpVector();
 
   if (!is_root_process) return;
 
@@ -92,9 +105,8 @@ void Glfw<WbvhT, SceneT>::init(const Config& cfg, bool is_root_process,
 
   glViewport(0, 0, image_w, image_h);
 
-  glm::mat4 projection =
-      glm::perspective(camera_->getVfov(), camera_->getAspectRatio(),
-                       camera_->getZnear(), camera_->getZfar());
+  glm::mat4 projection = glm::perspective(
+      camera_->getVfov(), camera_->getAspectRatio(), cfg_->znear, cfg_->zfar);
   glMatrixMode(GL_PROJECTION);
 }
 
@@ -106,11 +118,9 @@ void Glfw<WbvhT, SceneT>::cmdHandler() {
     camera_->rotate(msgcmd_->rotate_pan_dx, msgcmd_->rotate_pan_dy);
   } else if (msgcmd_->camera_cmd == CAM_PAN) {
     camera_->pan(msgcmd_->rotate_pan_dx, msgcmd_->rotate_pan_dy);
-  } else if (msgcmd_->camera_cmd == CAM_RESET) {
-    camera_->reset();
   } else if (msgcmd_->camera_cmd == CAM_RESET_TO_CFG) {
-    camera_->resetPosition(cfg_->camera_pos, cfg_->camera_lookat,
-                           cfg_->camera_up);
+    camera_->reset(default_camera_pos_, default_camera_lookat_,
+                   default_camera_upvec_);
   }
   msgcmd_->camera_cmd = CAM_NOP;
 }
@@ -131,14 +141,8 @@ void Glfw<WbvhT, SceneT>::keyCallback(GLFWwindow* window, int key, int scancode,
         msgcmd_->view_mode = VIEW_MODE_TERMINATE;
         msgcmd_->done = 1;
         break;
-      case GLFW_KEY_C:
-        camera_->reset();
-        reset();
-        break;
       case GLFW_KEY_SPACE:  // reset camera position according to initial
                             // configuration
-        camera_->resetPosition(cfg_->camera_pos, cfg_->camera_lookat,
-                               cfg_->camera_up);
         resetToCfg();
         break;
       case GLFW_KEY_EQUAL:  // to ray trace mode
@@ -197,15 +201,13 @@ void Glfw<WbvhT, SceneT>::keyCallback(GLFWwindow* window, int key, int scancode,
         break;
 
       case GLFW_KEY_P: {
-        const glm::vec3& p = camera_->getPosition();
-        const glm::vec3& c = camera_->getCenter();
-        const glm::vec3& u = camera_->getUp();
-        const Aabb& bound = camera_->getSceneBound();
-        printf("[INFO] Camera (pos,center) --camera %f %f %f %f %f %f\n", p.x,
-               p.y, p.z, c.x, c.y, c.z);
-        printf("[INFO] Camera (upvector) --up %f %f %f\n", u.x, u.y, u.z);
-        printf("[INFO] Camera (upvector cfg) --up %f %f %f\n",
-               cfg_->camera_up.x, cfg_->camera_up.y, cfg_->camera_up.z);
+        const glm::vec3& campos = camera_->getPosition();
+        const glm::vec3& lookat = camera_->getLookAt();
+        const glm::vec3& upvec = camera_->getUpVector();
+        const Aabb& bound = scene_->getBound();
+        printf("[INFO] Camera --camera %f %f %f %f %f %f\n", campos.x, campos.y,
+               campos.z, lookat.x, lookat.y, lookat.z);
+        printf("[INFO] Camera --up %f %f %f\n", upvec.x, upvec.y, upvec.z);
         printf("[INFO] Scene bound: min(%f %f %f), max(%f %f %f)\n",
                bound.bounds[0].x, bound.bounds[0].y, bound.bounds[0].z,
                bound.bounds[1].x, bound.bounds[1].y, bound.bounds[1].z);

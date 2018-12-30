@@ -232,7 +232,6 @@ set(SPRAY_SRC_LIST
     render/spray.cc
     render/sampler.cc
     render/reflection.cc
-    render/camera.cc
     render/aabb.cc
     render/block_buffer.cc
     render/tile.cc

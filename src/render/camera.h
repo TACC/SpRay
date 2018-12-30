@@ -20,32 +20,23 @@
 
 #pragma once
 
+#include <cmath>
+
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+
 #include "render/aabb.h"
-#include "render/spray.h"
 
 namespace spray {
 
 class Camera {
  public:
-  Camera() {}
-  /**
-   * Creates a simple pinhole camera following the OpenGL coordinate system.
-   *
-   * \param scene_aabb Scene bounds in world space.
-   * \param image_w Image width in the number of pixels.
-   * \param image_h Image height in the number of pixels.
-   * \param znear Z-coordinate of the near clipping plane in camera space.
-   * \param zfar Z-coordinate of the far clipping plane in camera space.
-   * \param vfov Vertical field of view in degrees.
-   */
-  Camera(const Aabb& scene_aabb, unsigned int image_w, unsigned int image_h,
-         float znear, float zfar, float vfov);
+  void init(const glm::vec3 campos, const glm::vec3 lookat,
+            const glm::vec3 upvec, float vfov, int image_w, int image_h);
 
-  void init(const Aabb& scene_aabb, unsigned int image_w, unsigned int image_h,
-            float znear, float zfar, float vfov);
-
-  void resetPosition(const glm::vec3& pos, const glm::vec3& center,
-                     const glm::vec3& up);
+  /** Resets the camera position and lookat. */
+  void reset(const glm::vec3 campos, const glm::vec3 lookat,
+             const glm::vec3 upvec);
 
   /**
    * Resets the image size.
@@ -55,37 +46,25 @@ class Camera {
    */
   void resize(unsigned int w, unsigned int h);
 
-  /** Returns the current position of the camera in world space. */
-  const glm::vec3& getPosition() const { return pos_; }
+  /** Returns the current camera position in world space. */
+  const glm::vec3& getPosition() const { return camera_pos_; }
 
-  /** Returns the coordinates of the scene center in world space. */
-  const glm::vec3& getCenter() const { return center_; }
+  /** Returns the current lookat position in world space. */
+  const glm::vec3& getLookAt() const { return camera_lookat_; }
 
-  // /** Returns the current up vector of the camera in world space. */
-  // const glm::vec3& getUp() const { return up_; }
+  /** Returns the current up vector in world space. */
+  const glm::vec3& getUpVector() const { return camera_up_; }
 
   /**
    * Returns the up vector of the camera in world space.
-   * i.e. the second column of the camera-to-world transform matrix.
    */
-  const glm::vec3& getUp() const { return cam2world_[1]; }
-
-  const Aabb& getSceneBound() const { return scene_aabb_; }
+  const glm::vec3& getUp() const { return camera_up_; }
 
   /** Returns the vertical field of view in radians. */
-  float getVfov() const { return vfov_; }
-
-  /** Returns the horizontal field of view in radians. */
-  float getHfov() const { return hfov_; }
+  float getVfov() const { return camera_vfov_radians_; }
 
   /** Returns the aspect ratio of the image plane (width / height). */
-  float getAspectRatio() const { return ar_; }
-
-  /** Returns the z-coordinate of the near clipping plane in camera space. */
-  float getZnear() const { return znear_; }
-
-  /** Returns the z-coordinate of the far clipping plane in camera space. */
-  float getZfar() const { return zfar_; }
+  float getAspectRatio() const { return image_aspect_ratio_; }
 
   void generateRay(float x, float y, glm::vec3* org, glm::vec3* dir) const;
   void generateRay(float x, float y, float org[3], float dir[3]) const;
@@ -121,55 +100,144 @@ class Camera {
    */
   void pan(float mouse_dx, float mouse_dy);
 
-  /**
-   * Resets the camera to a default position.
-   */
-  void reset();
+ private:
+  glm::vec3 getDirection(float u, float v) const;
 
  private:
-  /**
-   * Updates the position of the camera (#pos_) and the camera-to-world
-   * transform matrix (#cam2world_). This function must be called whenever
-   * #phi_ or #theta, is updated.
-   */
-  void updatePosition();
+  glm::vec3 camera_pos_;       ///< Camera position.
+  glm::vec3 camera_lookat_;    ///< Camera lookat position.
+  glm::vec3 camera_up_;        ///< Camera up vector.
+  float camera_vfov_degrees_;  ///< Vertical field of view in degrees.
+  float camera_vfov_radians_;  ///< Vertical field of view in radians.
 
-  /**
-   * Resets the camera to a default position.
-   */
-  void resetPosition();
+  glm::vec3 u_vec_;
+  glm::vec3 v_vec_;
 
- private:
-  Aabb scene_aabb_;  ///< Scene bounds.
+  /** Position of lower-left corner of the image plane.*/
+  glm::vec3 image_lowerleft_pos_;
+  glm::vec3 image_w_vec_;  ///< x-axis in the image plane
+  glm::vec3 image_h_vec_;  ///< y-axis in the image plane
 
-  unsigned int image_w_;  ///< Image width.
-  unsigned int image_h_;  ///< Image height.
-  float znear_;           ///< Near clip plane.
-  float zfar_;            ///< Far clip plane.
-  float zscreen_;         ///< Distance between camera and screen
-  float vfov_;            ///< Vertical field of view in radians.
-  float hfov_;            ///< Horizontal field of view in radians.
-  float tan_half_vfov_;   ///< Tangent of v_fov_ / 2.
-  float tan_half_hfov_;   ///< Tangent of h_fov_ / 2.
-
-  glm::vec3 pos_;     ///< Camera position in world space
-  glm::vec3 center_;  ///< Center of scene in world space (viewing target)
-  glm::vec3 up_;
-
-  /**
-   * 3x3 Camera-to-world space transform matrix. Note that to achieve the full
-   * transformation, the current position (#pos_) must be added.
-   */
-  glm::mat3 cam2world_;
-
-  float ar_;  ///< aspect ratio (image_width / image_height).
-
-  float phi_;         ///< Pitch in radians.
-  float theta_;       ///< Yaw in radians.
-  float radius_;      ///< Distance between center of scene and camera position.
-  float min_radius_;  ///< Minimum radius.
-  float max_radius_;  ///< Maximum radius.
+  float image_w_;             ///< Image width.
+  float image_h_;             ///< Image height.
+  float image_aspect_ratio_;  ///< Image aspect ratio.
+  float image_half_w_;
+  float image_half_h_;
 };
 
-}  // namespace spray
+inline void Camera::init(const glm::vec3 campos, const glm::vec3 lookat,
+                         const glm::vec3 upvec, float vfov, int image_w,
+                         int image_h) {
+  float aspect_ratio =
+      static_cast<float>(image_w) / static_cast<float>(image_h);
+  float theta = vfov * M_PI / 180.0f;
+  float image_half_h = tan(theta / 2.0f);
+  float image_half_w = aspect_ratio * image_half_h;
 
+  glm::vec3 w = glm::normalize(campos - lookat);
+  glm::vec3 u = glm::normalize(glm::cross(upvec, w));
+  glm::vec3 v = glm::cross(w, u);
+
+  glm::vec3 image_center = campos - w;
+  image_lowerleft_pos_ = image_center - (image_half_w * u) - (image_half_h * v);
+
+  image_w_vec_ = 2.0f * image_half_w * u;
+  image_h_vec_ = 2.0f * image_half_h * v;
+
+  // init member variables
+  camera_pos_ = campos;
+  camera_lookat_ = lookat;
+  camera_up_ = upvec;
+  camera_vfov_degrees_ = vfov;
+  camera_vfov_radians_ = glm::radians(vfov);
+
+  image_w_ = static_cast<float>(image_w);
+  image_h_ = static_cast<float>(image_h);
+  image_aspect_ratio_ = aspect_ratio;
+  image_half_w_ = image_half_w;
+  image_half_h_ = image_half_h;
+
+  u_vec_ = u;
+  v_vec_ = v;
+}
+
+inline void Camera::reset(const glm::vec3 campos, const glm::vec3 lookat,
+                          const glm::vec3 upvec) {
+  init(campos, lookat, upvec, camera_vfov_degrees_, image_w_, image_h_);
+}
+
+inline glm::vec3 Camera::getDirection(float u, float v) const {
+  glm::vec3 dir = image_lowerleft_pos_ + (u * image_w_vec_) +
+                  (v * image_h_vec_) - camera_pos_;
+  return glm::normalize(dir);
+}
+
+inline void Camera::generateRay(float x, float y, glm::vec3* org,
+                                glm::vec3* dir) const {
+  *org = camera_pos_;
+  float u = x / image_w_;
+  float v = y / image_h_;
+  *dir = getDirection(u, v);
+}
+
+inline void Camera::generateRay(float x, float y, float org[3],
+                                float dir[3]) const {
+  org[0] = camera_pos_[0];
+  org[1] = camera_pos_[1];
+  org[2] = camera_pos_[2];
+
+  float u = x / image_w_;
+  float v = y / image_h_;
+  glm::vec3 direction = getDirection(u, v);
+
+  dir[0] = direction[0];
+  dir[1] = direction[1];
+  dir[2] = direction[2];
+}
+
+inline void Camera::generateRay(float x, float y, float dir[3]) const {
+  float u = x / image_w_;
+  float v = y / image_h_;
+  glm::vec3 direction = getDirection(u, v);
+  dir[0] = direction[0];
+  dir[1] = direction[1];
+  dir[2] = direction[2];
+}
+
+inline void Camera::zoom(float offset) {
+  glm::vec3 view_dir = camera_lookat_ - camera_pos_;
+
+  glm::vec3 dir = offset * glm::normalize(view_dir);
+  glm::vec3 new_campos = camera_pos_ + dir;
+  glm::vec3 new_lookat = camera_lookat_ + dir;
+
+  reset(new_campos, new_lookat, camera_up_);
+}
+
+inline void Camera::rotate(float mouse_dx, float mouse_dy) {
+  float dtheta = mouse_dx * (M_PI / image_w_);
+  float dphi = mouse_dy * (M_PI / image_h_);
+
+  glm::vec3 p = camera_pos_ - camera_lookat_;
+
+  glm::mat4 mv = glm::rotate(glm::mat4(1.0f), dtheta, v_vec_);
+  glm::mat4 mu = glm::rotate(glm::mat4(1.0f), dphi, u_vec_);
+  glm::vec4 p2 = mu * (mv * glm::vec4(p, 1.0f));
+
+  glm::vec3 pos = glm::vec3(p2) + camera_lookat_;
+
+  reset(pos, camera_lookat_, camera_up_);
+}
+
+inline void Camera::pan(float mouse_dx, float mouse_dy) {
+  float dx = 0.001f * mouse_dx;
+  float dy = -0.001f * mouse_dy;
+
+  glm::vec3 offset = (dx * u_vec_) + (dy * v_vec_);
+  glm::vec3 pos = camera_pos_ + offset;
+  glm::vec3 lookat = camera_lookat_ + offset;
+
+  reset(pos, lookat, camera_up_);
+}
+
+}  // namespace spray

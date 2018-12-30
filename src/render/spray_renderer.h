@@ -51,6 +51,8 @@ class SprayRenderer {
   void run();
 
  private:
+  void initCamera(const Config& cfg);
+
   void run_normal();
   void run_dev();
   void renderFilm();
