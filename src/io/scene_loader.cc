@@ -278,7 +278,9 @@ void SceneLoader::parseSphere(const std::vector<std::string>& tokens) {
     float index = atof(tokens[6].c_str());
 
     m = new Dielectric(index);
-  }
+  } else {
+    CHECK(false) << "unknown material " << tokens[5];
+   }
 
   CHECK_NOTNULL(m);
 

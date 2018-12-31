@@ -120,8 +120,7 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
 
   // direct illumination
 
-  // for each light
-  if (!material->isMetal()) {
+  if (material->hasDiffuse()) {
     for (int l = 0; l < nlights; ++l) {
       Light *light = lights_[l];
 

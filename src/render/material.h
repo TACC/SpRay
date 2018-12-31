@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <cmath>
+#include <cstdlib>
 #include <iostream>
 
 #include "embree/random_sampler.h"
@@ -53,13 +55,14 @@ class Material {
                       RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
                       float* pdf) const = 0;
 
-  virtual bool isMetal() const { return false; }
+  virtual bool hasDiffuse() const { return false; }
 };
 
 class Matte : public Material {
  public:
   Matte(const glm::vec3& albedo) : albedo_(albedo) {}
   int type() const override { return MATTE; }
+  bool hasDiffuse() const override { return true; }
 
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
                   const glm::vec3& normal) const override;
@@ -98,7 +101,6 @@ class Metal : public Material {
  public:
   Metal(const glm::vec3& albedo, float fuzz) : albedo_(albedo), fuzz_(fuzz) {}
   int type() const override { return METAL; }
-  bool isMetal() const override { return true; }
 
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
                   const glm::vec3& normal) const override {
@@ -139,14 +141,69 @@ class Dielectric : public Material {
 
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
                   const glm::vec3& normal) const override {
-    // TODO
-    return glm::vec3();
+    return glm::vec3(0.0f);
   }
 
   bool sample(const glm::vec3& wo, const glm::vec3& normal,
               RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
               float* pdf) const override {
-    // TODO
+    *color = glm::vec3(1.0f);
+    *pdf = 1.0f;
+
+    glm::vec3 ray_dir = -wo;
+    glm::vec3 outward_normal;
+    float ni_over_nt;
+    float cosine;
+
+    if (glm::dot(ray_dir, normal) > 0.0f) {
+      outward_normal = -normal;
+      ni_over_nt = index_;
+      // cosine = index_ * glm::dot(ray_dir, normal);
+      cosine = glm::dot(ray_dir, normal);
+      cosine = glm::sqrt(1.0f - index_ * index_ * (1.0f - cosine * cosine));
+
+    } else {
+      outward_normal = normal;
+      ni_over_nt = 1.0f / index_;
+      cosine = -glm::dot(ray_dir, normal);
+    }
+
+    glm::vec3 refracted;
+    float reflect_prob;
+
+    if (refract(ray_dir, outward_normal, ni_over_nt, &refracted)) {
+      reflect_prob = schlick(cosine, index_);
+    } else {
+      reflect_prob = 1.0;
+    }
+
+    if (drand48() < reflect_prob) {
+      glm::vec3 reflected = glm::reflect(ray_dir, normal);
+      *wi = glm::normalize(reflected);
+    } else {
+      *wi = glm::normalize(refracted);
+    }
+
+    return true;
+  }
+
+ private:
+  float schlick(float cosine, float index) const {
+    float r0 = (1.0f - index) / (1.0f + index);
+    r0 = r0 * r0;
+    float c = 1.0f - cosine;
+    return r0 + ((1.0f - r0) * (c * c * c * c * c));
+  }
+
+  bool refract(const glm::vec3& v, const glm::vec3& n, float ni_over_nt,
+               glm::vec3* refracted) const {
+    float dt = glm::dot(v, n);
+    float discriminant = 1.0f - ni_over_nt * ni_over_nt * (1.0f - dt * dt);
+
+    if (discriminant > 0.0f) {
+      *refracted = ni_over_nt * (v - n * dt) - n * std::sqrt(discriminant);
+      return true;
+    }
     return false;
   }
 
