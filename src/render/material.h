@@ -20,9 +20,11 @@
 
 #pragma once
 
+#include "embree/random_sampler.h"
 #include "glm/glm.hpp"
 #include "glog/logging.h"
 
+#include "render/sampler.h"
 #include "render/spray.h"
 
 namespace spray {
@@ -46,6 +48,10 @@ class Material {
   virtual glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
                           const glm::vec3& normal, const glm::vec3& light_color,
                           float* inv_pdf) const = 0;
+
+  virtual glm::vec3 sample(const glm::vec3& wo, const glm::vec3& normal,
+                           RandomSampler& sampler, glm::vec3* wi,
+                           float* pdf) const = 0;
 };
 
 class Matte : public Material {
@@ -56,6 +62,10 @@ class Matte : public Material {
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
                   const glm::vec3& normal, const glm::vec3& light_color,
                   float* inv_pdf) const override;
+
+  glm::vec3 sample(const glm::vec3& wo, const glm::vec3& normal,
+                   RandomSampler& sampler, glm::vec3* wi,
+                   float* pdf) const override;
 
  private:
   const glm::vec3 albedo_;
@@ -69,6 +79,13 @@ class Metal : public Material {
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
                   const glm::vec3& normal, const glm::vec3& light_color,
                   float* inv_pdf) const override {
+    // TODO
+    glm::vec3(1.0f);
+  }
+
+  glm::vec3 sample(const glm::vec3& wo, const glm::vec3& normal,
+                   RandomSampler& sampler, glm::vec3* wi,
+                   float* pdf) const override {
     // TODO
     glm::vec3(1.0f);
   }
@@ -90,6 +107,13 @@ class Dielectric : public Material {
     glm::vec3(1.0f);
   }
 
+  glm::vec3 sample(const glm::vec3& wo, const glm::vec3& normal,
+                   RandomSampler& sampler, glm::vec3* wi,
+                   float* pdf) const override {
+    // TODO
+    glm::vec3(1.0f);
+  }
+
  private:
   const float index_;  ///< Refraction index.
 };
@@ -101,6 +125,15 @@ inline glm::vec3 Matte::shade(const glm::vec3& wi, const glm::vec3& wo,
   *inv_pdf = SPRAY_ONE_OVER_PI;
   return albedo_ * SPRAY_ONE_OVER_PI *
          glm::clamp(glm::dot(wi, normal), 0.0f, 1.0f);
+}
+
+inline glm::vec3 Matte::sample(const glm::vec3& wo, const glm::vec3& normal,
+                               RandomSampler& sampler, glm::vec3* wi,
+                               float* pdf) const {
+  glm::vec2 u = RandomSampler_get2D(sampler);
+  getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
+  return albedo_ * SPRAY_ONE_OVER_PI *
+         glm::clamp(glm::dot(*wi, normal), 0.0f, 1.0f);
 }
 
 }  // namespace spray

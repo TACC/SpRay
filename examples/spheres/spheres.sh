@@ -31,7 +31,6 @@ NUM_THREADS=1
 CACHE_SIZE=-1
 PARTITION=insitu
 CAMERA="0 0 5 0 0 0"
-NUM_BOUNCES=1
 BLINN_PHONG="0.4 0.4 0.4 10"
 NUM_PARTITIONS=1
 
@@ -41,20 +40,23 @@ then
   NUM_FRAMES=-1
   NUM_PIXEL_SAMPLES=1
   NUM_AO_SAMPLES=1
+  NUM_BOUNCES=1
 
 elif [ $APP == "2" ] # simple diffuse, antialiasing, glfw
 then
   MODE=glfw
   NUM_FRAMES=-1
-  NUM_PIXEL_SAMPLES=8
-  NUM_AO_SAMPLES=4
+  NUM_PIXEL_SAMPLES=4
+  NUM_AO_SAMPLES=2
+  NUM_BOUNCES=4
 
 elif [ $APP == "3" ] # simple diffuse, antialiasing, film
 then
   MODE=film
   NUM_FRAMES=1
-  NUM_PIXEL_SAMPLES=8
+  NUM_PIXEL_SAMPLES=32
   NUM_AO_SAMPLES=4
+  NUM_BOUNCES=4
 
 else # undefined
   echo "[error] invalid input"

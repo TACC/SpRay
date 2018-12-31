@@ -66,16 +66,6 @@ class ShaderPtShapes {
                   const spray::RTCRayIntersection &isect,
                   spray::MemoryArena *mem, std::queue<Ray *> *sq,
                   std::queue<Ray *> *rq, int ray_depth);
-
- private:
-  void genR2(const Ray &rayin, const glm::vec3 &org, const glm::vec3 &dir,
-             const glm::vec3 &w, float t, spray::MemoryArena *mem,
-             std::queue<Ray *> *rq) {
-    Ray *r2 = mem->Alloc<Ray>(1, false);
-    CHECK_NOTNULL(r2);
-    RayUtil::makeRay(rayin, org, dir, w, t, r2);
-    rq->push(r2);
-  }
 };
 
 template <typename CacheT, typename SceneT>
@@ -96,7 +86,10 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
   // util::unpack(isect.color, surf_radiance);
 
   glm::vec3 normal(isect.Ng[0], isect.Ng[1], isect.Ng[2]);
+
   glm::vec3 wo(-rayin.dir[0], -rayin.dir[1], -rayin.dir[2]);
+  wo = glm::normalize(wo);
+
   glm::vec3 Lin(rayin.w[0], rayin.w[1], rayin.w[2]);
 
   float cos_theta_i = glm::dot(wo, normal);
@@ -115,8 +108,8 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
 
   int next_ray_depth = ray_depth + 1;
 
-  RandomSampler light_sampler;
-  RandomSampler_init(light_sampler, rayin.samid * next_ray_depth);
+  RandomSampler sampler;
+  RandomSampler_init(sampler, rayin.samid * next_ray_depth);
 
   int light_sample_offset = 0;
   int num_light_samples;
@@ -135,7 +128,7 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
     // for each light sample
     for (int s = 0; s < num_light_samples; ++s) {
       // light color
-      light_color = light->sampleL(pos, light_sampler, normal_ff, &wi, &pdf);
+      light_color = light->sampleL(pos, sampler, normal_ff, &wi, &pdf);
 
       if (pdf > 0.0f) {
         // wi, wo, normal_ff: all normalized
@@ -164,124 +157,24 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
 
   // indirect illumination
 
-  /*
-    if (!delta_dist) {
-      RandomSampler light_sampler;
-      RandomSampler_init(light_sampler, rayin.samid * next_ray_depth);
+#ifdef SPRAY_GLOG_CHECK
+  CHECK_LT(ray_depth, bounces_);
+#endif
 
-      int light_sample_offset = 0;
-      int light_sample_id;
-
-      for (int l = 0; l < nlights; ++l) {
-        if (lights_[l]->isAreaLight()) {
-          for (int s = 0; s < samples_; ++s) {
-            // light color
-            light_color =
-                lights_[l]->sampleArea(light_sampler, normal_ff, &wi, &pdf);
-
-            if (pdf > 0.0f) {
-              costheta = glm::clamp(glm::dot(normal_ff, wi), 0.0f, 1.0f);
-              Lr = Lin *
-                   spray::blinnPhong(costheta, surf_radiance, ks_, shininess_,
-                                     light_color, wi, normal_ff, wo) *
-                   (1.0f / (pdf * samples_));
-
-              if (hasPositive(Lr)) {
-                // create shadow ray
-                Ray *shadow = mem->Alloc<Ray>(1, false);
-                CHECK_NOTNULL(shadow);
-
-                light_sample_id = light_sample_offset + s;
-
-                RayUtil::makeShadow(rayin, light_sample_id, pos, wi, Lr,
-                                    isect.tfar, shadow);
-
-                sq->push(shadow);
-              }
-            }
-          }
-
-          light_sample_offset += samples_;
-
-        } else {  // point light
-          light_color = lights_[l]->sample(pos, &wi, &pdf);
-
-          if (pdf > 0.0f) {
-            costheta = glm::clamp(glm::dot(normal_ff, wi), 0.0f, 1.0f);
-            Lr = Lin *
-                 spray::blinnPhong(costheta, surf_radiance, ks_, shininess_,
-                                   light_color, wi, normal_ff, wo) *
-                 (1.0f / pdf);
-
-            if (hasPositive(Lr)) {
-              Ray *shadow = mem->Alloc<Ray>(1, false);
-              CHECK_NOTNULL(shadow);
-
-              light_sample_id = light_sample_offset;
-              RayUtil::makeShadow(rayin, light_sample_id, pos, wi, Lr,
-  isect.tfar, shadow); sq->push(shadow);
-            }
-          }
-          ++light_sample_offset;
-        }
-      }
-    }  // if (!delta_dist) {
-
-  #ifdef SPRAY_GLOG_CHECK
-    CHECK_LT(ray_depth, bounces_);
-  #endif
-
-    if (next_ray_depth < bounces_) {
-      wo = glm::normalize(wo);
-
-      if (delta_dist) {
-        if (cos_theta_i != 0.0f) {  // rule out 90 degree
-          cos_theta_i = glm::clamp(cos_theta_i, -1.0f, 1.0f);
-          float abs_cos_theta_i = glm::abs(cos_theta_i);
-
-          if (!entering) {  // i.e cos_theta_i < 0.0f
-            cos_theta_i = abs_cos_theta_i;
-          }
-
-          uint32_t sample_type;
-          float fr;      // prob. of reflection
-          glm::vec3 wt;  // direction of transmitted ray
-          bsdf->sampleDelta(entering, cos_theta_i, wo, normal_ff, &sample_type,
-                            &fr, &wt);
-          bool has_reflect = hasReflection(sample_type);
-
-          if (has_reflect) {
-            glm::vec3 wr = Reflect(wo, normal_ff);
-            wi = glm::normalize(wr);
-            Lr = Lin * (fr / abs_cos_theta_i);
-            if (hasPositive(Lr)) {
-              genR2(rayin, pos, wi, Lr, isect.tfar, mem, rq);
-            }
-          }
-
-          if (hasTransmission(sample_type)) {
-            // TODO: support both reflection and refraction
-            CHECK_EQ(has_reflect, false);
-            wi = glm::normalize(wt);
-            Lr = Lin * ((1.0f - fr) / abs_cos_theta_i);
-            if (hasPositive(Lr)) {
-              genR2(rayin, pos, wi, Lr, isect.tfar, mem, rq);
-            }
-          }
-        }
-      } else {
-        RandomSampler sampler;
-        RandomSampler_init(sampler, rayin.samid * next_ray_depth);
-
-        bsdf->sampleRandom(normal_ff, &sampler, &wi, &pdf);
-        costheta = glm::clamp(glm::dot(normal_ff, wi), 0.0f, 1.0f);
-        Lr = Lin * surf_radiance * SPRAY_ONE_OVER_PI * costheta / pdf;
-        if (hasPositive(Lr)) {
-          genR2(rayin, pos, wi, Lr, isect.tfar, mem, rq);
-        }
+  if (next_ray_depth < bounces_) {
+    RandomSampler_init(sampler, rayin.samid * next_ray_depth);
+    glm::vec3 weight = material->sample(wo, normal_ff, sampler, &wi, &pdf);
+    if (pdf > 0.0f) {
+      Lr = Lin * weight * (1.0f / pdf);
+      if (hasPositive(Lr)) {
+        wi = glm::normalize(wi);
+        Ray *r2 = mem->Alloc<Ray>(1, false);
+        CHECK_NOTNULL(r2);
+        RayUtil::makeRay(rayin, pos, wi, Lr, isect.tfar, r2);
+        rq->push(r2);
       }
     }
-  */
+  }
 }
 
 }  // namespace insitu
