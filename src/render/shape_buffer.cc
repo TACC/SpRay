@@ -179,7 +179,7 @@ void ShapeBuffer::sphereIntersect1Callback(void* shape_ptr, RTCRay& ray_i,
 
   float discriminant = (b * b) - (4.0f * a * c);
 
-  if (discriminant > 0) {
+  if (discriminant > 0.0f) {
     float sqrt_d = std::sqrt(discriminant);
 
     // TODO: use embree's rcp() for 1/a

@@ -207,7 +207,7 @@ void Glfw<WbvhT, SceneT>::keyCallback(GLFWwindow* window, int key, int scancode,
         const Aabb& bound = scene_->getBound();
         printf("[INFO] Camera --camera %f %f %f %f %f %f\n", campos.x, campos.y,
                campos.z, lookat.x, lookat.y, lookat.z);
-        printf("[INFO] Camera --up %f %f %f\n", upvec.x, upvec.y, upvec.z);
+        printf("[INFO] Camera --camera-up %f %f %f\n", upvec.x, upvec.y, upvec.z);
         printf("[INFO] Scene bound: min(%f %f %f), max(%f %f %f)\n",
                bound.bounds[0].x, bound.bounds[0].y, bound.bounds[0].z,
                bound.bounds[1].x, bound.bounds[1].y, bound.bounds[1].z);
