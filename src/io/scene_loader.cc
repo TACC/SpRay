@@ -227,7 +227,7 @@ void SceneLoader::parseLight(const std::vector<std::string>& tokens) {
     radiance[1] = atof(tokens[3].c_str());
     radiance[2] = atof(tokens[4].c_str());
 
-    addLight(new DiffuseHemisphereLight(radiance));
+    addLight(new DiffuseHemisphereLight(radiance, num_light_samples_));
 
   } else {
     LOG(FATAL) << "unknown light source " << tokens[1];
@@ -259,6 +259,25 @@ void SceneLoader::parseSphere(const std::vector<std::string>& tokens) {
     albedo[2] = atof(tokens[8].c_str());
 
     m = new Matte(albedo);
+
+  } else if (tokens[5] == "metal") {
+    CHECK_EQ(tokens.size(), 10);
+
+    glm::vec3 albedo;
+    albedo[0] = atof(tokens[6].c_str());
+    albedo[1] = atof(tokens[7].c_str());
+    albedo[2] = atof(tokens[8].c_str());
+
+    float fuzz = atof(tokens[9].c_str());
+
+    m = new Metal(albedo, fuzz);
+
+  } else if (tokens[5] == "dielectric") {
+    CHECK_EQ(tokens.size(), 7);
+
+    float index = atof(tokens[6].c_str());
+
+    m = new Dielectric(index);
   }
 
   CHECK_NOTNULL(m);
@@ -360,9 +379,9 @@ void SceneLoader::countAndAllocate(std::ifstream& infile) {
 // # tbd
 
 void SceneLoader::load(const std::string& filename, const std::string& ply_path,
-                       std::vector<Domain>* domains_out,
+                       int num_light_samples, std::vector<Domain>* domains_out,
                        std::vector<Light*>* lights_out) {
-  reset(domains_out, lights_out);
+  reset(num_light_samples, domains_out, lights_out);
 
   std::ifstream infile(filename);
   CHECK(infile.is_open()) << "unable to open input file " << filename;

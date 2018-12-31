@@ -71,7 +71,7 @@ class Scene {
 
   void init(const std::string& desc_filename, const std::string& ply_path,
             const std::string& storage_basepath, int cache_size, int view_mode,
-            bool insitu_mode, int num_virtual_ranks);
+            bool insitu_mode, int num_partitions, int num_light_samples);
 
   const InsituPartition& getInsituPartition() const { return partition_; }
   bool insitu() const { return insitu_; }

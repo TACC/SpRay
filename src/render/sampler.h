@@ -127,9 +127,26 @@ inline float cosineHemispherePdf(const glm::vec3& dir) {
   return dir.z * SPRAY_INV_PI;
 }
 
+/**
+ * Sample on a hemisphere.
+ *
+ * \param u1 Random number.
+ * \param u2 Random number.
+ * \param N Normalized surface normal.
+ * \param s Normalized sample.
+ */
 void getCosineHemisphereSample(float u1, float u2, const glm::vec3& N,
                                Sample3* s);
 
+/**
+ * Sample on a hemisphere.
+ *
+ * \param u1 Random number.
+ * \param u2 Random number.
+ * \param N Normalized surface normal.
+ * \param wi Normalized sample.
+ * \param pdf Probability density function value.
+ */
 void getCosineHemisphereSample(float u1, float u2, const glm::vec3& N,
                                glm::vec3* wi, float* pdf);
 

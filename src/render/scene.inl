@@ -32,10 +32,11 @@ void Scene<CacheT, SurfaceBufT>::init(const std::string& desc_filename,
                                       const std::string& ply_path,
                                       const std::string& storage_basepath,
                                       int cache_size, int view_mode,
-                                      bool insitu_mode, int num_partitions) {
+                                      bool insitu_mode, int num_partitions,
+                                      int num_light_samples) {
   // load .domain file
   SceneLoader loader;
-  loader.load(desc_filename, ply_path, &domains_, &lights_);
+  loader.load(desc_filename, ply_path, num_light_samples, &domains_, &lights_);
 
   // merge domain bounds and find the scene bounds
   std::size_t max_num_vertices, max_num_faces;

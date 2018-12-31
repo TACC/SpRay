@@ -34,6 +34,7 @@ class Light;
 
 class SceneLoader {
  private:
+  int num_light_samples_;
   int domain_id_;
   int light_id_;
   std::vector<Domain>* domains_;
@@ -41,7 +42,8 @@ class SceneLoader {
 
  public:
   void load(const std::string& filename, const std::string& ply_path,
-            std::vector<Domain>* domains_out, std::vector<Light*>* lights_out);
+            int num_light_samples, std::vector<Domain>* domains_out,
+            std::vector<Light*>* lights_out);
 
  private:
   enum class DomainTokenType {
@@ -59,7 +61,9 @@ class SceneLoader {
     kSphere
   };
 
-  void reset(std::vector<Domain>* domains, std::vector<Light*>* lights) {
+  void reset(int num_light_samples, std::vector<Domain>* domains,
+             std::vector<Light*>* lights) {
+    num_light_samples_ = num_light_samples;
     domain_id_ = -1;
     light_id_ = 0;
 
