@@ -28,15 +28,19 @@
 namespace spray {
 
 template <typename CacheT, typename SurfaceBufT>
-void Scene<CacheT, SurfaceBufT>::init(const std::string& desc_filename,
-                                      const std::string& ply_path,
-                                      const std::string& storage_basepath,
-                                      int cache_size, int view_mode,
-                                      bool insitu_mode, int num_partitions,
-                                      int num_light_samples) {
-  // load .domain file
+void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
+  const std::string& storage_basepath = cfg.local_disk_path;
+  int cache_size = cfg.cache_size;
+  int view_mode = cfg.view_mode;
+  bool insitu_mode = (cfg.partition == spray::Config::INSITU);
+
+  int num_partitions = cfg.num_partitions;
+  int num_light_samples = cfg.ao_samples;
+
+  // load scene file
   SceneLoader loader;
-  loader.load(desc_filename, ply_path, num_light_samples, &domains_, &lights_);
+  loader.load(cfg.model_descriptor_filename, cfg.ply_path, num_light_samples,
+              &domains_, &lights_);
 
   // merge domain bounds and find the scene bounds
   std::size_t max_num_vertices, max_num_faces;

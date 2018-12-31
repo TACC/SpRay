@@ -30,11 +30,7 @@ void SprayRenderer<TracerT, SceneT>::init(const Config &cfg) {
   cfg_ = &cfg;
 
   // scene
-  bool insitu_mode = (cfg.partition == spray::Config::INSITU);
-
-  scene_.init(cfg.model_descriptor_filename, cfg.ply_path, cfg.local_disk_path,
-              cfg.cache_size, cfg.view_mode, insitu_mode, cfg.num_partitions,
-              cfg.ao_samples);
+  scene_.init(cfg);
 
 #ifdef SPRAY_GLOG_CHECK
   LOG(INFO) << "scene init done";

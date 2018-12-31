@@ -31,6 +31,7 @@
 #include "io/scene_loader.h"
 #include "render/aabb.h"
 #include "render/caches.h"
+#include "render/config.h"
 #include "render/data_partition.h"
 #include "render/domain.h"
 #include "render/light.h"
@@ -69,9 +70,7 @@ class Scene {
     if (!storage_basepath_.empty()) deleteAllDomainsFromLocalDisk();
   }
 
-  void init(const std::string& desc_filename, const std::string& ply_path,
-            const std::string& storage_basepath, int cache_size, int view_mode,
-            bool insitu_mode, int num_partitions, int num_light_samples);
+  void init(const Config& cfg);
 
   const InsituPartition& getInsituPartition() const { return partition_; }
   bool insitu() const { return insitu_; }
