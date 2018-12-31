@@ -43,7 +43,7 @@ then
   NUM_FRAMES=-1
   NUM_PIXEL_SAMPLES=1
   NUM_AO_SAMPLES=1
-  NUM_BOUNCES=8
+  NUM_BOUNCES=4
 
 elif [ $APP == "2" ] # simple diffuse, antialiasing, glfw
 then

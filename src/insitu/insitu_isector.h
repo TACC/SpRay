@@ -102,7 +102,6 @@ class Isector {
 
     for (std::size_t i = 0; i < ray_buf.num; ++i) {
       Ray* ray = &rays[i];
-      background_q->push(ray);
 
       RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
                                                &eray_);
@@ -120,7 +119,8 @@ class Isector {
           qs->push(id, ray);
         }
       } else {
-        RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
+        // RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
+        background_q->push(ray);
       }
     }
   }
@@ -147,6 +147,30 @@ class Isector {
     }
   }
 
+  void intersect(int exclude_id, int ndomains, SceneT* scene, Ray* ray,
+                 spray::QVector<Ray*>* qs, std::queue<Ray*>* background_q) {
+    RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
+                                             &eray_);
+
+    scene->intersectDomains(eray_);
+
+    if (domains_.count) {
+      RTCRayUtil::sortDomains(domains_, hits_);
+
+      for (int d = 0; d < domains_.count; ++d) {
+        int id = hits_[d].id;
+#ifdef SPRAY_GLOG_CHECK
+        CHECK_LT(id, ndomains);
+#endif
+        if (id != exclude_id) {
+          qs->push(id, ray);
+        }
+      }
+    } else {
+      background_q->push(ray);
+    }
+  }
+
   void intersect(int exclude_id, float t, int ndomains, SceneT* scene, Ray* ray,
                  spray::QVector<Ray*>* qs) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
@@ -166,6 +190,30 @@ class Isector {
           qs->push(id, ray);
         }
       }
+    }
+  }
+
+  void intersect(int exclude_id, float t, int ndomains, SceneT* scene, Ray* ray,
+                 spray::QVector<Ray*>* qs, std::queue<Ray*>* background_q) {
+    RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
+                                             &eray_);
+
+    scene->intersectDomains(eray_);
+
+    if (domains_.count) {
+      RTCRayUtil::sortDomains(domains_, hits_);
+
+      for (int d = 0; d < domains_.count; ++d) {
+        int id = hits_[d].id;
+#ifdef SPRAY_GLOG_CHECK
+        CHECK_LT(id, ndomains);
+#endif
+        if (id != exclude_id && hits_[d].t < t) {
+          qs->push(id, ray);
+        }
+      }
+    } else {
+      background_q->push(ray);
     }
   }
 };

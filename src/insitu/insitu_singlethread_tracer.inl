@@ -366,7 +366,7 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRad(int id, Ray *ray) {
   }
 #ifndef SPRAY_BACKGROUND_COLOR_BLACK
   else {
-    RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
+    // RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
     bg_retire_q_.push(ray);
   }
 #endif
@@ -432,7 +432,12 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procFsq2() {
         vbuf_.setOBuf(ray->samid, ray->light);
       } else {  // to retire q, isect domains exluding its domain
         retire_q_.push(ray);
+#ifdef SPRAY_BACKGROUND_COLOR_BLACK
         isector_.intersect(info.domain_id, num_domains_, scene_, ray, &sqs_);
+#else
+        isector_.intersect(info.domain_id, num_domains_, scene_, ray, &sqs_,
+                           &bg_retire_q_);
+#endif
       }
     }
     fsq2_.pop();
@@ -449,10 +454,20 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procFrq2() {
 
       if (!std::isinf(isect->tfar)) {  // hit
         cached_rq_.push(info);
+#ifdef SPRAY_BACKGROUND_COLOR_BLACK
         isector_.intersect(info.domain_id, isect->tfar, num_domains_, scene_,
                            ray, &rqs_);
+#else
+        isector_.intersect(info.domain_id, isect->tfar, num_domains_, scene_,
+                           ray, &rqs_, &bg_retire_q_);
+#endif
       } else {
+#ifdef SPRAY_BACKGROUND_COLOR_BLACK
         isector_.intersect(info.domain_id, num_domains_, scene_, ray, &rqs_);
+#else
+        isector_.intersect(info.domain_id, num_domains_, scene_, ray, &rqs_,
+                           &bg_retire_q_);
+#endif
       }
     }
     frq2_.pop();
@@ -494,12 +509,11 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::retireBackground() {
   while (!bg_retire_q_.empty()) {
     auto *ray = bg_retire_q_.front();
     bg_retire_q_.pop();
-    int oflag = ray->occluded;
-    if (oflag == RayUtil::OFLAG_BACKGROUND) {
-      bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
-                RayUtil::computeBackGroundColor(*ray);
-      image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
-    }
+    // int oflag = ray->occluded;
+    // CHECK_EQ(oflag, RayUtil::OFLAG_BACKGROUND);
+    bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
+              RayUtil::computeBackGroundColor(*ray);
+    image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
   }
 }
 
@@ -526,7 +540,11 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
                     mytile_, &shared_eyes);
     }
 
+#ifdef SPRAY_BACKGROUND_COLOR_BLACK
     isector_.intersect(num_domains_, scene_, shared_eyes, &rqs_);
+#else
+    isector_.intersect(num_domains_, scene_, shared_eyes, &rqs_, &bg_retire_q_);
+#endif
 
     populateRadWorkStats();
   }
@@ -567,12 +585,6 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
       procRetireQ();
       vbuf_.resetOBuf();
     }
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
-    else {
-      retireBackground();
-    }
-#endif
-
     vbuf_.resetTBufIn();
     vbuf_.swapTBufs();
 
@@ -585,6 +597,10 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
     std::swap(mem_in_, mem_out_);
 
     ++ray_depth_;
+
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+    retireBackground();
+#endif
   }
 #ifdef SPRAY_GLOG_CHECK
   CHECK(bg_retire_q_.empty());

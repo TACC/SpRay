@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <iostream>
+
 #include "embree/random_sampler.h"
 #include "glm/glm.hpp"
 #include "glog/logging.h"
@@ -47,9 +49,11 @@ class Material {
   virtual glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
                           const glm::vec3& normal, float* inv_pdf) const = 0;
 
-  virtual glm::vec3 sample(const glm::vec3& wo, const glm::vec3& normal,
-                           RandomSampler& sampler, glm::vec3* wi,
-                           float* pdf) const = 0;
+  virtual bool sample(const glm::vec3& wo, const glm::vec3& normal,
+                      RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
+                      float* pdf) const = 0;
+
+  virtual bool isMetal() const { return false; }
 };
 
 class Matte : public Material {
@@ -60,9 +64,9 @@ class Matte : public Material {
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
                   const glm::vec3& normal, float* inv_pdf) const override;
 
-  glm::vec3 sample(const glm::vec3& wo, const glm::vec3& normal,
-                   RandomSampler& sampler, glm::vec3* wi,
-                   float* pdf) const override;
+  bool sample(const glm::vec3& wo, const glm::vec3& normal,
+              RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
+              float* pdf) const override;
 
  private:
   const glm::vec3 albedo_;
@@ -75,19 +79,28 @@ inline glm::vec3 Matte::shade(const glm::vec3& wi, const glm::vec3& wo,
          glm::clamp(glm::dot(wi, normal), 0.0f, 1.0f);
 }
 
-inline glm::vec3 Matte::sample(const glm::vec3& wo, const glm::vec3& normal,
-                               RandomSampler& sampler, glm::vec3* wi,
-                               float* pdf) const {
+inline bool Matte::sample(const glm::vec3& wo, const glm::vec3& normal,
+                          RandomSampler& sampler, glm::vec3* wi,
+                          glm::vec3* color, float* pdf) const {
   glm::vec2 u = RandomSampler_get2D(sampler);
   getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
-  return albedo_ * SPRAY_ONE_OVER_PI *
-         glm::clamp(glm::dot(*wi, normal), 0.0f, 1.0f);
+
+  if (*pdf > 0.0f) {
+    float l_dot_n = glm::dot(*wi, normal);
+
+    if (l_dot_n > 0.0f) {
+      *color = albedo_ * glm::clamp(l_dot_n, 0.0f, 1.0f);
+      return true;
+    }
+  }
+  return false;
 }
 
 class Metal : public Material {
  public:
   Metal(const glm::vec3& albedo, float fuzz) : albedo_(albedo), fuzz_(fuzz) {}
   int type() const override { return METAL; }
+  bool isMetal() const override { return true; }
 
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
                   const glm::vec3& normal, float* inv_pdf) const override {
@@ -95,13 +108,18 @@ class Metal : public Material {
     return glm::vec3(0.0f);
   }
 
-  glm::vec3 sample(const glm::vec3& wo, const glm::vec3& normal,
-                   RandomSampler& sampler, glm::vec3* wi,
-                   float* pdf) const override {
+  bool sample(const glm::vec3& wo, const glm::vec3& normal,
+              RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
+              float* pdf) const override {
     *pdf = 1.0f;
-    glm::vec3 reflect = wo - (2.0f * glm::dot(wo, normal) * normal);
-    *wi = glm::normalize(reflect);
-    return albedo_;
+    glm::vec3 reflect = glm::reflect(-wo, normal);
+
+    if (glm::dot(reflect, normal) > 0) {
+      *wi = glm::normalize(reflect);
+      *color = albedo_;
+      return true;
+    }
+    return false;
   }
 
  private:
@@ -117,19 +135,18 @@ class Dielectric : public Material {
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
                   const glm::vec3& normal, float* inv_pdf) const override {
     // TODO
-    glm::vec3(1.0f);
+    return glm::vec3();
   }
 
-  glm::vec3 sample(const glm::vec3& wo, const glm::vec3& normal,
-                   RandomSampler& sampler, glm::vec3* wi,
-                   float* pdf) const override {
+  bool sample(const glm::vec3& wo, const glm::vec3& normal,
+              RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
+              float* pdf) const override {
     // TODO
-    glm::vec3(1.0f);
+    return false;
   }
 
  private:
   const float index_;  ///< Refraction index.
 };
-
 
 }  // namespace spray

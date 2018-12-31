@@ -92,10 +92,11 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
 
   glm::vec3 Lin(rayin.w[0], rayin.w[1], rayin.w[2]);
 
-  float cos_theta_i = glm::dot(wo, normal);
-  bool entering = (cos_theta_i > 0.0f);
-  glm::vec3 normal_ff = entering ? normal : -normal;
-  normal_ff = glm::normalize(normal_ff);
+  // float cos_theta_i = glm::dot(wo, normal);
+  // bool entering = (cos_theta_i > 0.0f);
+  // glm::vec3 normal_ff = entering ? normal : -normal;
+  // normal_ff = glm::normalize(normal_ff);
+  glm::vec3 normal_ff = glm::normalize(normal);
 
   glm::vec3 wi, light_color, Lr;
   float pdf, inv_shade_pdf, costheta;
@@ -120,41 +121,43 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
   // direct illumination
 
   // for each light
-  for (int l = 0; l < nlights; ++l) {
-    Light *light = lights_[l];
+  if (!material->isMetal()) {
+    for (int l = 0; l < nlights; ++l) {
+      Light *light = lights_[l];
 
-    num_light_samples = light->getNumSamples();
+      num_light_samples = light->getNumSamples();
 
-    // for each light sample
-    for (int s = 0; s < num_light_samples; ++s) {
-      // light color
-      light_color = light->sampleL(pos, sampler, normal_ff, &wi, &pdf);
+      // for each light sample
+      for (int s = 0; s < num_light_samples; ++s) {
+        // light color
+        light_color = light->sampleL(pos, sampler, normal_ff, &wi, &pdf);
 
-      if (pdf > 0.0f) {
-        // wi, wo, normal_ff: all normalized
-        shade_color = material->shade(wi, wo, normal_ff, &inv_shade_pdf);
+        if (pdf > 0.0f) {
+          // wi, wo, normal_ff: all normalized
+          shade_color = material->shade(wi, wo, normal_ff, &inv_shade_pdf);
 
-        if (inv_shade_pdf > 0.0f) {
-          Lr = Lin * light_color * shade_color * inv_shade_pdf /
-               (pdf * num_light_samples);
+          if (inv_shade_pdf > 0.0f) {
+            Lr = Lin * light_color * shade_color * inv_shade_pdf /
+                 (pdf * num_light_samples);
 
-          if (hasPositive(Lr)) {
-            // create shadow ray
-            Ray *shadow = mem->Alloc<Ray>(1, false);
-            CHECK_NOTNULL(shadow);
+            if (hasPositive(Lr)) {
+              // create shadow ray
+              Ray *shadow = mem->Alloc<Ray>(1, false);
+              CHECK_NOTNULL(shadow);
 
-            light_sample_id = light_sample_offset + s;
+              light_sample_id = light_sample_offset + s;
 
-            RayUtil::makeShadow(rayin, light_sample_id, pos, wi, Lr, isect.tfar,
-                                shadow);
+              RayUtil::makeShadow(rayin, light_sample_id, pos, wi, Lr,
+                                  isect.tfar, shadow);
 
-            sq->push(shadow);
+              sq->push(shadow);
+            }
           }
         }
       }
-    }
 
-    light_sample_offset += num_light_samples;
+      light_sample_offset += num_light_samples;
+    }
   }
 
   // indirect illumination
@@ -165,11 +168,11 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
 
   if (next_ray_depth < bounces_) {
     RandomSampler_init(sampler, rayin.samid * next_ray_depth);
-    glm::vec3 weight = material->sample(wo, normal_ff, sampler, &wi, &pdf);
-    if (pdf > 0.0f) {
+    glm::vec3 weight;
+    bool valid = material->sample(wo, normal_ff, sampler, &wi, &weight, &pdf);
+    if (valid) {
       Lr = Lin * weight * (1.0f / pdf);
       if (hasPositive(Lr)) {
-        wi = glm::normalize(wi);
         Ray *r2 = mem->Alloc<Ray>(1, false);
         CHECK_NOTNULL(r2);
         RayUtil::makeRay(rayin, pos, wi, Lr, isect.tfar, r2);
