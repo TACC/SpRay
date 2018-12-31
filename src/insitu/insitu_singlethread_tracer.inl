@@ -364,12 +364,12 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRad(int id, Ray *ray) {
       filterRq2(id);
     }
   }
-  // #ifndef SPRAY_BACKGROUND_COLOR_BLACK
-  //   else {
-  //     RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
-  //     bg_retire_q_.push(ray);
-  //   }
-  // #endif
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+  else {
+    RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
+    bg_retire_q_.push(ray);
+  }
+#endif
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
@@ -527,11 +527,11 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
                     mytile_, &shared_eyes);
     }
 
-#ifdef SPRAY_BACKGROUND_COLOR_BLACK
+// #ifdef SPRAY_BACKGROUND_COLOR_BLACK
     isector_.intersect(num_domains_, scene_, shared_eyes, &rqs_);
-#else
-    isector_.intersect(num_domains_, scene_, shared_eyes, &rqs_, &bg_retire_q_);
-#endif
+// #else
+//     isector_.intersect(num_domains_, scene_, shared_eyes, &rqs_, &bg_retire_q_);
+// #endif
 
     populateRadWorkStats();
   }
