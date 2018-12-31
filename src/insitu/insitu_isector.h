@@ -149,6 +149,7 @@ class Isector {
 
   void intersect(int exclude_id, int ndomains, SceneT* scene, Ray* ray,
                  spray::QVector<Ray*>* qs, std::queue<Ray*>* background_q) {
+    background_q->push(ray);
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
                                              &eray_);
 
@@ -167,7 +168,7 @@ class Isector {
         }
       }
     } else {
-      background_q->push(ray);
+      RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
     }
   }
 
@@ -195,6 +196,7 @@ class Isector {
 
   void intersect(int exclude_id, float t, int ndomains, SceneT* scene, Ray* ray,
                  spray::QVector<Ray*>* qs, std::queue<Ray*>* background_q) {
+    background_q->push(ray);
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
                                              &eray_);
 
@@ -213,7 +215,7 @@ class Isector {
         }
       }
     } else {
-      background_q->push(ray);
+      RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
     }
   }
 };

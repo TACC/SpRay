@@ -364,12 +364,6 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRad(int id, Ray *ray) {
       filterRq2(id);
     }
   }
-  // #ifndef SPRAY_BACKGROUND_COLOR_BLACK
-  //   else {
-  //     // RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
-  //     bg_retire_q_.push(ray);
-  //   }
-  // #endif
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
@@ -446,7 +440,6 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procFrq2() {
     auto *ray = info.ray;
     if (vbuf_.correct(ray->samid, ray->t)) {
       auto *isect = info.isect;
-
       if (!std::isinf(isect->tfar)) {  // hit
         cached_rq_.push(info);
         isector_.intersect(info.domain_id, isect->tfar, num_domains_, scene_,
