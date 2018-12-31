@@ -132,11 +132,11 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
 
       if (pdf > 0.0f) {
         // wi, wo, normal_ff: all normalized
-        shade_color =
-            material->shade(wi, wo, normal_ff, light_color, &inv_shade_pdf);
+        shade_color = material->shade(wi, wo, normal_ff, &inv_shade_pdf);
 
         if (inv_shade_pdf > 0.0f) {
-          Lr = Lin * shade_color * inv_shade_pdf / (pdf * num_light_samples);
+          Lr = Lin * light_color * shade_color * inv_shade_pdf /
+               (pdf * num_light_samples);
 
           if (hasPositive(Lr)) {
             // create shadow ray
