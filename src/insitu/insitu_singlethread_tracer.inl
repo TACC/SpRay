@@ -495,10 +495,11 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::retireBackground() {
     auto *ray = bg_retire_q_.front();
     bg_retire_q_.pop();
     int oflag = ray->occluded;
-    if (oflag == RayUtil::OFLAG_BACKGROUND || vbuf_.tbufOutMiss(ray->samid)) {
-      // bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
-      //           RayUtil::computeBackGroundColor(*ray);
-      bgcolor = RayUtil::computeBackGroundColor(*ray);
+    // if (oflag == RayUtil::OFLAG_BACKGROUND || vbuf_.tbufOutMiss(ray->samid)) {
+    if (oflag == RayUtil::OFLAG_BACKGROUND) {
+      bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
+                RayUtil::computeBackGroundColor(*ray);
+      // bgcolor = RayUtil::computeBackGroundColor(*ray);
       image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
     }
   }
@@ -527,11 +528,7 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
                     mytile_, &shared_eyes);
     }
 
-// #ifdef SPRAY_BACKGROUND_COLOR_BLACK
     isector_.intersect(num_domains_, scene_, shared_eyes, &rqs_);
-// #else
-//     isector_.intersect(num_domains_, scene_, shared_eyes, &rqs_, &bg_retire_q_);
-// #endif
 
     populateRadWorkStats();
   }
