@@ -29,6 +29,7 @@
 #include "pbrt/memory.h"
 
 #include "render/shape.h"
+#include "render/rays.h"
 
 namespace spray {
 
@@ -54,8 +55,9 @@ class ShapeBuffer {
  public:
   RTCScene get(int cache_block) { return scenes_[cache_block]; }
 
-  void updateIntersection(RTCRayIntersection* isect) const;
-  void updateIntersection(int cache_block, RTCRayIntersection* isect) const;
+  void updateIntersection(int cache_block, RTCRayIntersection* isect) const {
+    isect->material = getMaterial(cache_block, isect->primID);
+  }
 
   static void intersect(void* shape_ptr, RTCRay& ray_i);
 
