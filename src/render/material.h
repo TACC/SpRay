@@ -47,7 +47,7 @@ class Material {
    * \param inv_pdf Reciprocal of a probablity density function value.
    */
   virtual glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
-                          const glm::vec3& normal, float* inv_pdf) const = 0;
+                          const glm::vec3& normal) const = 0;
 
   virtual bool sample(const glm::vec3& wo, const glm::vec3& normal,
                       RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
@@ -62,7 +62,7 @@ class Matte : public Material {
   int type() const override { return MATTE; }
 
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
-                  const glm::vec3& normal, float* inv_pdf) const override;
+                  const glm::vec3& normal) const override;
 
   bool sample(const glm::vec3& wo, const glm::vec3& normal,
               RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
@@ -73,10 +73,8 @@ class Matte : public Material {
 };
 
 inline glm::vec3 Matte::shade(const glm::vec3& wi, const glm::vec3& wo,
-                              const glm::vec3& normal, float* inv_pdf) const {
-  *inv_pdf = SPRAY_ONE_OVER_PI;
-  return albedo_ * SPRAY_ONE_OVER_PI *
-         glm::clamp(glm::dot(wi, normal), 0.0f, 1.0f);
+                              const glm::vec3& normal) const {
+  return albedo_ * glm::clamp(glm::dot(wi, normal), 0.0f, 1.0f);
 }
 
 inline bool Matte::sample(const glm::vec3& wo, const glm::vec3& normal,
@@ -89,7 +87,7 @@ inline bool Matte::sample(const glm::vec3& wo, const glm::vec3& normal,
     float l_dot_n = glm::dot(*wi, normal);
 
     if (l_dot_n > 0.0f) {
-      *color = albedo_ * glm::clamp(l_dot_n, 0.0f, 1.0f);
+      *color = albedo_ * SPRAY_ONE_OVER_PI * glm::clamp(l_dot_n, 0.0f, 1.0f);
       return true;
     }
   }
@@ -103,8 +101,7 @@ class Metal : public Material {
   bool isMetal() const override { return true; }
 
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
-                  const glm::vec3& normal, float* inv_pdf) const override {
-    *inv_pdf = 0.0f;
+                  const glm::vec3& normal) const override {
     return glm::vec3(0.0f);
   }
 
@@ -133,7 +130,7 @@ class Dielectric : public Material {
   int type() const override { return DIELECTRIC; }
 
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
-                  const glm::vec3& normal, float* inv_pdf) const override {
+                  const glm::vec3& normal) const override {
     // TODO
     return glm::vec3();
   }
