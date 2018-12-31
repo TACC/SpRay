@@ -357,22 +357,19 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRad(int id, Ray *ray) {
   bool is_hit = scene_->intersect(sinfo_.rtc_scene, sinfo_.cache_block,
                                   ray->org, ray->dir, &rtc_isect_);
 
-  if (is_hit) retire_q_.push(ray);
-  // LOG(INFO) << ray->pixid << "," << ray->samid << "\n";
-
-  // if (is_hit) {
-  //   if (vbuf_.updateTBufOutT(rtc_isect_.tfar, ray)) {
-  //     shader_(id, *ray, rtc_isect_, mem_out_, &sq2_, &rq2_, ray_depth_);
-  //     filterSq2(id);
-  //     filterRq2(id);
+  if (is_hit) {
+    if (vbuf_.updateTBufOutT(rtc_isect_.tfar, ray)) {
+      shader_(id, *ray, rtc_isect_, mem_out_, &sq2_, &rq2_, ray_depth_);
+      filterSq2(id);
+      filterRq2(id);
+    }
+  }
+  // #ifndef SPRAY_BACKGROUND_COLOR_BLACK
+  //   else {
+  //     RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
+  //     bg_retire_q_.push(ray);
   //   }
-  // }
-// #ifndef SPRAY_BACKGROUND_COLOR_BLACK
-//   else {
-//     RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
-//     bg_retire_q_.push(ray);
-//   }
-// #endif
+  // #endif
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
@@ -538,8 +535,6 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
 
     populateRadWorkStats();
   }
-
-  // LOG(INFO) << "num of eye rays: " << shared_eyes.num;
 
   ray_depth_ = 0;
 

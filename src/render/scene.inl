@@ -22,11 +22,12 @@
 #error An implementation of Scene
 #endif
 
-#define DEBUG_SCENE
-#undef DEBUG_SCENE
+#define DEBUG_SPRAY_SCENE
+#undef DEBUG_SPRAY_SCENE
 
 namespace spray {
 
+#ifdef DEBUG_SPRAY_SCENE
 template <typename SurfaceBufT>
 inline bool intersect(SurfaceBufT& sbuf, RTCScene rtc_scene, int cache_block,
                       RTCRayIntersection* isect, std::vector<Domain>& domains) {
@@ -55,6 +56,7 @@ inline bool intersect<ShapeBuffer>(ShapeBuffer& sbuf, RTCScene rtc_scene,
   }
   return false;
 }
+#endif
 
 template <typename CacheT, typename SurfaceBufT>
 void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
@@ -177,14 +179,14 @@ template <typename CacheT, typename SurfaceBufT>
 void Scene<CacheT, SurfaceBufT>::load(int id) {
   int cache_block;
   if (cache_.load(id, &cache_block)) {
-#ifdef DEBUG_SCENE
+#ifdef DEBUG_SPRAY_SCENE
     LOG(INFO) << "loading cached domain " << id << " cache block "
               << cache_block << " $size " << cache_.getSize() << " $capacity "
               << cache_.getCacheSize();
 #endif
     scene_ = surface_buf_.get(cache_block);
   } else {
-#ifdef DEBUG_SCENE
+#ifdef DEBUG_SPRAY_SCENE
     LOG(INFO) << "loading uncached domain " << id << " cache block "
               << cache_block << " $size " << cache_.getSize() << " $capacity "
               << cache_.getCacheSize();
@@ -204,14 +206,14 @@ template <typename CacheT, typename SurfaceBufT>
 void Scene<CacheT, SurfaceBufT>::load(int id, SceneInfo* sinfo) {
   int cache_block;
   if (cache_.load(id, &cache_block)) {
-#ifdef DEBUG_SCENE
+#ifdef DEBUG_SPRAY_SCENE
     LOG(INFO) << "loading cached domain " << id << " cache block "
               << cache_block << " $size " << cache_.getSize() << " $capacity "
               << cache_.getCacheSize();
 #endif
     scene_ = surface_buf_.get(cache_block);
   } else {
-#ifdef DEBUG_SCENE
+#ifdef DEBUG_SPRAY_SCENE
     LOG(INFO) << "loading uncached domain " << id << " cache block "
               << cache_block << " $size " << cache_.getSize() << " $capacity "
               << cache_.getCacheSize();
@@ -228,18 +230,25 @@ void Scene<CacheT, SurfaceBufT>::load(int id, SceneInfo* sinfo) {
   sinfo->cache_block = cache_block;
 }
 
+#ifdef DEBUG_SPRAY_SCENE
 template <typename CacheT, typename SurfaceBufT>
 bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
                                            RTCRayIntersection* isect) {
   return spray::intersect(surface_buf_, rtc_scene, cache_block, isect,
                           domains_);
-  // rtcIntersect(rtc_scene, (RTCRay&)(*isect));
+}
+#endif
 
-  // if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-  //   surface_buf_.updateIntersection(cache_block, isect);
-  //   return true;
-  // }
-  // return false;
+template <typename CacheT, typename SurfaceBufT>
+bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
+                                           RTCRayIntersection* isect) {
+  rtcIntersect(rtc_scene, (RTCRay&)(*isect));
+
+  if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
+    surface_buf_.updateIntersection(cache_block, isect);
+    return true;
+  }
+  return false;
 }
 
 template <typename CacheT, typename SurfaceBufT>
