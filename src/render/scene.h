@@ -36,6 +36,7 @@
 #include "render/domain.h"
 #include "render/light.h"
 #include "render/rays.h"
+#include "render/shape_buffer.h"
 #include "render/spray.h"
 #include "render/wbvh_embree.h"
 #include "utils/comm.h"

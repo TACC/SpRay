@@ -56,7 +56,7 @@ void ShapeBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
   // CHECK_NOTNULL(colors_);
 
   // embree device
-  device_ = rtcNewDevice(nullptr);
+  if (!device_) device_ = rtcNewDevice(nullptr);
   CHECK_NOTNULL(device_);
 
   // embree scenes
@@ -64,7 +64,8 @@ void ShapeBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
   // CHECK_NOTNULL(scenes_);
   scenes_.resize(cache_size);
 
-  RTCSceneFlags sflags = RTC_SCENE_STATIC | RTC_SCENE_HIGH_QUALITY;
+  // RTCSceneFlags sflags = RTC_SCENE_STATIC | RTC_SCENE_HIGH_QUALITY;
+  RTCSceneFlags sflags = RTC_SCENE_STATIC;
   RTCAlgorithmFlags aflags = RTC_INTERSECT1;
 
   for (std::size_t i = 0; i < cache_size; ++i) {
@@ -99,6 +100,7 @@ RTCScene ShapeBuffer::load(const std::string& filename, int cache_block,
   RTCAlgorithmFlags aflags = RTC_INTERSECT1;
   RTCScene scene = scenes_[cache_block];
 
+  // std::cout<<"shapes.size: "<<shapes.size()<<std::endl;
   // create geometry
   unsigned int geom_id = rtcNewUserGeometry(scene, shapes.size());
 
@@ -109,6 +111,7 @@ RTCScene ShapeBuffer::load(const std::string& filename, int cache_block,
     Shape* shape = shapes[i];
     CHECK_EQ(shape->type(), Shape::SPHERE);
     shape->setGeomId(geom_id);
+    // std::cout << ((Sphere*)shape)->radius << "\n";
   }
 
   // set data
@@ -121,8 +124,8 @@ RTCScene ShapeBuffer::load(const std::string& filename, int cache_block,
   rtcSetOccludedFunction(scene, geom_id, ShapeBuffer::sphereOccluded1Callback);
 
   // update geometry
-  rtcUpdate(scene, geom_id);
-  rtcEnable(scene, geom_id);
+  // rtcUpdate(scene, geom_id);
+  // rtcEnable(scene, geom_id);
 
   rtcCommit(scene);
 
@@ -158,11 +161,13 @@ void ShapeBuffer::sphereBoundsCallback(void* shape_ptr, std::size_t item,
   bounds_o.upper_z = sphere->center.z + sphere->radius;
 }
 
-void ShapeBuffer::sphereIntersect1Callback(void* shape_ptr, RTCRay& ray,
+void ShapeBuffer::sphereIntersect1Callback(void* shape_ptr, RTCRay& ray_i,
                                            std::size_t item) {
   const Sphere** spheres = static_cast<const Sphere**>(shape_ptr);
   const Sphere* sphere = spheres[item];
 
+  RTCRayIntersection& ray = (RTCRayIntersection&)ray_i;
+
   const glm::vec3 center_to_origin(ray.org[0] - sphere->center[0],
                                    ray.org[1] - sphere->center[1],
                                    ray.org[2] - sphere->center[2]);
@@ -171,51 +176,55 @@ void ShapeBuffer::sphereIntersect1Callback(void* shape_ptr, RTCRay& ray,
   float b = 2.0f * spray::dot(center_to_origin, ray.dir);
   float c = glm::dot(center_to_origin, center_to_origin) -
             (sphere->radius * sphere->radius);
+
   float discriminant = (b * b) - (4.0f * a * c);
-  if (discriminant <= 0.0f) return;
 
-  float sqrt_d = std::sqrt(discriminant);
+  if (discriminant > 0) {
+    float sqrt_d = std::sqrt(discriminant);
 
-  // TODO: use embree's rcp() for 1/a
-  float a2 = 2.0f * a;
-  float root0 = (-b - sqrt_d) / a2;
-  float root1 = (-b + sqrt_d) / a2;
+    // TODO: use embree's rcp() for 1/a
+    float a2 = 2.0f * a;
+    float root = (-b - sqrt_d) / a2;
 
-  // root0 between tnear and tfar
-  if (root0 > ray.tnear && root0 < ray.tfar) {
-    // TODO: update u,v with correct values
-    ray.u = 0.0f;
-    ray.v = 0.0f;
-    ray.tfar = root0;
-    ray.geomID = sphere->geom_id;
-    ray.primID = static_cast<unsigned int>(item);
-    // NOTE: Ng not normalized
-    ray.Ng[0] = ray.org[0] + (root0 * ray.dir[0]) - sphere->center[0];
-    ray.Ng[1] = ray.org[1] + (root0 * ray.dir[1]) - sphere->center[1];
-    ray.Ng[2] = ray.org[2] + (root0 * ray.dir[2]) - sphere->center[2];
-    return;
-  }
+    // root between tnear and tfar
+    if (root > ray.tnear && root < ray.tfar) {
+      // TODO: update u,v with correct values
+      // ray.u = 0.0f;
+      // ray.v = 0.0f;
+      ray.tfar = root;
+      ray.geomID = sphere->geom_id;
+      ray.primID = static_cast<unsigned int>(item);
+      // NOTE: Ng not normalized
+      ray.Ng[0] = ray.org[0] + (root * ray.dir[0]) - sphere->center[0];
+      ray.Ng[1] = ray.org[1] + (root * ray.dir[1]) - sphere->center[1];
+      ray.Ng[2] = ray.org[2] + (root * ray.dir[2]) - sphere->center[2];
+      return;
+    }
 
-  // root1 between tnear and tfar
-  if (root1 > ray.tnear && root1 < ray.tfar) {
-    // TODO: update u,v with correct values
-    ray.u = 0.0f;
-    ray.v = 0.0f;
-    ray.tfar = root1;
-    ray.geomID = sphere->geom_id;
-    ray.primID = static_cast<unsigned int>(item);
-    // NOTE: Ng not normalized
-    ray.Ng[0] = ray.org[0] + (root1 * ray.dir[0]) - sphere->center[0];
-    ray.Ng[1] = ray.org[1] + (root1 * ray.dir[1]) - sphere->center[1];
-    ray.Ng[2] = ray.org[2] + (root1 * ray.dir[2]) - sphere->center[2];
+    root = (-b + sqrt_d) / a2;
+    // root between tnear and tfar
+    if (root > ray.tnear && root < ray.tfar) {
+      // TODO: update u,v with correct values
+      // ray.u = 0.0f;
+      // ray.v = 0.0f;
+      ray.tfar = root;
+      ray.geomID = sphere->geom_id;
+      ray.primID = static_cast<unsigned int>(item);
+      // NOTE: Ng not normalized
+      ray.Ng[0] = ray.org[0] + (root * ray.dir[0]) - sphere->center[0];
+      ray.Ng[1] = ray.org[1] + (root * ray.dir[1]) - sphere->center[1];
+      ray.Ng[2] = ray.org[2] + (root * ray.dir[2]) - sphere->center[2];
+    }
   }
 }
 
-void ShapeBuffer::sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
+void ShapeBuffer::sphereOccluded1Callback(void* shape_ptr, RTCRay& ray_i,
                                           std::size_t item) {
   const Sphere** spheres = static_cast<const Sphere**>(shape_ptr);
   const Sphere* sphere = spheres[item];
 
+  RTCRayIntersection& ray = (RTCRayIntersection&)ray_i;
+
   const glm::vec3 center_to_origin(ray.org[0] - sphere->center[0],
                                    ray.org[1] - sphere->center[1],
                                    ray.org[2] - sphere->center[2]);
@@ -224,34 +233,38 @@ void ShapeBuffer::sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
   float b = 2.0f * spray::dot(center_to_origin, ray.dir);
   float c = glm::dot(center_to_origin, center_to_origin) -
             (sphere->radius * sphere->radius);
+
   float discriminant = (b * b) - (4.0f * a * c);
-  if (discriminant <= 0.0f) return;
 
-  float sqrt_d = std::sqrt(discriminant);
+  if (discriminant > 0.0f) {
+    float sqrt_d = std::sqrt(discriminant);
 
-  // TODO: use embree's rcp() for 1/a
-  float a2 = 2.0f * a;
-  float root0 = (-b - sqrt_d) / a2;
-  float root1 = (-b + sqrt_d) / a2;
+    // TODO: use embree's rcp() for 1/a
+    float a2 = 2.0f * a;
+    float root = (-b - sqrt_d) / a2;
 
-  // root0 between tnear and tfar
-  if (root0 > ray.tnear && root0 < ray.tfar) {
-    ray.geomID = 0;  // 0 means occluded
-  }
+    // root between tnear and tfar
+    if (root > ray.tnear && root < ray.tfar) {
+      ray.geomID = 0;  // 0 means occluded
+      return;
+    }
 
-  // root1 between tnear and tfar
-  if (root1 > ray.tnear && root1 < ray.tfar) {
-    ray.geomID = 0;  // 0 means occluded
+    root = (-b + sqrt_d) / a2;
+
+    // root between tnear and tfar
+    if (root > ray.tnear && root < ray.tfar) {
+      ray.geomID = 0;  // 0 means occluded
+    }
   }
 }
 
 // void ShapeBuffer::getColorTuple(int cache_block, uint32_t primID,
 //                                 uint32_t colors[3]) const {
 //   uint32_t* faces = &faces_[faceBaseIndex(cache_block)];
-// 
+//
 //   uint32_t fid = primID * NUM_VERTICES_PER_FACE;
 //   uint32_t* c = &colors_[colorBaseIndex(cache_block)];
-// 
+//
 //   colors[0] = c[faces[fid]];
 //   colors[1] = c[faces[fid + 1]];
 //   colors[2] = c[faces[fid + 2]];
@@ -269,6 +282,59 @@ void ShapeBuffer::updateIntersection(int cache_block,
   // isect->Ns[0] = isect->Ng[0];
   // isect->Ns[1] = isect->Ng[1];
   // isect->Ns[2] = isect->Ng[2];
+}
+
+void ShapeBuffer::intersect(void* shape_ptr, RTCRay& ray) {
+  Sphere* sphere = (Sphere*)shape_ptr;
+
+  const glm::vec3 center_to_origin(ray.org[0] - sphere->center[0],
+                                   ray.org[1] - sphere->center[1],
+                                   ray.org[2] - sphere->center[2]);
+
+  float a = spray::dot(ray.dir, ray.dir);
+  float b = 2.0f * spray::dot(center_to_origin, ray.dir);
+  float c = glm::dot(center_to_origin, center_to_origin) -
+            (sphere->radius * sphere->radius);
+
+  float discriminant = (b * b) - (4.0f * a * c);
+
+  if (discriminant > 0) {
+    float sqrt_d = std::sqrt(discriminant);
+
+    // TODO: use embree's rcp() for 1/a
+    float a2 = 2.0f * a;
+    float root = (-b - sqrt_d) / a2;
+
+    // root between tnear and tfar
+    if (root > ray.tnear && root < ray.tfar) {
+      // TODO: update u,v with correct values
+      // ray.u = 0.0f;
+      // ray.v = 0.0f;
+      ray.tfar = root;
+      ray.geomID = sphere->geom_id;
+      // ray.primID = static_cast<unsigned int>(item);
+      // NOTE: Ng not normalized
+      ray.Ng[0] = ray.org[0] + (root * ray.dir[0]) - sphere->center[0];
+      ray.Ng[1] = ray.org[1] + (root * ray.dir[1]) - sphere->center[1];
+      ray.Ng[2] = ray.org[2] + (root * ray.dir[2]) - sphere->center[2];
+      return;
+    }
+
+    root = (-b + sqrt_d) / a2;
+    // root between tnear and tfar
+    if (root > ray.tnear && root < ray.tfar) {
+      // TODO: update u,v with correct values
+      // ray.u = 0.0f;
+      // ray.v = 0.0f;
+      ray.tfar = root;
+      ray.geomID = sphere->geom_id;
+      // ray.primID = static_cast<unsigned int>(item);
+      // NOTE: Ng not normalized
+      ray.Ng[0] = ray.org[0] + (root * ray.dir[0]) - sphere->center[0];
+      ray.Ng[1] = ray.org[1] + (root * ray.dir[1]) - sphere->center[1];
+      ray.Ng[2] = ray.org[2] + (root * ray.dir[2]) - sphere->center[2];
+    }
+  }
 }
 
 }  // namespace spray

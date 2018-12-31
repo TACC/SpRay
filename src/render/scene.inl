@@ -27,6 +27,35 @@
 
 namespace spray {
 
+template <typename SurfaceBufT>
+inline bool intersect(SurfaceBufT& sbuf, RTCScene rtc_scene, int cache_block,
+                      RTCRayIntersection* isect, std::vector<Domain>& domains) {
+  rtcIntersect(rtc_scene, (RTCRay&)(*isect));
+
+  if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
+    sbuf.updateIntersection(cache_block, isect);
+    return true;
+  }
+  return false;
+}
+
+template <>
+inline bool intersect<ShapeBuffer>(ShapeBuffer& sbuf, RTCScene rtc_scene,
+                                   int cache_block, RTCRayIntersection* isect,
+                                   std::vector<Domain>& domains) {
+  std::vector<Shape*>& shapes = domains[0].shapes;
+
+  for (std::size_t i = 0; i < shapes.size(); ++i) {
+    Sphere* s = (Sphere*)shapes[i];
+    ShapeBuffer::intersect(s, (RTCRay&)(*isect));
+    if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
+      isect->material = s->material;
+      return true;
+    }
+  }
+  return false;
+}
+
 template <typename CacheT, typename SurfaceBufT>
 void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
   const std::string& storage_basepath = cfg.local_disk_path;
@@ -202,13 +231,15 @@ void Scene<CacheT, SurfaceBufT>::load(int id, SceneInfo* sinfo) {
 template <typename CacheT, typename SurfaceBufT>
 bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
                                            RTCRayIntersection* isect) {
-  rtcIntersect(rtc_scene, (RTCRay&)(*isect));
+  return spray::intersect(surface_buf_, rtc_scene, cache_block, isect,
+                          domains_);
+  // rtcIntersect(rtc_scene, (RTCRay&)(*isect));
 
-  if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    surface_buf_.updateIntersection(cache_block, isect);
-    return true;
-  }
-  return false;
+  // if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
+  //   surface_buf_.updateIntersection(cache_block, isect);
+  //   return true;
+  // }
+  // return false;
 }
 
 template <typename CacheT, typename SurfaceBufT>

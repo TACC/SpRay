@@ -1,7 +1,7 @@
 # light point 0 10 0 0.5 0.5 0.5
 # light point 0 0 -10 0.5 0.5 0.5
-# light point 10 10 5 1 1 1
-light diffuse .1 .1 .1 
+light point 10 10 10 1 1 1
+# light diffuse .1 .1 .1 
 
 # domain
 # sphere 0 0 0 1
@@ -10,7 +10,8 @@ light diffuse .1 .1 .1
 
 domain
 # big metal ball
-sphere -5 1 0 2 metal 0.7 0.6 0.5 0.0
+# sphere -5 1 0 2 metal 0.7 0.6 0.5 0.0
+sphere -5 1 0 2 matte 0.7 0.6 0.5
 ##### # sphere -5 1 0 2 matte 0.5 0.5 0.5
 ##### 
 ##### # small matte ball (in front of the big metal ball)
@@ -24,6 +25,7 @@ sphere -5 1 0 2 metal 0.7 0.6 0.5 0.0
 ##### sphere 5 1 0 2 metal 0.7 0.6 0.5 0.0
 ##### # sphere 5 1 0 2 matte 0.7 0.7 0.7
 # ground ball
-sphere 0 -201 0 200 matte 0.5 0.5 0.5
+# sphere 0 -201 0 200 matte 0.5 0.5 0.5
 mtl diffuse 1 1 1
-bound -200 -401 -200 200 1 200
+# bound -200 -401 -200 200 1 200
+bound -7 -1 -2 -3 3 2

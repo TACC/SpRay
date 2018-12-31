@@ -57,6 +57,8 @@ class ShapeBuffer {
   void updateIntersection(RTCRayIntersection* isect) const;
   void updateIntersection(int cache_block, RTCRayIntersection* isect) const;
 
+  static void intersect(void* shape_ptr, RTCRay& ray_i);
+
  private:
   // void getColorTuple(int cache_block, uint32_t primID,
   //                    uint32_t colors[3]) const;
@@ -65,9 +67,9 @@ class ShapeBuffer {
 
   static void sphereBoundsCallback(void* shape_ptr, std::size_t item,
                                    RTCBounds& bounds_o);
-  static void sphereIntersect1Callback(void* shape_ptr, RTCRay& ray,
+  static void sphereIntersect1Callback(void* shape_ptr, RTCRay& ray_i,
                                        std::size_t item);
-  static void sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
+  static void sphereOccluded1Callback(void* shape_ptr, RTCRay& ray_i,
                                       std::size_t item);
 
   Material* getMaterial(int cache_block, int prim_id) const {

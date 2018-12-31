@@ -323,6 +323,8 @@ void Glfw<WbvhT, SceneT>::mouseButtonCallback(GLFWwindow* window, int button,
 template <class WbvhT, class SceneT>
 void Glfw<WbvhT, SceneT>::cursorPosCallback(GLFWwindow* window, double xpos,
                                             double ypos) {
+  // DEBUG
+  camera_->print(xpos, ypos);
   if (mouse_state_.left && !mouse_state_.middle && !mouse_state_.right) {
     // left click
     float dx = rotate_pan_sensitivity_ * (xpos - mouse_state_.x);

@@ -211,6 +211,8 @@ struct SPRAY_ALIGN(16) RTCRayIntersection {
   unsigned primID;  //!< primitive ID
   unsigned instID;  //!< instance ID
 
+  /* extension*/
+ public:
   float Ns[3];
   Material* material;
 };
