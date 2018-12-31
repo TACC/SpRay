@@ -104,6 +104,10 @@ class Camera {
    */
   void pan(float mouse_dx, float mouse_dy);
 
+#define DEBUG_SPRAY_CAMERA_RAYS
+#undef DEBUG_SPRAY_CAMERA_RAYS
+
+#ifdef DEBUG_SPRAY_CAMERA_RAYS
   void print(int x, int y) {
     float dir[3];
     generateRay(x, image_h_ - y, dir);
@@ -137,6 +141,7 @@ class Camera {
                 << dir[1] << "," << dir[2] << " ,(miss)\n";
     }
   }
+#endif
 
  private:
   glm::vec3 getDirection(float u, float v) const;
