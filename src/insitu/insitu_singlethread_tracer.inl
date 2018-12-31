@@ -352,7 +352,6 @@ template <typename CacheT, typename ShaderT, typename SceneT>
 void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRad(int id, Ray *ray) {
   bool is_hit = scene_->intersect(sinfo_.rtc_scene, sinfo_.cache_block,
                                   ray->org, ray->dir, &rtc_isect_);
-
   if (is_hit) {
     if (vbuf_.updateTBufOutT(rtc_isect_.tfar, ray)) {
       shader_(id, *ray, rtc_isect_, mem_out_, &sq2_, &rq2_, ray_depth_);
@@ -360,6 +359,12 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRad(int id, Ray *ray) {
       filterRq2(id);
     }
   }
+// #ifndef SPRAY_BACKGROUND_COLOR_BLACK
+//   else {
+//     RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
+//     bg_retire_q_.push(ray);
+//   }
+// #endif
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
@@ -486,6 +491,8 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::retireBackground() {
     bg_retire_q_.pop();
     int oflag = ray->occluded;
     if (oflag == RayUtil::OFLAG_BACKGROUND || vbuf_.tbufOutMiss(ray->samid)) {
+      // bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
+      //           RayUtil::computeBackGroundColor(*ray);
       bgcolor = RayUtil::computeBackGroundColor(*ray);
       image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
     }

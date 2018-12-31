@@ -172,7 +172,7 @@ void ShapeBuffer::sphereIntersect1Callback(void* shape_ptr, RTCRay& ray,
   float c = glm::dot(center_to_origin, center_to_origin) -
             (sphere->radius * sphere->radius);
   float discriminant = (b * b) - (4.0f * a * c);
-  if (discriminant < 0.0f) return;
+  if (discriminant <= 0.0f) return;
 
   float sqrt_d = std::sqrt(discriminant);
 
@@ -193,6 +193,7 @@ void ShapeBuffer::sphereIntersect1Callback(void* shape_ptr, RTCRay& ray,
     ray.Ng[0] = ray.org[0] + (root0 * ray.dir[0]) - sphere->center[0];
     ray.Ng[1] = ray.org[1] + (root0 * ray.dir[1]) - sphere->center[1];
     ray.Ng[2] = ray.org[2] + (root0 * ray.dir[2]) - sphere->center[2];
+    return;
   }
 
   // root1 between tnear and tfar
@@ -224,7 +225,7 @@ void ShapeBuffer::sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
   float c = glm::dot(center_to_origin, center_to_origin) -
             (sphere->radius * sphere->radius);
   float discriminant = (b * b) - (4.0f * a * c);
-  if (discriminant < 0.0f) return;
+  if (discriminant <= 0.0f) return;
 
   float sqrt_d = std::sqrt(discriminant);
 

@@ -71,6 +71,24 @@ class Matte : public Material {
   const glm::vec3 albedo_;
 };
 
+inline glm::vec3 Matte::shade(const glm::vec3& wi, const glm::vec3& wo,
+                              const glm::vec3& normal,
+                              const glm::vec3& light_color,
+                              float* inv_pdf) const {
+  *inv_pdf = SPRAY_ONE_OVER_PI;
+  return albedo_ * SPRAY_ONE_OVER_PI *
+         glm::clamp(glm::dot(wi, normal), 0.0f, 1.0f);
+}
+
+inline glm::vec3 Matte::sample(const glm::vec3& wo, const glm::vec3& normal,
+                               RandomSampler& sampler, glm::vec3* wi,
+                               float* pdf) const {
+  glm::vec2 u = RandomSampler_get2D(sampler);
+  getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
+  return albedo_ * SPRAY_ONE_OVER_PI *
+         glm::clamp(glm::dot(*wi, normal), 0.0f, 1.0f);
+}
+
 class Metal : public Material {
  public:
   Metal(const glm::vec3& albedo, float fuzz) : albedo_(albedo), fuzz_(fuzz) {}
@@ -79,15 +97,17 @@ class Metal : public Material {
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
                   const glm::vec3& normal, const glm::vec3& light_color,
                   float* inv_pdf) const override {
-    // TODO
-    glm::vec3(1.0f);
+    *inv_pdf = 0.0f;
+    return glm::vec3(0.0f);
   }
 
   glm::vec3 sample(const glm::vec3& wo, const glm::vec3& normal,
                    RandomSampler& sampler, glm::vec3* wi,
                    float* pdf) const override {
-    // TODO
-    glm::vec3(1.0f);
+    *pdf = 1.0f;
+    glm::vec3 reflect = wo - (2.0f * glm::dot(wo, normal) * normal);
+    *wi = glm::normalize(reflect);
+    return albedo_;
   }
 
  private:
@@ -118,22 +138,5 @@ class Dielectric : public Material {
   const float index_;  ///< Refraction index.
 };
 
-inline glm::vec3 Matte::shade(const glm::vec3& wi, const glm::vec3& wo,
-                              const glm::vec3& normal,
-                              const glm::vec3& light_color,
-                              float* inv_pdf) const {
-  *inv_pdf = SPRAY_ONE_OVER_PI;
-  return albedo_ * SPRAY_ONE_OVER_PI *
-         glm::clamp(glm::dot(wi, normal), 0.0f, 1.0f);
-}
-
-inline glm::vec3 Matte::sample(const glm::vec3& wo, const glm::vec3& normal,
-                               RandomSampler& sampler, glm::vec3* wi,
-                               float* pdf) const {
-  glm::vec2 u = RandomSampler_get2D(sampler);
-  getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
-  return albedo_ * SPRAY_ONE_OVER_PI *
-         glm::clamp(glm::dot(*wi, normal), 0.0f, 1.0f);
-}
 
 }  // namespace spray

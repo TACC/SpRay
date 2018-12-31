@@ -37,8 +37,8 @@ Config::Config() {
 
   // camera
   has_camera_config = false;
-  znear = 0.000001f;
-  zfar = 1000000.0f;
+  znear = 0.1f;
+  zfar = 100000.0f;
   fov = 90.0f;
 
   // render

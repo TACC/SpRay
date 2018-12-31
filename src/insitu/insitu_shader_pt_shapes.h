@@ -135,19 +135,21 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
         shade_color =
             material->shade(wi, wo, normal_ff, light_color, &inv_shade_pdf);
 
-        Lr = Lin * shade_color * inv_shade_pdf / (pdf * num_light_samples);
+        if (inv_shade_pdf > 0.0f) {
+          Lr = Lin * shade_color * inv_shade_pdf / (pdf * num_light_samples);
 
-        if (hasPositive(Lr)) {
-          // create shadow ray
-          Ray *shadow = mem->Alloc<Ray>(1, false);
-          CHECK_NOTNULL(shadow);
+          if (hasPositive(Lr)) {
+            // create shadow ray
+            Ray *shadow = mem->Alloc<Ray>(1, false);
+            CHECK_NOTNULL(shadow);
 
-          light_sample_id = light_sample_offset + s;
+            light_sample_id = light_sample_offset + s;
 
-          RayUtil::makeShadow(rayin, light_sample_id, pos, wi, Lr, isect.tfar,
-                              shadow);
+            RayUtil::makeShadow(rayin, light_sample_id, pos, wi, Lr, isect.tfar,
+                                shadow);
 
-          sq->push(shadow);
+            sq->push(shadow);
+          }
         }
       }
     }
