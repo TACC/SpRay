@@ -495,11 +495,9 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::retireBackground() {
     auto *ray = bg_retire_q_.front();
     bg_retire_q_.pop();
     int oflag = ray->occluded;
-    // if (oflag == RayUtil::OFLAG_BACKGROUND || vbuf_.tbufOutMiss(ray->samid)) {
     if (oflag == RayUtil::OFLAG_BACKGROUND) {
       bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
                 RayUtil::computeBackGroundColor(*ray);
-      // bgcolor = RayUtil::computeBackGroundColor(*ray);
       image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
     }
   }
