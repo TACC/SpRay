@@ -103,6 +103,14 @@ class Metal : public Material {
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
                   const glm::vec3& normal) const override {
     return glm::vec3(0.0f);
+    // glm::vec3 half_hat = glm::normalize(wi + wo);
+    // float n_dot_h = glm::clamp(glm::dot(normal, half_hat), 0.0f, 1.0f);
+
+    // float shininess = 20;
+    // glm::vec3 cs = albedo_ * glm::pow(n_dot_h, shininess);
+    // // glm::vec3 cd = kd * costheta;
+
+    // return cs;
   }
 
   bool sample(const glm::vec3& wo, const glm::vec3& normal,
