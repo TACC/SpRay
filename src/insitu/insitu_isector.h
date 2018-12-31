@@ -102,6 +102,7 @@ class Isector {
 
     for (std::size_t i = 0; i < ray_buf.num; ++i) {
       Ray* ray = &rays[i];
+      background_q->push(ray);
 
       RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
                                                &eray_);
@@ -119,8 +120,7 @@ class Isector {
           qs->push(id, ray);
         }
       } else {
-        // RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
-        background_q->push(ray);
+        RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
       }
     }
   }
