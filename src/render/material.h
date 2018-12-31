@@ -99,7 +99,8 @@ inline glm::vec3 Matte::shade(const glm::vec3& wi, const glm::vec3& wo,
                               const glm::vec3& light_color,
                               float* inv_pdf) const {
   *inv_pdf = SPRAY_ONE_OVER_PI;
-  return albedo_ * SPRAY_ONE_OVER_PI * glm::dot(wi, normal);
+  return albedo_ * SPRAY_ONE_OVER_PI *
+         glm::clamp(glm::dot(wi, normal), 0.0f, 1.0f);
 }
 
 }  // namespace spray

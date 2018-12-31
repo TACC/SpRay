@@ -124,6 +124,8 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
 
   glm::vec3 shade_color;
 
+  // direct illumination
+
   // for each light
   for (int l = 0; l < nlights; ++l) {
     Light *light = lights_[l];
@@ -159,6 +161,8 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
 
     light_sample_offset += num_light_samples;
   }
+
+  // indirect illumination
 
   /*
     if (!delta_dist) {
