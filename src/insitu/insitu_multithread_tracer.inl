@@ -502,6 +502,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
 #pragma omp barrier
 
       if (done) {
+        tcontext->procRetireQ(num_pixel_samples_);
         break;
       }
 
@@ -573,7 +574,10 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
 
 #pragma omp barrier
     }  // while (1)
-  }    // # pragma omp parallel
+#ifdef SPRAY_GLOG_CHECK
+    tcontext->checkQs();
+#endif
+  }  // # pragma omp parallel
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
@@ -647,6 +651,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
 #pragma omp barrier
 
     if (done_) {
+      tcontext->procRetireQ(num_pixel_samples_);
       break;
     }
 

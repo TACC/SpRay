@@ -24,9 +24,9 @@ echo "3. simple diffuse, antialiasing, film"
 read APP
 
 echo "Choose a scene (1,2,3):"
-echo "1. spheres with a point light" 
-echo "2. spheres with a diffuse light"
-echo "3. a sphere with a diffuse light"
+echo "1. many spheres with a point light" 
+echo "2. many spheres with a diffuse light"
+echo "3. one sphere with a diffuse light"
 
 read LIGHT
 
@@ -125,7 +125,6 @@ cmd="$SHAPES_APP --nthreads $NUM_THREADS \
                  --pixel-samples $NUM_PIXEL_SAMPLES \
                  --ao-samples $NUM_AO_SAMPLES \
                  --bounces $NUM_BOUNCES \
-                 --blinn $BLINN_PHONG \
                  --num-partitions $NUM_PARTITIONS \
                  --fov $FOV \
                  $SCENE"

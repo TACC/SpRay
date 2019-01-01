@@ -143,6 +143,18 @@ class TContext {
   void updateTBufWithCached();
   void processCached(int ray_depth);
 
+  void checkQs() const {
+    CHECK(rqs_.empty());
+    CHECK(sqs_.empty());
+    CHECK(rq2_.empty());
+    CHECK(sq2_.empty());
+    CHECK(frq2_.empty());
+    CHECK(fsq2_.empty());
+    CHECK(retire_q_.empty());
+    CHECK(cached_rq_.empty());
+    CHECK(reduced_cached_rq_.empty());
+  }
+
  private:
   void filterSq2(int id);
   void filterRq2(int id);
