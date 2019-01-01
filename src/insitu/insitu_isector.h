@@ -68,6 +68,33 @@ class Isector {
     }
   }
 
+  // used for parallel ray queuing (with background support)
+  void intersect(int ndomains, SceneT* scene, Ray* ray,
+                 spray::QVector<Ray*>* qs, std::queue<Ray*>* background_q) {
+    background_q->push(ray);
+
+    RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
+                                             &eray_);
+
+    // ray-domain intersection tests
+    scene->intersectDomains(eray_);
+
+    // place ray in hit domains
+    if (domains_.count) {
+      // sort hit domains
+      RTCRayUtil::sortDomains(domains_, hits_);
+
+      // place the ray (
+      for (int d = 0; d < domains_.count; ++d) {
+        int id = hits_[d].id;
+#ifdef SPRAY_GLOG_CHECK
+        CHECK_LT(id, ndomains);
+#endif
+        qs->push(id, ray);
+      }
+    }
+  }
+
   // for processing eye rays
   void intersect(int ndomains, SceneT* scene, RayBuf<Ray> ray_buf,
                  spray::QVector<Ray*>* qs) {

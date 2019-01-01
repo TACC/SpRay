@@ -142,6 +142,7 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::genSingleEyes(
       ray->w[2] = 1.f;
 
       ray->t = SPRAY_FLOAT_INF;
+
 #ifndef SPRAY_BACKGROUND_COLOR_BLACK
       RayUtil::setOccluded(RayUtil::OFLAG_UNDEFINED, ray);
 #endif

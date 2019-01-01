@@ -107,7 +107,11 @@ class TContext {
 
  public:
   void isectDomains(Ray* ray) {
+#ifdef SPRAY_BACKGROUND_COLOR_BLACK
     isector_.intersect(num_domains_, scene_, ray, &rqs_);
+#else
+    isector_.intersect(num_domains_, scene_, ray, &rqs_, &bg_retire_q_);
+#endif
   }
 
  public:
@@ -139,6 +143,7 @@ class TContext {
   void occlRecvShad(int id, Ray* ray);
   void isectCachedRq(int ray_depth);
   void procRetireQ(int num_pixel_samples);
+  void retireBackground();
   void sendRays(bool shadow, int id, Ray* rays);
   void updateTBufWithCached();
   void processCached(int ray_depth);
@@ -226,10 +231,13 @@ class TContext {
   std::queue<IsectCacheItem> frq2_;  // filtered
   std::queue<OcclCacheItem> fsq2_;   // filtered
 
-  std::queue<Ray*> retire_q_;
+  std::queue<Ray*> retire_q_;     ///< Retire queue for foreground colors.
+  std::queue<Ray*> bg_retire_q_;  ///< Retire queue for background colors.
 
   std::queue<IsectCacheItem> cached_rq_;
   std::queue<IsectCacheItem> reduced_cached_rq_;
+
+  double one_over_num_pixel_samples_;
 };
 
 }  // namespace insitu

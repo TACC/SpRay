@@ -149,6 +149,10 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::genSingleEyes(
       // ray->depth = 0;
       // ray->tdom = 0; //unused
       ray->t = SPRAY_FLOAT_INF;
+
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+      RayUtil::setOccluded(RayUtil::OFLAG_UNDEFINED, ray);
+#endif
     }
   }
 }
@@ -199,6 +203,10 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::genMultiEyes(
         // ray->depth = 0;
         // ray->tdom = 0; //unused
         ray->t = SPRAY_FLOAT_INF;
+
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+        RayUtil::setOccluded(RayUtil::OFLAG_UNDEFINED, ray);
+#endif
       }
     }
   }
@@ -556,6 +564,12 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
           vbuf_.resetOBuf();
         }
 
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+        for (auto &t : tcontexts_) {
+          t.retireBackground();
+        }
+#endif
+
         vbuf_.resetTBufIn();
         vbuf_.swapTBufs();
       }
@@ -704,6 +718,12 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
         }
         vbuf_.resetOBuf();
       }
+
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+      for (auto &t : tcontexts_) {
+        t.retireBackground();
+      }
+#endif
 
       vbuf_.resetTBufIn();
       vbuf_.swapTBufs();
