@@ -1,5 +1,5 @@
 # light point 10 10 10 .2 .2 .2
-light diffuse .3 .3 .3 
+light diffuse .05 .05 .05 
 
 # domain
 # sphere 0 0 0 1
@@ -25,7 +25,7 @@ sphere 0 1 0 1 matte 0 1 0
 sphere 2 1 0 1 matte 0 0 1
 
 ##### # big metal ball (far right)
-sphere 5 2 0 2 metal 1 1 1 0
+sphere 5 2 0 2 metal .7 .5 .5 0
 
 ##### # big metal ball (behind)
 sphere -4 0.8 5 0.8 dielectric 1.5
