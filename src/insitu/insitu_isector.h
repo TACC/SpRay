@@ -119,8 +119,6 @@ class Isector {
 #endif
           qs->push(id, ray);
         }
-      } else {
-        RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
       }
     }
   }
@@ -167,8 +165,6 @@ class Isector {
           qs->push(id, ray);
         }
       }
-    } else {
-      RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
     }
   }
 
@@ -214,8 +210,6 @@ class Isector {
           qs->push(id, ray);
         }
       }
-    } else {
-      RayUtil::setOccluded(RayUtil::OFLAG_BACKGROUND, ray);
     }
   }
 };
