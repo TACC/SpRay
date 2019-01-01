@@ -13,10 +13,10 @@ sphere -5 2 0 2 matte 0.8 0.8 0.8
 ##### # sphere -5 1 0 2 matte 0.5 0.5 0.5
 ##### 
 # small matte ball (in front of the big metal ball)
-sphere -2 0.5 3 0.5 matte 0 1 1
+sphere -2 0.5 3 0.5 metal 0 1 1 0
 
 # small matte ball (in front of the big metal ball)
-sphere 2 0.5 3 0.5 matte 0.83 0.68 0.21
+sphere 2 0.5 3 0.5 metal 0.83 0.68 0.21 0
 
 ##### 
 # small matte balls (in the middle)
