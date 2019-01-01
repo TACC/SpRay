@@ -510,7 +510,12 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
 #pragma omp barrier
 
       if (done) {
-        tcontext->procRetireQ(num_pixel_samples_);
+#pragma omp single
+        {
+          for (auto &t : tcontexts_) {
+            t.procRetireQ(num_pixel_samples_);
+          }
+        }
         break;
       }
 
@@ -665,7 +670,12 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
 #pragma omp barrier
 
     if (done_) {
-      tcontext->procRetireQ(num_pixel_samples_);
+#pragma omp single
+      {
+        for (auto &t : tcontexts_) {
+          t.procRetireQ(num_pixel_samples_);
+        }
+      }
       break;
     }
 
