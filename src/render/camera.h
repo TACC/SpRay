@@ -134,9 +134,13 @@ inline void Camera::init(const glm::vec3 campos, const glm::vec3 lookat,
   float image_half_h = tan(theta / 2.0f);
   float image_half_w = aspect_ratio * image_half_h;
 
-  glm::vec3 w = glm::normalize(campos - lookat);
-  glm::vec3 u = glm::normalize(glm::cross(upvec, w));
+  glm::vec3 w = campos - lookat;
+  glm::vec3 u = glm::cross(upvec, w);
   glm::vec3 v = glm::cross(w, u);
+
+  w = glm::normalize(w);
+  u = glm::normalize(u);
+  v = glm::normalize(v);
 
   glm::vec3 image_center = campos - w;
   image_lowerleft_pos_ = image_center - (image_half_w * u) - (image_half_h * v);
