@@ -78,7 +78,9 @@ std::size_t VBuf::obufIndex(int samid, int light, std::size_t* bit) const {
   std::size_t obuf_index = id >> 5;  // id / 32
   *bit = id - (obuf_index << 5);     // id % 32 (bit index)
 #ifdef SPRAY_GLOG_CHECK
-  CHECK_LT(obuf_index, obuf_size_);
+  CHECK_LT(obuf_index, obuf_size_)
+      << "[samid " << samid << "][total_num_light_samples "
+      << total_num_light_samples_ << "][light id " << light << "]";
   CHECK_LT(*bit, 32);
   CHECK_GE(*bit, 0);
 #endif
