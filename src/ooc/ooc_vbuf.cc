@@ -27,7 +27,7 @@
 namespace spray {
 namespace ooc {
 
-void VBuf::resize(const Tile& tile, int num_pixel_samples) {
+void VBuf::resize(const spray::Tile& tile, int num_pixel_samples) {
   tile_ = tile;
   num_pixel_samples_ = num_pixel_samples;
 

@@ -89,7 +89,7 @@ void Tracer<CacheT, ShaderT>::init(const Config &cfg, const Camera &camera,
 
 template <typename CacheT, typename ShaderT>
 void Tracer<CacheT, ShaderT>::genSingleEyes(int image_w, float orgx, float orgy,
-                                            float orgz, Tile tile,
+                                            float orgz, spray::Tile tile,
                                             RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
 #pragma omp for collapse(2) schedule(static, 1)
@@ -129,7 +129,7 @@ void Tracer<CacheT, ShaderT>::genSingleEyes(int image_w, float orgx, float orgy,
 
 template <typename CacheT, typename ShaderT>
 void Tracer<CacheT, ShaderT>::genMultiEyes(int image_w, float orgx, float orgy,
-                                           float orgz, Tile tile,
+                                           float orgz, spray::Tile tile,
                                            RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
 

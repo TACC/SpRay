@@ -24,7 +24,6 @@
 
 #include "insitu/insitu_comm.h"
 #include "insitu/insitu_ray.h"
-#include "insitu/insitu_tiler.h"
 #include "render/spray.h"
 
 namespace spray {

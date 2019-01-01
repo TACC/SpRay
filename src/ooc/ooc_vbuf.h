@@ -25,8 +25,8 @@
 
 #include "display/image.h"
 #include "ooc/ooc_ray.h"
-#include "ooc/ooc_tiler.h"
 #include "render/spray.h"
+#include "render/tile.h"
 
 namespace spray {
 namespace ooc {
@@ -39,13 +39,13 @@ class VBuf {
 
  private:
   std::vector<float> tbuf_;
-  Tile tile_;
+  spray::Tile tile_;
   int num_pixel_samples_;
 
  public:
   void resize(const Tile& tile, int num_pixel_samples);
 
-  std::size_t tbufSize(const Tile& tile, int num_pixel_samples) {
+  std::size_t tbufSize(const spray::Tile& tile, int num_pixel_samples) {
     return (std::size_t)tile.w * tile.h * num_pixel_samples *
            SPRAY_HISTORY_SIZE;
   }

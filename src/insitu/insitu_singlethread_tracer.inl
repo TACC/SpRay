@@ -109,7 +109,7 @@ template <typename CacheT, typename ShaderT>
 void SingleThreadTracer<CacheT, ShaderT>::genSingleEyes(int image_w, float orgx,
                                                         float orgy, float orgz,
                                                         int base_tile_y,
-                                                        Tile tile,
+                                                        spray::Tile tile,
                                                         RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
   for (int y = tile.y; y < tile.y + tile.h; ++y) {
@@ -149,7 +149,7 @@ template <typename CacheT, typename ShaderT>
 void SingleThreadTracer<CacheT, ShaderT>::genMultiEyes(int image_w, float orgx,
                                                        float orgy, float orgz,
                                                        int base_tile_y,
-                                                       Tile tile,
+                                                       spray::Tile tile,
                                                        RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
 

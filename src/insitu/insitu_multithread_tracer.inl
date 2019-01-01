@@ -115,7 +115,7 @@ template <typename CacheT, typename ShaderT>
 void MultiThreadTracer<CacheT, ShaderT>::genSingleEyes(int image_w, float orgx,
                                                        float orgy, float orgz,
                                                        int base_tile_y,
-                                                       Tile tile,
+                                                       spray::Tile tile,
                                                        RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
 #pragma omp for collapse(2) schedule(static)
@@ -159,7 +159,7 @@ template <typename CacheT, typename ShaderT>
 void MultiThreadTracer<CacheT, ShaderT>::genMultiEyes(int image_w, float orgx,
                                                       float orgy, float orgz,
                                                       int base_tile_y,
-                                                      Tile tile,
+                                                      spray::Tile tile,
                                                       RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
 

@@ -28,8 +28,8 @@
 
 #include "display/image.h"
 #include "insitu/insitu_ray.h"
-#include "insitu/insitu_tiler.h"
 #include "render/spray.h"
+#include "render/tile.h"
 #include "utils/profiler_util.h"
 
 namespace spray {
@@ -70,12 +70,12 @@ class VBuf {
   std::size_t obuf_capacity_;
   std::size_t obuf_size_;
 
-  Tile tile_;
+  spray::Tile tile_;
   int num_pixel_samples_;
   int total_num_light_samples_;
 
  public:
-  void resize(const Tile& tile, int num_pixel_samples,
+  void resize(const spray::Tile& tile, int num_pixel_samples,
               int total_num_light_samples);
 
   std::size_t tbufSize(const Tile& tile, int num_pixel_samples) {
