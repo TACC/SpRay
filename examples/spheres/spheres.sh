@@ -11,8 +11,9 @@ SHAPES_APP_SINGLE_THREAD=$SPRAY_BIN_PATH/spray_insitu_singlethread_shapes
 SHAPES_APP_MULTI_THREAD=$SPRAY_BIN_PATH/spray_insitu_multithread_shapes
 EXAMPLE_PATH=$SPRAY_HOME_PATH/examples
 SPHERES_PATH=$SPRAY_HOME_PATH/examples/spheres
-SCENE_DIFFUSE_LIGHT=$SPHERES_PATH/spheres-diffuse-light.spray
-SCENE_POINT_LIGHT=$SPHERES_PATH/spheres-point-light.spray
+SPHERES_DIFFUSE_LIGHT=$SPHERES_PATH/spheres-diffuse-light.spray
+SPHERES_POINT_LIGHT=$SPHERES_PATH/spheres-point-light.spray
+ONE_SPHERE_DIFFUSE_LIGHT=$SPHERES_PATH/sphere.spray
 MPI_BIN="mpirun -n"
 
 echo "Choose a setup (1-2):"
@@ -22,9 +23,10 @@ echo "3. simple diffuse, antialiasing, film"
 
 read APP
 
-echo "Choose a light (1-2):"
-echo "1. point light" 
-echo "2. diffuse light"
+echo "Choose a scene (1,2,3):"
+echo "1. spheres with a point light" 
+echo "2. spheres with a diffuse light"
+echo "3. a sphere with a diffuse light"
 
 read LIGHT
 
@@ -34,7 +36,11 @@ then
 
 elif [ $LIGHT == "2" ]
 then
-  SCENE=$SCENE_DIFFUSE_LIGHT
+  SCENE=$SPHERES_DIFFUSE_LIGHT
+
+elif [ $LIGHT == "3" ]
+then
+  SCENE=$ONE_SPHERE_DIFFUSE_LIGHT
 
 else
   echo "[error] invalid input"
