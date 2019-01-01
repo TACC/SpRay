@@ -32,7 +32,7 @@ class Shape {
   enum ShapeType { UNDEFINED, SPHERE };
 
   Shape(Material* m) : material(m) {}
-  ~Shape() { delete material; }
+  virtual ~Shape() { delete material; }
 
   virtual int type() const {
     LOG(FATAL) << "undefined";

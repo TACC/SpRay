@@ -176,8 +176,8 @@ if(SPRAY_TIMING)
 endif(SPRAY_TIMING)
 
 # background color
-set(SPRAY_BACKGROUND_COLOR "Black" CACHE STRING "Select a background color.")
-set_property(CACHE SPRAY_BACKGROUND_COLOR PROPERTY STRINGS "Black" "Sky" "White")
+set(SPRAY_BACKGROUND_COLOR "Sky" CACHE STRING "Select a background color.")
+set_property(CACHE SPRAY_BACKGROUND_COLOR PROPERTY STRINGS "Sky" "Black" "White")
 
 if (${SPRAY_BACKGROUND_COLOR} STREQUAL "Black")
   add_definitions(-DSPRAY_BACKGROUND_COLOR_BLACK)

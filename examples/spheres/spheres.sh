@@ -32,7 +32,7 @@ read LIGHT
 
 if [ $LIGHT == "1" ] 
 then
-  SCENE=$SCENE_POINT_LIGHT
+  SCENE=$SPHERES_POINT_LIGHT
 
 elif [ $LIGHT == "2" ]
 then

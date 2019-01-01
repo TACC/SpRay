@@ -37,6 +37,8 @@ class Material {
  public:
   enum { UNDEFINED, MATTE, METAL, DIELECTRIC };
 
+  virtual ~Material() {}
+
   /** Return a material type. */
   virtual int type() const = 0;
 
