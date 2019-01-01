@@ -508,7 +508,7 @@ void MultiThreadTracer<CacheT, ShaderT>::trace() {
 #pragma omp barrier
 
       if (done) {
-#pragma single
+#pragma omp single
         {
           for (auto &t : tcontexts_) {
             t.procRetireQ(num_pixel_samples_);
@@ -659,7 +659,7 @@ void MultiThreadTracer<CacheT, ShaderT>::traceInOmp() {
 #pragma omp barrier
 
     if (done_) {
-#pragma single
+#pragma omp single
       {
         for (auto &t : tcontexts_) {
           t.procRetireQ(num_pixel_samples_);
