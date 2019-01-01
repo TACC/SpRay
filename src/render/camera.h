@@ -174,7 +174,7 @@ inline void Camera::init(const glm::vec3 campos, const glm::vec3 lookat,
   float aspect_ratio =
       static_cast<float>(image_w) / static_cast<float>(image_h);
   float theta = glm::radians(vfov);
-  float image_half_h = glm::tan(theta * 0.4f);
+  float image_half_h = glm::tan(theta * 0.5f);
   float image_half_w = aspect_ratio * image_half_h;
 
   glm::vec3 w = campos - lookat;
