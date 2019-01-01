@@ -548,13 +548,22 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
         if (ray_depth > 0 && nranks > 1) {
           vbuf_.compositeOBuf();
         }
+      }
+#pragma omp barrier
 
-        if (ray_depth > 0) {
-          for (auto &t : tcontexts_) {
-            t.procRetireQ(num_pixel_samples_);
-          }
-          vbuf_.resetOBuf();
-        }
+      tcontext->procRetireQ(num_pixel_samples_);
+
+      // if (ray_depth > 0) {
+      //   for (auto &t : tcontexts_) {
+      //     t.procRetireQ(num_pixel_samples_);
+      //   }
+      //   vbuf_.resetOBuf();
+      // }
+
+#pragma omp barrier
+#pragma omp master
+      {
+        if (ray_depth > 0) vbuf_.resetOBuf();
 
         vbuf_.resetTBufIn();
         vbuf_.swapTBufs();
@@ -697,13 +706,21 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
       if (ray_depth > 0 && nranks > 1) {
         vbuf_.compositeOBuf();
       }
+    }
+#pragma omp barrier
 
-      if (ray_depth > 0) {
-        for (auto &t : tcontexts_) {
-          t.procRetireQ(num_pixel_samples_);
-        }
-        vbuf_.resetOBuf();
-      }
+      tcontext->procRetireQ(num_pixel_samples_);
+
+      // if (ray_depth > 0) {
+      //   for (auto &t : tcontexts_) {
+      //     t.procRetireQ(num_pixel_samples_);
+      //   }
+      //   vbuf_.resetOBuf();
+      // }
+
+#pragma omp master
+    {
+      if (ray_depth > 0) vbuf_.resetOBuf();
 
       vbuf_.resetTBufIn();
       vbuf_.swapTBufs();
