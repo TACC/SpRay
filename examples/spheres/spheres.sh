@@ -7,7 +7,8 @@ then
 fi
 
 SPRAY_BIN_PATH=$SPRAY_HOME_PATH/build
-SHAPES_APP=$SPRAY_BIN_PATH/spray_insitu_singlethread_shapes
+SHAPES_APP_SINGLE_THREAD=$SPRAY_BIN_PATH/spray_insitu_singlethread_shapes
+SHAPES_APP_MULTI_THREAD=$SPRAY_BIN_PATH/spray_insitu_multithread_shapes
 EXAMPLE_PATH=$SPRAY_HOME_PATH/examples
 SPHERES_PATH=$SPRAY_HOME_PATH/examples/spheres
 SCENE_DIFFUSE_LIGHT=$SPHERES_PATH/spheres-diffuse-light.spray
@@ -40,8 +41,28 @@ else
   return
 fi
 
-# common settings
-NUM_THREADS=1
+echo "Choose a threading mode (1-2):"
+echo "1. single-thread" 
+echo "2. multi-thread"
+
+read THREADING
+
+if [ $THREADING == "1" ] 
+then
+  SHAPES_APP=$SHAPES_APP_SINGLE_THREAD
+  NUM_THREADS=1
+
+elif [ $THREADING == "2" ]
+then
+  SHAPES_APP=$SHAPES_APP_MULTI_THREAD
+  NUM_THREADS=4
+
+else
+  echo "[error] invalid input"
+  return
+fi
+
+export OMP_NUM_THREADS=$NUM_THREADS
 
 # common settings
 CACHE_SIZE=-1
