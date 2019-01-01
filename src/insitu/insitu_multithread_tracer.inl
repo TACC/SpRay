@@ -718,6 +718,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
       //   vbuf_.resetOBuf();
       // }
 
+#pragma omp barrier
 #pragma omp master
     {
       if (ray_depth > 0) vbuf_.resetOBuf();
