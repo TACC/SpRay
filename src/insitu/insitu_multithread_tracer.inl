@@ -513,7 +513,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
 #pragma omp single
         {
           for (auto &t : tcontexts_) {
-            t.procRetireQ(num_pixel_samples_);
+            t.procRetireQ();
           }
         }
         break;
@@ -564,7 +564,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
 
         if (ray_depth > 0) {
           for (auto &t : tcontexts_) {
-            t.procRetireQ(num_pixel_samples_);
+            t.procRetireQ();
           }
           vbuf_.resetOBuf();
         }
@@ -673,7 +673,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
 #pragma omp single
       {
         for (auto &t : tcontexts_) {
-          t.procRetireQ(num_pixel_samples_);
+          t.procRetireQ();
         }
       }
       break;
@@ -724,7 +724,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
 
       if (ray_depth > 0) {
         for (auto &t : tcontexts_) {
-          t.procRetireQ(num_pixel_samples_);
+          t.procRetireQ();
         }
         vbuf_.resetOBuf();
       }

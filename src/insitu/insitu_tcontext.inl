@@ -355,14 +355,13 @@ void TContext<CacheT, ShaderT, SceneT>::processCached(int ray_depth) {
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
-void TContext<CacheT, ShaderT, SceneT>::procRetireQ(int num_pixel_samples) {
-  double scale = 1.0 / (double)num_pixel_samples;
+void TContext<CacheT, ShaderT, SceneT>::procRetireQ() {
   while (!retire_q_.empty()) {
     auto* ray = retire_q_.front();
     retire_q_.pop();
 
     if (!vbuf_->occluded(ray->samid, ray->light)) {
-      image_->add(ray->pixid, ray->w, scale);
+      image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
     }
   }
 }
