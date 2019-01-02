@@ -74,7 +74,6 @@ class MultiThreadTracer {
   std::vector<TContextType> tcontexts_;
 
   ShaderT shader_;
-  // spray::Tiler tiler_;
   Comm comm_;
   VBuf vbuf_;
 
@@ -82,11 +81,13 @@ class MultiThreadTracer {
   spray::RTCRayIntersection rtc_isect_;
   RTCRay rtc_ray_;
 
+  Tile blocking_tile_, strip_;
+
  private:
-  void genSingleEyes(int image_w, float orgx, float orgy, float orgz,
-                     int base_tile_y, spray::Tile tile, RayBuf<Ray> *ray_buf);
-  void genMultiEyes(int image_w, float orgx, float orgy, float orgz,
-                    int base_tile_y, spray::Tile tile, RayBuf<Ray> *ray_buf);
+  // void genSingleEyes(int image_w, float orgx, float orgy, float orgz,
+  //                    int base_tile_y, spray::Tile tile, RayBuf<Ray> *ray_buf);
+  // void genMultiEyes(int image_w, float orgx, float orgy, float orgz,
+  //                   int base_tile_y, spray::Tile tile, RayBuf<Ray> *ray_buf);
 
   void sendRays(int tid, TContextType *tcontext);
   void send(bool shadow, int tid, int domain_id, int dest, std::size_t num_rays,
@@ -126,6 +127,8 @@ class MultiThreadTracer {
 
   RayBuf<Ray> shared_eyes_;
   int done_;
+
+  spray::TileList tile_list_;
 
  private:
   int rank_;
