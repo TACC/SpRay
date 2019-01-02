@@ -444,26 +444,32 @@ void MultiThreadTracer<CacheT, ShaderT>::procRecvShads(int id, Ray *rays,
 
 template <typename CacheT, typename ShaderT>
 void MultiThreadTracer<CacheT, ShaderT>::trace() {
-  vbuf_.resetTBufOut();
-  vbuf_.resetOBuf();
-
   RayBuf<Ray> shared_eyes;
-
-  for (auto &tc : tcontexts_) {
-    tc.resetMems();
-  }
-
-  shared_eyes.num = (std::size_t)(mytile_.w * mytile_.h) * num_pixel_samples_;
-  if (shared_eyes.num) {
-    shared_eyes.rays = tcontexts_[0].allocMemIn(shared_eyes.num);
-  }
-
-  int nranks = num_ranks_;
-  int nbounces = num_bounces_;
-  int done = 0;
-
-#pragma omp parallel firstprivate(shared_eyes, nranks, nbounces)
+  int done;
+#pragma omp parallel
   {
+    int nranks = num_ranks_;
+    int nbounces = num_bounces_;
+
+#pragma omp master
+    {
+      vbuf_.resetTBufOut();
+      vbuf_.resetOBuf();
+
+      for (auto &tc : tcontexts_) {
+        tc.resetMems();
+      }
+
+      shared_eyes.num =
+          (std::size_t)(mytile_.w * mytile_.h) * num_pixel_samples_;
+      if (shared_eyes.num) {
+        shared_eyes.rays = tcontexts_[0].allocMemIn(shared_eyes.num);
+      }
+
+      done = 0;
+    }
+#pragma omp barrier
+
     int tid = omp_get_thread_num();
     TContextType *tcontext = &tcontexts_[tid];
 
@@ -480,7 +486,7 @@ void MultiThreadTracer<CacheT, ShaderT>::trace() {
       }
 #pragma omp barrier
 
-        // isect domains for eyes on shared variables the eyes buffer
+      // isect domains for eyes on shared variables the eyes buffer
 #pragma omp for schedule(static, 1)
       for (std::size_t i = 0; i < shared_eyes.num; ++i) {
         Ray *ray = &shared_eyes.rays[i];
@@ -631,7 +637,7 @@ void MultiThreadTracer<CacheT, ShaderT>::traceInOmp() {
     }
 #pragma omp barrier
 
-      // isect domains for eyes on shared variables the eyes buffer
+    // isect domains for eyes on shared variables the eyes buffer
 #pragma omp for schedule(static, 1)
     for (std::size_t i = 0; i < shared_eyes_.num; ++i) {
       Ray *ray = &shared_eyes_.rays[i];
