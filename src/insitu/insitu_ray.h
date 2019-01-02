@@ -130,7 +130,6 @@ inline void genSingleSampleEyeRays(const Camera& camera, int image_w,
                                    float orgx, float orgy, float orgz,
                                    Tile blocking_tile, Tile tile,
                                    RayBuf<Ray>* ray_buf) {
-  //
   Ray* rays = ray_buf->rays;
 
 #pragma omp for collapse(2) schedule(static, 1)
@@ -166,7 +165,6 @@ inline void genMultiSampleEyeRays(const Camera& camera, int image_w, float orgx,
                                   float orgy, float orgz, int num_pixel_samples,
                                   spray::Tile blocking_tile, spray::Tile tile,
                                   RayBuf<Ray>* ray_buf) {
-  //
   Ray* rays = ray_buf->rays;
 
 #pragma omp for collapse(3) schedule(static, 1)
