@@ -37,12 +37,12 @@
 #include "ooc/ooc_pcontext.h"
 #include "ooc/ooc_ray.h"
 #include "ooc/ooc_tcontext.h"
-#include "ooc/ooc_tiler.h"
 #include "render/camera.h"
 #include "render/domain.h"
 #include "render/light.h"
 #include "render/reflection.h"
 #include "render/spray.h"
+#include "render/tile.h"
 #include "utils/profiler_util.h"
 
 namespace spray {
@@ -67,10 +67,10 @@ class Tracer {
   std::vector<TContextType> tcontexts_;
 
  private:
-  void genSingleEyes(int image_w, float orgx, float orgy, float orgz, Tile tile,
-                     RayBuf<Ray> *ray_buf);
-  void genMultiEyes(int image_w, float orgx, float orgy, float orgz, Tile tile,
-                    RayBuf<Ray> *ray_buf);
+  void genSingleEyes(int image_w, float orgx, float orgy, float orgz,
+                     spray::Tile tile, RayBuf<Ray> *ray_buf);
+  void genMultiEyes(int image_w, float orgx, float orgy, float orgz,
+                    spray::Tile tile, RayBuf<Ray> *ray_buf);
 
   void isectDomsRads(RayBuf<Ray> buf, TContextType *tc);
   void isectPrimsRads(TContextType *tc);
@@ -81,8 +81,8 @@ class Tracer {
   SceneT *scene_;
   spray::HdrImage *image_;
 
-  Tile image_tile_;
-  Tile mytile_;
+  spray::Tile image_tile_;
+  spray::Tile mytile_;
   RayBuf<Ray> shared_eyes_;
 
  private:

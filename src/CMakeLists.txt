@@ -244,12 +244,10 @@ set(SPRAY_SRC_LIST
     
     # insitu
     insitu/insitu_comm.cc
-    insitu/insitu_tiler.cc
     insitu/insitu_vbuf.cc
     insitu/insitu_work_stats.cc
     
     # ooc
-    ooc/ooc_tiler.cc
     ooc/ooc_vbuf.cc
     ooc/ooc_domain_stats.cc
     ooc/ooc_pcontext.cc

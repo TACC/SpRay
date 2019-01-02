@@ -62,9 +62,6 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
   CHECK_GT(image_w_, 0);
   CHECK_GT(image_h_, 0);
 
-  // tiling
-  tiler_.resize(cfg.image_w, cfg.image_h, cfg.num_tiles, cfg.min_tile_size);
-
   // shader
   shader_.init(cfg, scene);
 
@@ -88,20 +85,15 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
     }
   }
 
-  image_tile_.x = 0;
-  image_tile_.y = 0;
-  image_tile_.w = cfg.image_w;
-  image_tile_.h = cfg.image_h;
+  tile_list_.init(cfg.image_w, cfg.image_h, cfg.pixel_samples, nranks, rank,
+                  cfg.maximum_num_screen_space_samples_per_rank);
 
-  mytile_ = RankStriper::make(mpi::size(), mpi::rank(), image_tile_);
-
-  int64_t total_num_samples =
-      (int64_t)mytile_.w * mytile_.h * cfg.pixel_samples;
-  CHECK_LT(total_num_samples, INT_MAX);
+  CHECK(!tile_list_.empty());
 
   work_stats_.resize(nranks, cfg.nthreads, ndomains);
 
-  vbuf_.resize(image_tile_, cfg.pixel_samples, total_num_light_samples);
+  vbuf_.resize(tile_list_.getLargestBlockingTile(), cfg.pixel_samples,
+               total_num_light_samples);
 
   tcontexts_.resize(cfg.nthreads);
   for (auto &t : tcontexts_) {
@@ -109,107 +101,6 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
   }
   thread_status_.resize(cfg.nthreads);
   scan_.resize(cfg.nthreads);
-}
-
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::genSingleEyes(
-    int image_w, float orgx, float orgy, float orgz, int base_tile_y, Tile tile,
-    RayBuf<Ray> *ray_buf) {
-  Ray *rays = ray_buf->rays;
-#pragma omp for collapse(2) schedule(static)
-  for (int y = tile.y; y < tile.y + tile.h; ++y) {
-    for (int x = tile.x; x < tile.x + tile.w; ++x) {
-      int y0 = y - tile.y;
-      int bufid_offset = y0 * tile.w;
-      int pixid_offset = y * image_w;
-      int x0 = x - tile.x;
-      int bufid = bufid_offset + x0;
-      int pixid = pixid_offset + x;
-      int samid_offset = (tile.y - base_tile_y) * tile.w;
-//
-#ifdef SPRAY_GLOG_CHECK
-      CHECK_LT(bufid, ray_buf->num);
-#endif
-      auto *ray = &rays[bufid];
-      //
-      ray->org[0] = orgx;
-      ray->org[1] = orgy;
-      ray->org[2] = orgz;
-
-      ray->pixid = pixid;
-
-      camera_->generateRay((float)x, (float)y, ray->dir);
-
-      ray->samid = bufid + samid_offset;
-      // ray->samid = bufid;
-
-      ray->w[0] = 1.f;
-      ray->w[1] = 1.f;
-      ray->w[2] = 1.f;
-      // ray->depth = 0;
-      // ray->tdom = 0; //unused
-      ray->t = SPRAY_FLOAT_INF;
-
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
-      RayUtil::setOccluded(RayUtil::OFLAG_UNDEFINED, ray);
-#endif
-    }
-  }
-}
-
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::genMultiEyes(
-    int image_w, float orgx, float orgy, float orgz, int base_tile_y, Tile tile,
-    RayBuf<Ray> *ray_buf) {
-  Ray *rays = ray_buf->rays;
-
-  int nsamples = num_pixel_samples_;
-
-#pragma omp for collapse(3) schedule(static, 1)
-  for (int y = tile.y; y < tile.y + tile.h; ++y) {
-    for (int x = tile.x; x < tile.x + tile.w; ++x) {
-      for (int s = 0; s < nsamples; ++s) {
-        int x0 = x - tile.x;
-        int y0 = y - tile.y;
-        int bufid = nsamples * (y0 * tile.w + x0) + s;
-        int pixid = y * image_w + x;
-        int samid_offset = (tile.y - base_tile_y) * tile.w * nsamples;
-#ifdef SPRAY_GLOG_CHECK
-        CHECK_LT(bufid, ray_buf->num);
-#endif
-        Ray *ray = &rays[bufid];
-        //
-        ray->org[0] = orgx;
-        ray->org[1] = orgy;
-        ray->org[2] = orgz;
-
-        ray->pixid = pixid;
-
-        RandomSampler sampler;
-        RandomSampler_init(sampler, bufid + samid_offset);
-
-        float fx = (float)(x) + RandomSampler_get1D(sampler);
-        float fy = (float)(y) + RandomSampler_get1D(sampler);
-
-        // common origin
-        camera_->generateRay(fx, fy, ray->dir);
-
-        ray->samid = bufid + samid_offset;
-        // ray->samid = bufid;
-
-        ray->w[0] = 1.f;
-        ray->w[1] = 1.f;
-        ray->w[2] = 1.f;
-        // ray->depth = 0;
-        // ray->tdom = 0; //unused
-        ray->t = SPRAY_FLOAT_INF;
-
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
-        RayUtil::setOccluded(RayUtil::OFLAG_UNDEFINED, ray);
-#endif
-      }
-    }
-  }
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
@@ -446,46 +337,226 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::procRecvShads(
 
 template <typename CacheT, typename ShaderT, typename SceneT>
 void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
-  vbuf_.resetTBufOut();
-  vbuf_.resetOBuf();
-
-  RayBuf<Ray> shared_eyes;
-
-  for (auto &tc : tcontexts_) {
-    tc.resetMems();
-  }
-
-  shared_eyes.num = (std::size_t)(mytile_.w * mytile_.h) * num_pixel_samples_;
-  if (shared_eyes.num) {
-    shared_eyes.rays = tcontexts_[0].allocMemIn(shared_eyes.num);
-  }
-
-  int nranks = num_ranks_;
-  int nbounces = num_bounces_;
-  int done = 0;
-
-#pragma omp parallel firstprivate(shared_eyes, nranks, nbounces)
+#pragma omp parallel
   {
-    int tid = omp_get_thread_num();
-    TContextType *tcontext = &tcontexts_[tid];
+    int nranks = num_ranks_;
+    int nbounces = num_bounces_;
+    int image_w = image_w_;
+    int num_pixel_samples = num_pixel_samples_;
 
-    // generate eye rays
-    if (shared_eyes.num) {
-      glm::vec3 cam_pos = camera_->getPosition();
-      if (num_pixel_samples_ > 1) {  // multi samples
-        genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-                     image_tile_.y, mytile_, &shared_eyes);
+    while (!tile_list_.empty()) {
+#pragma omp barrier
+#pragma omp master
+      {
+        tile_list_.front(&blocking_tile_, &strip_);
+        tile_list_.pop();
 
-      } else {  // single sample
-        genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-                      image_tile_.y, mytile_, &shared_eyes);
+        vbuf_.resetTBufOut();
+        vbuf_.resetOBuf();
+
+        for (auto &tc : tcontexts_) {
+          tc.resetMems();
+        }
+
+        shared_eyes_.num = (std::size_t)(strip_.w * strip_.h) * num_pixel_samples;
+        if (shared_eyes_.num) {
+          shared_eyes_.rays = tcontexts_[0].allocMemIn(shared_eyes_.num);
+        }
+
+        done_ = 0;
       }
+#pragma omp barrier
+
+      int tid = omp_get_thread_num();
+      TContextType *tcontext = &tcontexts_[tid];
+
+      // generate eye rays
+      if (shared_eyes_.num) {
+        glm::vec3 cam_pos = camera_->getPosition();
+        if (num_pixel_samples > 1) {  // multi samples
+          spray::insitu::genMultiSampleEyeRays(
+              *camera_, image_w, cam_pos[0], cam_pos[1], cam_pos[2],
+              num_pixel_samples, blocking_tile_, strip_, &shared_eyes_);
+
+        } else {  // single sample
+          spray::insitu::genSingleSampleEyeRays(
+              *camera_, image_w, cam_pos[0], cam_pos[1], cam_pos[2],
+              blocking_tile_, strip_, &shared_eyes_);
+        }
 #pragma omp barrier
 
       // isect domains for eyes on shared variables the eyes buffer
 #pragma omp for schedule(static, 1)
-      for (std::size_t i = 0; i < shared_eyes.num; ++i) {
-        Ray *ray = &shared_eyes.rays[i];
+        for (std::size_t i = 0; i < shared_eyes_.num; ++i) {
+          Ray *ray = &shared_eyes_.rays[i];
+          tcontext->isectDomains(ray);
+        }
+
+        populateRadWorkStats(tcontext);
+      }
+
+      int ray_depth = 0;
+
+      while (1) {
+#pragma omp barrier
+
+#pragma omp master
+        {
+          work_stats_.reduce();
+
+          if (work_stats_.allDone()) {
+            done_ = 1;
+            comm_.waitForSend();
+          }
+        }
+
+#pragma omp barrier
+
+        if (done_) {
+#pragma omp single
+          {
+            for (auto &t : tcontexts_) {
+              t.procRetireQ();
+            }
+          }
+          break;
+        }
+
+#ifdef SPRAY_GLOG_CHECK
+        CHECK_LT(ray_depth, nbounces + 1);
+#pragma omp barrier
+#endif
+
+        // send rays (transfer WorkSendMsg's to the comm q)
+        if (nranks > 1) {
+#ifdef SPRAY_GLOG_CHECK
+          CHECK(comm_.emptySendQ());
+#endif
+          sendRays(tid, tcontext);
+
+#pragma omp barrier
+#pragma omp master
+          {
+            comm_.waitForSend();
+            auto *memin = tcontext->getMemIn();
+            comm_.run(&work_stats_, memin, &recv_rq_, &recv_sq_);
+          }
+#pragma omp barrier
+        }
+
+        procCachedRq(ray_depth, tcontext);
+#pragma omp barrier
+
+        procLocalQs(tid, ray_depth, tcontext);
+#pragma omp barrier
+
+        if (nranks > 1) {
+          procRecvQs(ray_depth, tcontext);
+#pragma omp barrier
+        }
+
+#pragma omp master
+        {
+          if (ray_depth < nbounces && nranks > 1) {
+            vbuf_.compositeTBuf();
+          }
+
+          if (ray_depth > 0 && nranks > 1) {
+            vbuf_.compositeOBuf();
+          }
+
+          if (ray_depth > 0) {
+            for (auto &t : tcontexts_) {
+              t.procRetireQ();
+            }
+            vbuf_.resetOBuf();
+          }
+
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+          for (auto &t : tcontexts_) {
+            t.retireBackground();
+          }
+#endif
+
+          vbuf_.resetTBufIn();
+          vbuf_.swapTBufs();
+        }
+#pragma omp barrier
+
+        // refer to tbuf input for correctness
+        tcontext->processRays2();
+
+#pragma omp barrier
+
+        populateWorkStats(tcontext);
+
+        tcontext->resetAndSwapMems();
+
+        ++ray_depth;
+
+#pragma omp barrier
+      }  // while (1)
+#ifdef SPRAY_GLOG_CHECK
+      tcontext->checkQs();
+#endif
+    }  // while (!tile_list_.empty())
+  }    // # pragma omp parallel
+  tile_list_.reset();
+}
+
+template <typename CacheT, typename ShaderT, typename SceneT>
+void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
+  while (!tile_list_.empty()) {
+#pragma omp barrier
+#pragma omp master
+    {
+      tile_list_.front(&blocking_tile_, &strip_);
+      tile_list_.pop();
+
+      vbuf_.resetTBufOut();
+      vbuf_.resetOBuf();
+
+      for (auto &tc : tcontexts_) {
+        tc.resetMems();
+      }
+
+      shared_eyes_.num =
+          (std::size_t)(strip_.w * strip_.h) * num_pixel_samples_;
+      if (shared_eyes_.num) {
+        shared_eyes_.rays = tcontexts_[0].allocMemIn(shared_eyes_.num);
+      } else {
+        shared_eyes_.rays = nullptr;
+      }
+    }
+#pragma omp barrier
+
+    const int nranks = num_ranks_;
+    const int nbounces = num_bounces_;
+#pragma omp single
+    done_ = 0;
+
+    int tid = omp_get_thread_num();
+    TContextType *tcontext = &tcontexts_[tid];
+
+    // generate eye rays
+    if (shared_eyes_.num) {
+      glm::vec3 cam_pos = camera_->getPosition();
+      if (num_pixel_samples_ > 1) {  // multi samples
+        spray::insitu::genMultiSampleEyeRays(
+            *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
+            num_pixel_samples_, blocking_tile_, strip_, &shared_eyes_);
+
+      } else {  // single sample
+        spray::insitu::genSingleSampleEyeRays(
+            *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
+            blocking_tile_, strip_, &shared_eyes_);
+      }
+#pragma omp barrier
+
+    // isect domains for eyes on shared variables the eyes buffer
+#pragma omp for schedule(static, 1)
+      for (std::size_t i = 0; i < shared_eyes_.num; ++i) {
+        Ray *ray = &shared_eyes_.rays[i];
         tcontext->isectDomains(ray);
       }
 
@@ -502,14 +573,14 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
         work_stats_.reduce();
 
         if (work_stats_.allDone()) {
-          done = 1;
+          done_ = 1;
           comm_.waitForSend();
         }
       }
 
 #pragma omp barrier
 
-      if (done) {
+      if (done_) {
 #pragma omp single
         {
           for (auto &t : tcontexts_) {
@@ -593,166 +664,11 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
 
 #pragma omp barrier
     }  // while (1)
-#ifdef SPRAY_GLOG_CHECK
-    tcontext->checkQs();
-#endif
-  }  // # pragma omp parallel
-}
-
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
-#pragma omp master
-  {
-    vbuf_.resetTBufOut();
-    vbuf_.resetOBuf();
-
-    for (auto &tc : tcontexts_) {
-      tc.resetMems();
-    }
-
-    shared_eyes_.num =
-        (std::size_t)(mytile_.w * mytile_.h) * num_pixel_samples_;
-    if (shared_eyes_.num) {
-      shared_eyes_.rays = tcontexts_[0].allocMemIn(shared_eyes_.num);
-    } else {
-      shared_eyes_.rays = nullptr;
-    }
-  }
-#pragma omp barrier
-
-  const int nranks = num_ranks_;
-  const int nbounces = num_bounces_;
-  // int done = 0;
-#pragma omp single
-  done_ = 0;
-
-  int tid = omp_get_thread_num();
-  TContextType *tcontext = &tcontexts_[tid];
-
-  // generate eye rays
-  if (shared_eyes_.num) {
-    glm::vec3 cam_pos = camera_->getPosition();
-    if (num_pixel_samples_ > 1) {  // multi samples
-      genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2], image_tile_.y,
-                   mytile_, &shared_eyes_);
-
-    } else {  // single sample
-      genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2], image_tile_.y,
-                    mytile_, &shared_eyes_);
-    }
-#pragma omp barrier
-
-    // isect domains for eyes on shared variables the eyes buffer
-#pragma omp for schedule(static, 1)
-    for (std::size_t i = 0; i < shared_eyes_.num; ++i) {
-      Ray *ray = &shared_eyes_.rays[i];
-      tcontext->isectDomains(ray);
-    }
-
-    populateRadWorkStats(tcontext);
-  }
-
-  int ray_depth = 0;
-
-  while (1) {
-#pragma omp barrier
-
-#pragma omp master
-    {
-      work_stats_.reduce();
-
-      if (work_stats_.allDone()) {
-        done_ = 1;
-        comm_.waitForSend();
-      }
-    }
-
-#pragma omp barrier
-
-    if (done_) {
-#pragma omp single
-      {
-        for (auto &t : tcontexts_) {
-          t.procRetireQ();
-        }
-      }
-      break;
-    }
-
-#ifdef SPRAY_GLOG_CHECK
-    CHECK_LT(ray_depth, nbounces + 1);
-#pragma omp barrier
-#endif
-
-    // send rays (transfer WorkSendMsg's to the comm q)
-    if (nranks > 1) {
-#ifdef SPRAY_GLOG_CHECK
-      CHECK(comm_.emptySendQ());
-#endif
-      sendRays(tid, tcontext);
-
+  }    // while (!tile_list_.empty())
 #pragma omp barrier
 #pragma omp master
-      {
-        comm_.waitForSend();
-        auto *memin = tcontext->getMemIn();
-        comm_.run(&work_stats_, memin, &recv_rq_, &recv_sq_);
-      }
+  tile_list_.reset();
 #pragma omp barrier
-    }
-
-    procCachedRq(ray_depth, tcontext);
-#pragma omp barrier
-
-    procLocalQs(tid, ray_depth, tcontext);
-#pragma omp barrier
-
-    if (nranks > 1) {
-      procRecvQs(ray_depth, tcontext);
-#pragma omp barrier
-    }
-
-#pragma omp master
-    {
-      if (ray_depth < nbounces && nranks > 1) {
-        vbuf_.compositeTBuf();
-      }
-
-      if (ray_depth > 0 && nranks > 1) {
-        vbuf_.compositeOBuf();
-      }
-
-      if (ray_depth > 0) {
-        for (auto &t : tcontexts_) {
-          t.procRetireQ();
-        }
-        vbuf_.resetOBuf();
-      }
-
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
-      for (auto &t : tcontexts_) {
-        t.retireBackground();
-      }
-#endif
-
-      vbuf_.resetTBufIn();
-      vbuf_.swapTBufs();
-    }
-#pragma omp barrier
-
-    // refer to tbuf input for correctness
-    tcontext->processRays2();
-
-#pragma omp barrier
-
-    populateWorkStats(tcontext);
-
-    tcontext->resetAndSwapMems();
-
-    ++ray_depth;
-
-#pragma omp barrier
-  }  // while (1)
 }
 
 }  // namespace insitu

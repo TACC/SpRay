@@ -61,8 +61,6 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
   CHECK_GT(image_w_, 0);
   CHECK_GT(image_h_, 0);
 
-  tiler_.resize(cfg.image_w, cfg.image_h, cfg.num_tiles, cfg.min_tile_size);
-
   shader_.init(cfg, scene);
 
   int total_num_light_samples;
@@ -84,16 +82,10 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
     }
   }
 
-  image_tile_.x = 0;
-  image_tile_.y = 0;
-  image_tile_.w = cfg.image_w;
-  image_tile_.h = cfg.image_h;
+  tile_list_.init(cfg.image_w, cfg.image_h, cfg.pixel_samples, nranks, rank,
+                  cfg.maximum_num_screen_space_samples_per_rank);
 
-  mytile_ = RankStriper::make(mpi::size(), mpi::rank(), image_tile_);
-
-  int64_t total_num_samples =
-      (int64_t)mytile_.w * mytile_.h * cfg.pixel_samples;
-  CHECK_LT(total_num_samples, INT_MAX);
+  CHECK(!tile_list_.empty());
 
   rqs_.resize(ndomains);
   sqs_.resize(ndomains);
@@ -102,106 +94,8 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
   mem_in_ = &mem_0_;
   mem_out_ = &mem_1_;
 
-  vbuf_.resize(image_tile_, cfg.pixel_samples, total_num_light_samples);
-}
-
-template <typename CacheT, typename ShaderT, typename SceneT>
-void SingleThreadTracer<CacheT, ShaderT, SceneT>::genSingleEyes(
-    int image_w, float orgx, float orgy, float orgz, int base_tile_y, Tile tile,
-    RayBuf<Ray> *ray_buf) {
-  Ray *rays = ray_buf->rays;
-  for (int y = tile.y; y < tile.y + tile.h; ++y) {
-    for (int x = tile.x; x < tile.x + tile.w; ++x) {
-      int y0 = y - tile.y;
-      int bufid_offset = y0 * tile.w;
-      int pixid_offset = y * image_w;
-      int x0 = x - tile.x;
-      int bufid = bufid_offset + x0;
-      int pixid = pixid_offset + x;
-      int samid_offset = (tile.y - base_tile_y) * tile.w;
-#ifdef SPRAY_GLOG_CHECK
-      CHECK_LT(bufid, ray_buf->num);
-#endif
-      auto *ray = &rays[bufid];
-      //
-      ray->org[0] = orgx;
-      ray->org[1] = orgy;
-      ray->org[2] = orgz;
-
-      ray->pixid = pixid;
-
-      camera_->generateRay((float)x, (float)y, ray->dir);
-
-      ray->samid = bufid + samid_offset;
-#ifdef SPRAY_GLOG_CHECK
-      CHECK_LT(ray->samid, vbuf_.getTBufSize());
-#endif
-
-      ray->w[0] = 1.f;
-      ray->w[1] = 1.f;
-      ray->w[2] = 1.f;
-
-      ray->t = SPRAY_FLOAT_INF;
-
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
-      RayUtil::setOccluded(RayUtil::OFLAG_UNDEFINED, ray);
-#endif
-    }
-  }
-}
-
-template <typename CacheT, typename ShaderT, typename SceneT>
-void SingleThreadTracer<CacheT, ShaderT, SceneT>::genMultiEyes(
-    int image_w, float orgx, float orgy, float orgz, int base_tile_y, Tile tile,
-    RayBuf<Ray> *ray_buf) {
-  Ray *rays = ray_buf->rays;
-
-  int nsamples = num_pixel_samples_;
-
-  for (int y = tile.y; y < tile.y + tile.h; ++y) {
-    for (int x = tile.x; x < tile.x + tile.w; ++x) {
-      for (int s = 0; s < nsamples; ++s) {
-        int x0 = x - tile.x;
-        int y0 = y - tile.y;
-        int bufid = nsamples * (y0 * tile.w + x0) + s;
-        int pixid = y * image_w + x;
-        int samid_offset = (tile.y - base_tile_y) * tile.w * nsamples;
-#ifdef SPRAY_GLOG_CHECK
-        CHECK_LT(bufid, ray_buf->num);
-#endif
-        Ray *ray = &rays[bufid];
-        //
-        ray->org[0] = orgx;
-        ray->org[1] = orgy;
-        ray->org[2] = orgz;
-
-        ray->pixid = pixid;
-
-        RandomSampler sampler;
-        RandomSampler_init(sampler, bufid + samid_offset);
-
-        float fx = (float)(x) + RandomSampler_get1D(sampler);
-        float fy = (float)(y) + RandomSampler_get1D(sampler);
-
-        camera_->generateRay(fx, fy, ray->dir);
-
-        ray->samid = bufid + samid_offset;
-#ifdef SPRAY_GLOG_CHECK
-        CHECK_LT(ray->samid, vbuf_.getTBufSize());
-#endif
-
-        ray->w[0] = 1.f;
-        ray->w[1] = 1.f;
-        ray->w[2] = 1.f;
-
-        ray->t = SPRAY_FLOAT_INF;
-
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
-        RayUtil::setOccluded(RayUtil::OFLAG_UNDEFINED, ray);
-#endif
-      }
-    }
-  }
+  vbuf_.resize(tile_list_.getLargestBlockingTile(), cfg.pixel_samples,
+               total_num_light_samples);
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
@@ -511,88 +405,95 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::retireBackground() {
 
 template <typename CacheT, typename ShaderT, typename SceneT>
 void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
-  vbuf_.resetTBufOut();
-  vbuf_.resetOBuf();
+  while (!tile_list_.empty()) {
+    tile_list_.front(&blocking_tile_, &strip_);
+    tile_list_.pop();
 
-  RayBuf<Ray> shared_eyes;
+    vbuf_.resetTBufOut();
+    vbuf_.resetOBuf();
 
-  shared_eyes.num = (std::size_t)(mytile_.w * mytile_.h) * num_pixel_samples_;
-  if (shared_eyes.num) {
-    shared_eyes.rays = mem_in_->Alloc<Ray>(shared_eyes.num);
-  }
+    shared_eyes_.num = (std::size_t)(strip_.w * strip_.h) * num_pixel_samples_;
 
-  if (shared_eyes.num) {
-    glm::vec3 cam_pos = camera_->getPosition();
-    if (num_pixel_samples_ > 1) {  // multi samples
-      genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2], image_tile_.y,
-                   mytile_, &shared_eyes);
+    if (shared_eyes_.num) {
+      shared_eyes_.rays = mem_in_->Alloc<Ray>(shared_eyes_.num);
 
-    } else {  // single sample
-      genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2], image_tile_.y,
-                    mytile_, &shared_eyes);
-    }
+      glm::vec3 cam_pos = camera_->getPosition();
+      if (num_pixel_samples_ > 1) {  // multi samples
+        spray::insitu::genMultiSampleEyeRays(
+            *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
+            num_pixel_samples_, blocking_tile_, strip_, &shared_eyes_);
+
+      } else {  // single sample
+        spray::insitu::genSingleSampleEyeRays(
+            *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
+            blocking_tile_, strip_, &shared_eyes_);
+      }
 
 #ifdef SPRAY_BACKGROUND_COLOR_BLACK
-    isector_.intersect(num_domains_, scene_, shared_eyes, &rqs_);
+      isector_.intersect(num_domains_, scene_, shared_eyes_, &rqs_);
 #else
-    isector_.intersect(num_domains_, scene_, shared_eyes, &rqs_, &bg_retire_q_);
+      isector_.intersect(num_domains_, scene_, shared_eyes_, &rqs_,
+                         &bg_retire_q_);
 #endif
 
-    populateRadWorkStats();
-  }
-
-  ray_depth_ = 0;
-
-  while (1) {
-    work_stats_.reduce();
-
-    if (work_stats_.allDone()) {
-      procRetireQ();
-      comm_.waitForSend();
-      break;
+      populateRadWorkStats();
     }
 
-    if (num_ranks_ > 1) {
+    ray_depth_ = 0;
+
+    while (1) {
+      work_stats_.reduce();
+
+      if (work_stats_.allDone()) {
+        procRetireQ();
+        comm_.waitForSend();
+        break;
+      }
+
+      if (num_ranks_ > 1) {
 #ifdef SPRAY_GLOG_CHECK
-      CHECK(comm_.emptySendQ());
+        CHECK(comm_.emptySendQ());
 #endif
-      sendRays();
-      comm_.waitForSend();
-      comm_.run(&work_stats_, mem_in_, &recv_rq_, &recv_sq_);
-    }
+        sendRays();
+        comm_.waitForSend();
+        comm_.run(&work_stats_, mem_in_, &recv_rq_, &recv_sq_);
+      }
 
-    procCachedRq();
-    procLocalQs();
-    procRecvQs();
+      procCachedRq();
+      procLocalQs();
+      procRecvQs();
 
-    if (ray_depth_ < num_bounces_ && num_ranks_ > 1) {
-      vbuf_.compositeTBuf();
-    }
+      if (ray_depth_ < num_bounces_ && num_ranks_ > 1) {
+        vbuf_.compositeTBuf();
+      }
 
-    if (ray_depth_ > 0 && num_ranks_ > 1) {
-      vbuf_.compositeOBuf();
-    }
+      if (ray_depth_ > 0 && num_ranks_ > 1) {
+        vbuf_.compositeOBuf();
+      }
 
-    if (ray_depth_ > 0) {
-      procRetireQ();
-      vbuf_.resetOBuf();
-    }
+      if (ray_depth_ > 0) {
+        procRetireQ();
+        vbuf_.resetOBuf();
+      }
 #ifndef SPRAY_BACKGROUND_COLOR_BLACK
-    retireBackground();
+      retireBackground();
 #endif
-    vbuf_.resetTBufIn();
-    vbuf_.swapTBufs();
+      vbuf_.resetTBufIn();
+      vbuf_.swapTBufs();
 
-    procFrq2();
-    procFsq2();
+      procFrq2();
+      procFsq2();
 
-    populateWorkStats();
+      populateWorkStats();
 
-    mem_in_->Reset();
-    std::swap(mem_in_, mem_out_);
+      mem_in_->Reset();
+      std::swap(mem_in_, mem_out_);
 
-    ++ray_depth_;
+      ++ray_depth_;
+    }
   }
+  tile_list_.reset();
+
 #ifdef SPRAY_GLOG_CHECK
   CHECK(bg_retire_q_.empty());
 #endif

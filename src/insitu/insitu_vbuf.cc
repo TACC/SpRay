@@ -26,7 +26,7 @@
 namespace spray {
 namespace insitu {
 
-void VBuf::resize(const Tile& tile, int num_pixel_samples,
+void VBuf::resize(const spray::Tile& tile, int num_pixel_samples,
                   int total_num_light_samples) {
   tile_ = tile;
   num_pixel_samples_ = num_pixel_samples;

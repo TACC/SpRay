@@ -37,7 +37,6 @@
 #include "insitu/insitu_isector.h"
 #include "insitu/insitu_ray.h"
 #include "insitu/insitu_tcontext.h"
-#include "insitu/insitu_tiler.h"
 #include "insitu/insitu_vbuf.h"
 #include "insitu/insitu_work.h"
 #include "insitu/insitu_work_stats.h"
@@ -74,7 +73,6 @@ class MultiThreadTracer {
   std::vector<TContextType> tcontexts_;
 
   ShaderT shader_;
-  Tiler tiler_;
   Comm comm_;
   VBuf vbuf_;
 
@@ -82,12 +80,9 @@ class MultiThreadTracer {
   spray::RTCRayIntersection rtc_isect_;
   RTCRay rtc_ray_;
 
- private:
-  void genSingleEyes(int image_w, float orgx, float orgy, float orgz,
-                     int base_tile_y, Tile tile, RayBuf<Ray> *ray_buf);
-  void genMultiEyes(int image_w, float orgx, float orgy, float orgz,
-                    int base_tile_y, Tile tile, RayBuf<Ray> *ray_buf);
+  Tile blocking_tile_, strip_;
 
+ private:
   void sendRays(int tid, TContextType *tcontext);
   void send(bool shadow, int tid, int domain_id, int dest, std::size_t num_rays,
             TContextType *tcontext);
@@ -121,11 +116,13 @@ class MultiThreadTracer {
   WorkSendMsg<Ray, MsgHeader> *send_work_;
 
  private:
-  Tile mytile_;
-  Tile image_tile_;
+  spray::Tile mytile_;
+  spray::Tile image_tile_;
 
   RayBuf<Ray> shared_eyes_;
   int done_;
+
+  spray::TileList tile_list_;
 
  private:
   int rank_;

@@ -76,7 +76,7 @@ void Tracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
   pcontext_.resize(ndomains, cfg.bounces, cfg.nthreads, image_tile_,
                    cfg.pixel_samples, num_lights, image_);
 
-  mytile_ = RankStriper::make(mpi::size(), mpi::rank(), image_tile_);
+  mytile_ = makeHorizontalStrip(mpi::size(), mpi::rank(), image_tile_);
 
   int64_t total_num_samples =
       (int64_t)mytile_.w * mytile_.h * cfg.pixel_samples;
@@ -91,7 +91,7 @@ void Tracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
 template <typename CacheT, typename ShaderT, typename SceneT>
 void Tracer<CacheT, ShaderT, SceneT>::genSingleEyes(int image_w, float orgx,
                                                     float orgy, float orgz,
-                                                    Tile tile,
+                                                    spray::Tile tile,
                                                     RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
 #pragma omp for collapse(2) schedule(static, 1)
@@ -132,7 +132,7 @@ void Tracer<CacheT, ShaderT, SceneT>::genSingleEyes(int image_w, float orgx,
 template <typename CacheT, typename ShaderT, typename SceneT>
 void Tracer<CacheT, ShaderT, SceneT>::genMultiEyes(int image_w, float orgx,
                                                    float orgy, float orgz,
-                                                   Tile tile,
+                                                   spray::Tile tile,
                                                    RayBuf<Ray> *ray_buf) {
   Ray *rays = ray_buf->rays;
 
