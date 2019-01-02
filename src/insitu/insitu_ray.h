@@ -104,7 +104,6 @@ inline void genSingleSampleEyeRays(const Camera& camera, int image_w,
                                    float orgx, float orgy, float orgz,
                                    Tile blocking_tile, Tile tile,
                                    RayBuf<Ray>* ray_buf) {
-  //
   Ray* rays = ray_buf->rays;
 
 #pragma omp for collapse(2) schedule(static, 1)
@@ -120,7 +119,6 @@ inline void genSingleSampleEyeRays(const Camera& camera, int image_w,
       ray->org[1] = orgy;
       ray->org[2] = orgz;
 
-      // ray->pixid = pixid;
       ray->pixid = image_w * y + x;
 
       camera.generateRay((float)x, (float)y, ray->dir);
@@ -141,9 +139,7 @@ inline void genMultiSampleEyeRays(const Camera& camera, int image_w, float orgx,
                                   float orgy, float orgz, int num_pixel_samples,
                                   spray::Tile blocking_tile, spray::Tile tile,
                                   RayBuf<Ray>* ray_buf) {
-  //
   Ray* rays = ray_buf->rays;
-  RandomSampler sampler;
 
 #pragma omp for collapse(3) schedule(static, 1)
   for (int y = tile.y; y < tile.y + tile.h; ++y) {
@@ -162,6 +158,7 @@ inline void genMultiSampleEyeRays(const Camera& camera, int image_w, float orgx,
 
         ray->pixid = image_w * y + x;
 
+        RandomSampler sampler;
         RandomSampler_init(sampler, ray->pixid, s);
 
         float fx = (float)(x) + RandomSampler_get1D(sampler);
