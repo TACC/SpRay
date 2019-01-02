@@ -84,11 +84,6 @@ class MultiThreadTracer {
   Tile blocking_tile_, strip_;
 
  private:
-  // void genSingleEyes(int image_w, float orgx, float orgy, float orgz,
-  //                    int base_tile_y, spray::Tile tile, RayBuf<Ray> *ray_buf);
-  // void genMultiEyes(int image_w, float orgx, float orgy, float orgz,
-  //                   int base_tile_y, spray::Tile tile, RayBuf<Ray> *ray_buf);
-
   void sendRays(int tid, TContextType *tcontext);
   void send(bool shadow, int tid, int domain_id, int dest, std::size_t num_rays,
             TContextType *tcontext);

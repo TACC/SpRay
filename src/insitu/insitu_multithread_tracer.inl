@@ -103,103 +103,6 @@ void MultiThreadTracer<CacheT, ShaderT>::init(const Config &cfg,
   scan_.resize(cfg.nthreads);
 }
 
-// template <typename CacheT, typename ShaderT>
-// void MultiThreadTracer<CacheT, ShaderT>::genSingleEyes(int image_w, float orgx,
-//                                                        float orgy, float orgz,
-//                                                        int base_tile_y,
-//                                                        spray::Tile tile,
-//                                                        RayBuf<Ray> *ray_buf) {
-//   Ray *rays = ray_buf->rays;
-// #pragma omp for collapse(2) schedule(static)
-//   for (int y = tile.y; y < tile.y + tile.h; ++y) {
-//     for (int x = tile.x; x < tile.x + tile.w; ++x) {
-//       int y0 = y - tile.y;
-//       int bufid_offset = y0 * tile.w;
-//       int pixid_offset = y * image_w;
-//       int x0 = x - tile.x;
-//       int bufid = bufid_offset + x0;
-//       int pixid = pixid_offset + x;
-//       int samid_offset = (tile.y - base_tile_y) * tile.w;
-// //
-// #ifdef SPRAY_GLOG_CHECK
-//       CHECK_LT(bufid, ray_buf->num);
-// #endif
-//       auto *ray = &rays[bufid];
-//       //
-//       ray->org[0] = orgx;
-//       ray->org[1] = orgy;
-//       ray->org[2] = orgz;
-// 
-//       ray->pixid = pixid;
-// 
-//       camera_->generateRay((float)x, (float)y, ray->dir);
-// 
-//       ray->samid = bufid + samid_offset;
-//       // ray->samid = bufid;
-// 
-//       ray->w[0] = 1.f;
-//       ray->w[1] = 1.f;
-//       ray->w[2] = 1.f;
-//       // ray->depth = 0;
-//       // ray->tdom = 0; //unused
-//       ray->t = SPRAY_FLOAT_INF;
-//     }
-//   }
-// }
-// 
-// template <typename CacheT, typename ShaderT>
-// void MultiThreadTracer<CacheT, ShaderT>::genMultiEyes(int image_w, float orgx,
-//                                                       float orgy, float orgz,
-//                                                       int base_tile_y,
-//                                                       spray::Tile tile,
-//                                                       RayBuf<Ray> *ray_buf) {
-//   Ray *rays = ray_buf->rays;
-// 
-//   int nsamples = num_pixel_samples_;
-// 
-// #pragma omp for collapse(3) schedule(static, 1)
-//   for (int y = tile.y; y < tile.y + tile.h; ++y) {
-//     for (int x = tile.x; x < tile.x + tile.w; ++x) {
-//       for (int s = 0; s < nsamples; ++s) {
-//         int x0 = x - tile.x;
-//         int y0 = y - tile.y;
-//         int bufid = nsamples * (y0 * tile.w + x0) + s;
-//         int pixid = y * image_w + x;
-//         int samid_offset = (tile.y - base_tile_y) * tile.w * nsamples;
-// #ifdef SPRAY_GLOG_CHECK
-//         CHECK_LT(bufid, ray_buf->num);
-// #endif
-//         Ray *ray = &rays[bufid];
-//         //
-//         ray->org[0] = orgx;
-//         ray->org[1] = orgy;
-//         ray->org[2] = orgz;
-// 
-//         ray->pixid = pixid;
-// 
-//         RandomSampler sampler;
-//         RandomSampler_init(sampler, bufid + samid_offset);
-// 
-//         float fx = (float)(x) + RandomSampler_get1D(sampler);
-//         float fy = (float)(y) + RandomSampler_get1D(sampler);
-// 
-//         // common origin
-//         camera_->generateRay(fx, fy, ray->dir);
-// 
-//         ray->samid = bufid + samid_offset;
-//         // ray->samid = bufid;
-// 
-//         ray->w[0] = 1.f;
-//         ray->w[1] = 1.f;
-//         ray->w[2] = 1.f;
-//         // ray->depth = 0;
-//         // ray->tdom = 0; //unused
-//         ray->t = SPRAY_FLOAT_INF;
-//       }
-//     }
-//   }
-// }
-
 template <typename CacheT, typename ShaderT>
 void MultiThreadTracer<CacheT, ShaderT>::populateRadWorkStats(
     TContextType *tcontext) {
@@ -450,9 +353,6 @@ void MultiThreadTracer<CacheT, ShaderT>::trace() {
         tile_list_.front(&blocking_tile_, &strip_);
         tile_list_.pop();
 
-        // std::cout << "blocking tile: " << blocking_tile_
-        //           << ", strip: " << strip_ << "\n";
-
         vbuf_.resetTBufOut();
         vbuf_.resetOBuf();
 
@@ -476,15 +376,11 @@ void MultiThreadTracer<CacheT, ShaderT>::trace() {
       if (shared_eyes_.num) {
         glm::vec3 cam_pos = camera_->getPosition();
         if (num_pixel_samples > 1) {  // multi samples
-          // genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-          //              image_tile_.y, mytile_, &shared_eyes_);
           spray::insitu::genMultiSampleEyeRays(
               *camera_, image_w, cam_pos[0], cam_pos[1], cam_pos[2],
               num_pixel_samples, blocking_tile_, strip_, &shared_eyes_);
 
         } else {  // single sample
-          // genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-          //               image_tile_.y, mytile_, &shared_eyes_);
           spray::insitu::genSingleSampleEyeRays(
               *camera_, image_w, cam_pos[0], cam_pos[1], cam_pos[2],
               blocking_tile_, strip_, &shared_eyes_);
@@ -639,15 +535,11 @@ void MultiThreadTracer<CacheT, ShaderT>::traceInOmp() {
     if (shared_eyes_.num) {
       glm::vec3 cam_pos = camera_->getPosition();
       if (num_pixel_samples_ > 1) {  // multi samples
-        // genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-        //              image_tile_.y, mytile_, &shared_eyes_);
         spray::insitu::genMultiSampleEyeRays(
             *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
             num_pixel_samples_, blocking_tile_, strip_, &shared_eyes_);
 
       } else {  // single sample
-        // genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-        //               image_tile_.y, mytile_, &shared_eyes_);
         spray::insitu::genSingleSampleEyeRays(
             *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
             blocking_tile_, strip_, &shared_eyes_);

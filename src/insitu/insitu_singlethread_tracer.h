@@ -77,11 +77,6 @@ class SingleThreadTracer {
   RTCRay rtc_ray_;
 
  private:
-  void genSingleEyes(int image_w, float orgx, float orgy, float orgz,
-                     int base_tile_y, spray::Tile tile, RayBuf<Ray> *ray_buf);
-  void genMultiEyes(int image_w, float orgx, float orgy, float orgz,
-                    int base_tile_y, spray::Tile tile, RayBuf<Ray> *ray_buf);
-
   void sendRays();
   void send(bool shadow, int domain_id, int dest, std::queue<Ray *> *q);
   void procLocalQs();
