@@ -75,7 +75,7 @@ void Tracer<CacheT, ShaderT>::init(const Config &cfg, const Camera &camera,
   pcontext_.resize(ndomains, cfg.bounces, cfg.nthreads, image_tile_,
                    cfg.pixel_samples, num_lights, image_);
 
-  mytile_ = RankStriper::make(mpi::size(), mpi::rank(), image_tile_);
+  mytile_ = makeHorizontalStrip(mpi::size(), mpi::rank(), image_tile_);
 
   int64_t total_num_samples =
       (int64_t)mytile_.w * mytile_.h * cfg.pixel_samples;

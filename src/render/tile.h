@@ -170,32 +170,92 @@ std::vector<Tile> makeTileVector(int image_w, int image_h,
   return (std::move(tiles));
 }
 
-class Tiler {
+/**
+ * Given the number of ranks, create a horizontal strip of the input tile for
+ * the given rank.
+ *
+ * \param num_ranks Number of ranks in the cluster.
+ * \param rank Target rank.
+ * \param tile_in Input tile to get a horizontal strip from.
+ * \return Horizontal strip for the given rank. The strip can be either valid or
+ * invalid.
+ */
+Tile makeHorizontalStrip(int num_ranks, int rank, const Tile& tile_in);
+
+class BlockingTileList {
  public:
-  Tiler() : id_(-1), max_tile_id_(-1) {}
+  BlockingTileList() : tile_index_(-1), largest_tile_index_(-1) {}
 
-  void resize(int image_w, int image_h, int num_tiles_1d, int min_tile_size_1d);
-  void reset() { id_ = 0; }
+  void init(int64_t image_w, int64_t image_h, int64_t num_pixel_samples,
+            int64_t num_ranks, int64_t maximum_num_samples_per_rank);
 
-  Tile& front() { return tiles_[id_]; }
-  const Tile& front() const { return tiles_[id_]; }
+  void reset() { tile_index_ = 0; }
 
-  void pop() { ++id_; }
+  const Tile& front() const {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(tile_index_, tiles_.size());
+#endif
+    return tiles_[tile_index_];
+  }
 
-  bool empty() const { return (id_ == tiles_.size()); }
+  void pop() {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(tile_index_, tiles_.size());
+#endif
+    ++tile_index_;
+  }
+
+  bool empty() const { return (tile_index_ == tiles_.size()); }
 
   std::size_t size() const { return tiles_.size(); }
 
-  const Tile& getMaxTile() const { return tiles_[max_tile_id_]; }
+  const Tile& getLargestTile() const { return tiles_[largest_tile_index_]; }
 
  private:
   std::vector<Tile> tiles_;
-  int id_;
-  int max_tile_id_;
+  int tile_index_;
+  int largest_tile_index_;
 };
 
-struct RankStriper {
-  static Tile make(int num_ranks, int rank, const Tile& tile_in);
+class TileList {
+ public:
+  void init(int64_t image_w, int64_t image_h, int64_t num_pixel_samples,
+            int64_t num_ranks, int rank, int64_t maximum_num_samples_per_rank);
+
+  void reset() {
+    tile_index_ = 0;
+    blocking_tiles_.reset();
+  }
+
+  void front(Tile* blocking_tile, Tile* strip) const {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(tile_index_, tiles_.size());
+#endif
+    *blocking_tile = blocking_tiles_.front();
+    *strip = tiles_[tile_index_];
+  }
+
+  void pop() {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(tile_index_, tiles_.size());
+#endif
+    blocking_tiles_.pop();
+    ++tile_index_;
+  }
+
+  bool empty() const { return (tile_index_ == tiles_.size()); }
+
+  std::size_t size() const { return tiles_.size(); }
+
+  const Tile& getLargestBlockingTile() const {
+    return blocking_tiles_.getLargestTile();
+  }
+
+ private:
+  BlockingTileList blocking_tiles_;
+
+  std::vector<Tile> tiles_;
+  int tile_index_;
 };
 
 class RankTiler {

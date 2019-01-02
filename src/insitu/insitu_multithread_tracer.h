@@ -74,7 +74,7 @@ class MultiThreadTracer {
   std::vector<TContextType> tcontexts_;
 
   ShaderT shader_;
-  spray::Tiler tiler_;
+  // spray::Tiler tiler_;
   Comm comm_;
   VBuf vbuf_;
 

@@ -68,7 +68,7 @@ class SingleThreadTracer {
 
  private:
   ShaderT shader_;
-  spray::Tiler tiler_;
+  spray::TileList tile_list_;
   Comm comm_;
   VBuf vbuf_;
 
@@ -145,9 +145,6 @@ class SingleThreadTracer {
   spray::MemoryArena mem_1_;
 
  private:
-  spray::Tile mytile_;
-  spray::Tile image_tile_;
-
   int ray_depth_;
 
  private:

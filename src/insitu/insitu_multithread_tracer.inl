@@ -63,7 +63,7 @@ void MultiThreadTracer<CacheT, ShaderT>::init(const Config &cfg,
   CHECK_GT(image_h_, 0);
 
   // tiling
-  tiler_.resize(cfg.image_w, cfg.image_h, cfg.num_tiles, cfg.min_tile_size);
+  // tiler_.resize(cfg.image_w, cfg.image_h, cfg.num_tiles, cfg.min_tile_size);
 
   // shader
   shader_.init(cfg, scene);
@@ -93,7 +93,7 @@ void MultiThreadTracer<CacheT, ShaderT>::init(const Config &cfg,
   image_tile_.w = cfg.image_w;
   image_tile_.h = cfg.image_h;
 
-  mytile_ = RankStriper::make(mpi::size(), mpi::rank(), image_tile_);
+  mytile_ = makeHorizontalStrip(mpi::size(), mpi::rank(), image_tile_);
 
   int64_t total_num_samples =
       (int64_t)mytile_.w * mytile_.h * cfg.pixel_samples;

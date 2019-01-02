@@ -63,8 +63,7 @@ Config::Config() {
   // pt settings
   pixel_samples = 4;
 
-  num_tiles = 1;
-  min_tile_size = 64;
+  maximum_num_screen_space_samples_per_rank = 1024 * 1024;
 
   nthreads = 1;
 
@@ -96,6 +95,9 @@ void Config::printUsage(char** argv) {
   printf("  --camera <posx posy posz lookx looky lookz>\n");
   printf("  --ao-samples <number of samples in AO (8)>\n");
   printf("  --pixel-samples <number of pixel samples (4)>\n");
+  printf(
+      "  --max-samples-per-rank <maximum number of screen-space samples per "
+      "rank (1048576)>\n");
   printf("  --nthreads <number of threads (1)>\n");
   printf("  --shading <lambert | blinn>\n");
   printf("  --blinn ks_r ks_g ks_b shininess\n");
@@ -124,8 +126,7 @@ void Config::parse(int argc, char** argv) {
       {"pixel-samples", required_argument, 0, 403},
       {"shading", required_argument, 0, 404},
       {"blinn", required_argument, 0, 405},
-      {"num-tiles", required_argument, 0, 406},
-      {"min-tile-size", required_argument, 0, 407},
+      {"max-samples-per-rank", required_argument, 0, 406},
       {"ply-path", required_argument, 0, 408},
       {"dev-mode", no_argument, 0, 1000},
       {0, 0, 0, 0}};
@@ -250,12 +251,8 @@ void Config::parse(int argc, char** argv) {
         shininess = data[3];
       } break;
 
-      case 406: {  // --num-tiles
-        num_tiles = atoi(optarg);
-      } break;
-
-      case 407: {  // --min-tile-size
-        min_tile_size = atoi(optarg);
+      case 406: {  // --max-samples-per-rank
+        maximum_num_screen_space_samples_per_rank = atoi(optarg);
       } break;
 
       case 408: {  // --ply-path

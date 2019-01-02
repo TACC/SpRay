@@ -21,6 +21,7 @@
 #include "render/tile.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "utils/util.h"
 
@@ -49,69 +50,145 @@ TileCount::TileCount(int image_w, int image_h, int granularity,
 #endif
 }
 
-void Tiler::resize(int image_w, int image_h, int num_tiles_1d,
-                   int min_tile_size_1d) {
+void BlockingTileList::init(int64_t image_w, int64_t image_h,
+                            int64_t num_pixel_samples, int64_t num_ranks,
+                            int64_t maximum_num_samples_per_rank) {
   //
-  int tile_w = std::max(min_tile_size_1d, image_w / num_tiles_1d);
-  int tile_h = std::max(min_tile_size_1d, image_h / num_tiles_1d);
+  int64_t total_num_samples = image_w * image_h * num_pixel_samples;
 
-  CHECK_GT(tile_w, min_tile_size_1d);
-  CHECK_GT(tile_h, min_tile_size_1d);
+  int64_t maximum_num_samples_per_cluster =
+      maximum_num_samples_per_rank * num_ranks;
 
-  int ntiles_w = (image_w + tile_w - 1) / tile_w;
-  int ntiles_h = (image_h + tile_h - 1) / tile_h;
+  int64_t total_num_tiles =
+      (total_num_samples + maximum_num_samples_per_cluster - 1) /
+      maximum_num_samples_per_cluster;
 
-  CHECK_GT(ntiles_w, 0);
-  CHECK_GT(ntiles_h, 0);
+  CHECK_GT(total_num_tiles, 0);
 
-  int ntiles = ntiles_w * ntiles_h;
-  tiles_.resize(ntiles);
+  int64_t num_tiles_1d = static_cast<int64_t>(
+      std::ceil(std::sqrt(static_cast<double>(total_num_tiles))));
 
+  CHECK_GT(num_tiles_1d, 0);
+  CHECK_LE(num_tiles_1d, image_w);
+  CHECK_LE(num_tiles_1d, image_h);
+
+  int64_t tile_w = image_w / num_tiles_1d;
+  int64_t tile_h = image_h / num_tiles_1d;
+
+  // int tile_w = std::max(min_tile_size_1d, image_w / num_tiles_1d);
+  // int tile_h = std::max(min_tile_size_1d, image_h / num_tiles_1d);
+
+  // CHECK_GT(tile_w, min_tile_size_1d);
+  // CHECK_GT(tile_h, min_tile_size_1d);
+
+  int64_t num_tiles_w = (image_w + tile_w - 1) / tile_w;
+  int64_t num_tiles_h = (image_h + tile_h - 1) / tile_h;
+
+  CHECK_GT(num_tiles_w, 0);
+  CHECK_GT(num_tiles_h, 0);
+
+  int64_t estimated_num_tiles = num_tiles_w * num_tiles_h;
+  CHECK_GT(estimated_num_tiles, 0);
+
+  tiles_.resize(estimated_num_tiles);
+
+  Tile image;
+  image.x = 0;
+  image.y = 0;
+  image.w = static_cast<int>(image_w);
+  image.h = static_cast<int>(image_h);
+
+  Tile tile_size;
+  tile_size.x = 0;
+  tile_size.y = 0;
+  tile_size.w = static_cast<int>(tile_w);
+  tile_size.h = static_cast<int>(tile_h);
+
+  int tile_index = 0;
   int max_area = -1;
-  int max_tile_id;
+  int largest_tile_index;
 
-  int i = 0;
-  for (int y = 0; y < image_h; y += tile_h) {
-    for (int x = 0; x < image_w; x += tile_w) {
-      int w = std::min(tile_w, image_w - x);
-      int h = std::min(tile_h, image_h - y);
+  for (int y = 0; y < image.h; y += tile_size.h) {
+    for (int x = 0; x < image.w; x += tile_size.w) {
+      int w = std::min(tile_size.w, image.w - x);
+      int h = std::min(tile_size.h, image.h - y);
 
-      CHECK_LT(i, ntiles);
+      CHECK_LT(static_cast<int64_t>(tile_index), estimated_num_tiles);
 
-      Tile& tile = tiles_[i];
-      // tile.id = i;
+      Tile& tile = tiles_[tile_index];
       tile.x = x;
       tile.y = y;
       tile.w = w;
       tile.h = h;
 
-      CHECK_GT(tile.w, 0);
-      CHECK_GT(tile.h, 0);
+      CHECK_GE(tile.x, image.x);
+      CHECK_LT(tile.x, image.x + image.w);
+      CHECK_GE(tile.y, image.y);
+      CHECK_LT(tile.y, image.y + image.h);
+      CHECK_LE(tile.x + tile.w, image.x + image.w);
+      CHECK_LE(tile.y + tile.h, image.y + image.h);
 
       int area = w * h;
+
+      int64_t num_samples_per_tile =
+          static_cast<int64_t>(area) * num_pixel_samples;
+      CHECK_LE(num_samples_per_tile, maximum_num_samples_per_cluster);
+
       if (area > max_area) {
         max_area = area;
-        max_tile_id = i;
+        largest_tile_index = tile_index;
       }
 
-      ++i;
+      ++tile_index;
     }
   }
-  CHECK_EQ(ntiles, i);
-  CHECK_GT(ntiles, 0);
-  CHECK_GT(max_tile_id, -1);
 
-  id_ = 0;
-  max_tile_id_ = max_tile_id;
+  // initialize indices
+  tile_index_ = 0;
+  largest_tile_index_ = largest_tile_index;
 
-  CHECK_GT(ntiles, 0);
+  CHECK_EQ(static_cast<int64_t>(tile_index), estimated_num_tiles);
+  CHECK_GT(largest_tile_index, -1);
+  CHECK_LT(largest_tile_index, tiles_.size());
 
   for (const auto& t : tiles_) {
     CHECK_GT(t.w * t.h, 0);
   }
 }
 
-Tile RankStriper::make(int num_ranks, int rank, const Tile& tile_in) {
+void TileList::init(int64_t image_w, int64_t image_h, int64_t num_pixel_samples,
+                    int64_t num_ranks, int rank,
+                    int64_t maximum_num_samples_per_rank) {
+  blocking_tiles_.init(image_w, image_h, num_pixel_samples, num_ranks,
+                       maximum_num_samples_per_rank);
+
+  CHECK(!blocking_tiles_.empty());
+
+  // set tiles_
+
+  tiles_.resize(blocking_tiles_.size());
+
+  int i = 0;
+
+  while (!blocking_tiles_.empty()) {
+    const Tile& blocking_tile = blocking_tiles_.front();
+    blocking_tiles_.pop();
+
+    CHECK_LT(i, blocking_tiles_.size());
+
+    tiles_[i] = makeHorizontalStrip(num_ranks, rank, blocking_tile);
+    ++i;
+  }
+
+  CHECK_EQ(i, blocking_tiles_.size());
+
+  blocking_tiles_.reset();
+
+  // set tile index
+  tile_index_ = 0;
+}
+
+Tile makeHorizontalStrip(int num_ranks, int rank, const Tile& tile_in) {
   Tile tile_out;
 
   int h = std::max(tile_in.h / num_ranks, 1);
