@@ -379,36 +379,32 @@ void SingleThreadTracer<CacheT, ShaderT>::procRetireQ() {
 
 template <typename CacheT, typename ShaderT>
 void SingleThreadTracer<CacheT, ShaderT>::trace() {
-  Tile blocking_tile, strip;
-
   while (!tile_list_.empty()) {
-    tile_list_.front(&blocking_tile, &strip);
+    tile_list_.front(&blocking_tile_, &strip_);
     tile_list_.pop();
 
     vbuf_.resetTBufOut();
     vbuf_.resetOBuf();
 
-    RayBuf<Ray> shared_eyes;
-
-    shared_eyes.num = (std::size_t)(strip.w * strip.h) * num_pixel_samples_;
-    if (shared_eyes.num) {
-      shared_eyes.rays = mem_in_->Alloc<Ray>(shared_eyes.num);
+    shared_eyes_.num = (std::size_t)(strip_.w * strip_.h) * num_pixel_samples_;
+    if (shared_eyes_.num) {
+      shared_eyes_.rays = mem_in_->Alloc<Ray>(shared_eyes_.num);
     }
 
-    if (shared_eyes.num) {
+    if (shared_eyes_.num) {
       glm::vec3 cam_pos = camera_->getPosition();
       if (num_pixel_samples_ > 1) {  // multi samples
         spray::insitu::genMultiSampleEyeRays(
             *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-            num_pixel_samples_, blocking_tile, strip, &shared_eyes);
+            num_pixel_samples_, blocking_tile_, strip_, &shared_eyes_);
 
       } else {  // single sample
         spray::insitu::genSingleSampleEyeRays(
             *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-            blocking_tile, strip, &shared_eyes);
+            blocking_tile_, strip_, &shared_eyes_);
       }
 
-      isector_.intersect(num_domains_, scene_, shared_eyes, &rqs_);
+      isector_.intersect(num_domains_, scene_, shared_eyes_, &rqs_);
 
       populateRadWorkStats();
     }
