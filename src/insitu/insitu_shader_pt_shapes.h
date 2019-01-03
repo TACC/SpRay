@@ -48,8 +48,9 @@ class ShaderPtShapes {
     shininess_ = cfg.shininess;
     scene_ = scene;
     lights_ = scene->getLights();  // copy lights
-
+#ifdef SPRAY_GLOG_CHECK
     num_pixels_ = cfg.image_w * cfg.image_h;
+#endif
   }
 
  private:
@@ -60,8 +61,9 @@ class ShaderPtShapes {
   glm::vec3 ks_;
   float shininess_;
 
-  // for debug
+#ifdef SPRAY_GLOG_CHECK
   int num_pixels_;
+#endif
 
  public:
   bool isAo() { return false; }

@@ -151,13 +151,6 @@ void BlockingTileList::init(int64_t image_w, int64_t image_h,
   CHECK_GT(largest_tile_index, -1);
   CHECK_LT(largest_tile_index, tiles_.size());
 
-#undef DEBUG_SPRAY_TILES
-#define DEBUG_SPRAY_TILES
-#ifdef DEBUG_SPRAY_TILES
-  for (auto& t : tiles_) {
-    std::cout << t << "\n";
-  }
-#endif
 #ifdef SPRAY_GLOG_CHECK
   for (auto& t : tiles_) {
     if (t.getArea() > 0) {

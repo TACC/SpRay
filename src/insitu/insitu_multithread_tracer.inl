@@ -374,8 +374,8 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
       if (shared_eyes_.num) {
         glm::vec3 cam_pos = camera_->getPosition();
         if (num_pixel_samples > 1) {  // multi samples
-          spray::insitu::genMultiSampleEyeRays2(
-              *camera_, image_w, image_h_, cam_pos[0], cam_pos[1], cam_pos[2],
+          spray::insitu::genMultiSampleEyeRays(
+              *camera_, image_w, cam_pos[0], cam_pos[1], cam_pos[2],
               num_pixel_samples, blocking_tile_, strip_, &shared_eyes_);
 
         } else {  // single sample
@@ -385,7 +385,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
         }
 #pragma omp barrier
 
-      // isect domains for eyes on shared variables the eyes buffer
+        // isect domains for eyes on shared variables the eyes buffer
 #pragma omp for schedule(static, 1)
         for (std::size_t i = 0; i < shared_eyes_.num; ++i) {
           Ray *ray = &shared_eyes_.rays[i];
