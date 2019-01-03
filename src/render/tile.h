@@ -171,16 +171,16 @@ std::vector<Tile> makeTileVector(int image_w, int image_h,
 }
 
 /**
- * Given the number of ranks, create a horizontal strip of the input tile for
+ * Given the number of ranks, create a horizontal stripe of the input tile for
  * the given rank.
  *
  * \param num_ranks Number of ranks in the cluster.
  * \param rank Target rank.
- * \param tile_in Input tile to get a horizontal strip from.
- * \return Horizontal strip for the given rank. The strip can be either valid or
+ * \param tile_in Input tile to get a horizontal stripe from.
+ * \return Horizontal stripe for the given rank. The stripe can be either valid or
  * invalid.
  */
-Tile makeHorizontalStrip(int num_ranks, int rank, const Tile& tile_in);
+Tile makeHorizontalStripe(int num_ranks, int rank, const Tile& tile_in);
 
 class BlockingTileList {
  public:
@@ -227,12 +227,12 @@ class TileList {
     blocking_tiles_.reset();
   }
 
-  void front(Tile* blocking_tile, Tile* strip) const {
+  void front(Tile* blocking_tile, Tile* stripe) const {
 #ifdef SPRAY_GLOG_CHECK
     CHECK_LT(tile_index_, tiles_.size());
 #endif
     *blocking_tile = blocking_tiles_.front();
-    *strip = tiles_[tile_index_];
+    *stripe = tiles_[tile_index_];
   }
 
   void pop() {
@@ -284,6 +284,25 @@ class RankTiler {
   int begin_;
   int end_;
   int total_area_;
+};
+
+/**
+ * This tile list divides the image plane so that it first creates as many tiles
+ * (i.e. vertical stripes) as the number of ranks, and then each rank further
+ * divides assigned tiles to create blocking tiles (i.e. horizontal stripes)
+ * based on the maximum number of samples allowed.
+ */
+class ImageScheduleTileList {
+ public:
+  void init(int64_t image_w, int64_t image_h, int64_t num_pixel_samples,
+            int64_t num_ranks, int rank, int64_t maximum_num_samples_per_rank) {
+  }
+
+  void reset() { tile_index_ = 0; }
+
+ private:
+  std::vector<Tile> tiles_;
+  int tile_index_;
 };
 
 }  // namespace spray

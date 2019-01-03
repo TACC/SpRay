@@ -176,7 +176,7 @@ void TileList::init(int64_t image_w, int64_t image_h, int64_t num_pixel_samples,
 
     CHECK_LT(i, blocking_tiles_.size());
 
-    tiles_[i] = makeHorizontalStrip(num_ranks, rank, blocking_tile);
+    tiles_[i] = makeHorizontalStripe(num_ranks, rank, blocking_tile);
     ++i;
   }
 
@@ -188,7 +188,7 @@ void TileList::init(int64_t image_w, int64_t image_h, int64_t num_pixel_samples,
   tile_index_ = 0;
 }
 
-Tile makeHorizontalStrip(int num_ranks, int rank, const Tile& tile_in) {
+Tile makeHorizontalStripe(int num_ranks, int rank, const Tile& tile_in) {
   Tile tile_out;
 
   int h = std::max(tile_in.h / num_ranks, 1);
