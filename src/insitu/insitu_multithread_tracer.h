@@ -80,7 +80,7 @@ class MultiThreadTracer {
   spray::RTCRayIntersection rtc_isect_;
   RTCRay rtc_ray_;
 
-  Tile blocking_tile_, strip_;
+  Tile blocking_tile_, stripe_;
 
  private:
   void sendRays(int tid, TContextType *tcontext);

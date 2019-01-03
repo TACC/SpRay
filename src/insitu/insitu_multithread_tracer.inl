@@ -348,7 +348,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
 #pragma omp barrier
 #pragma omp master
       {
-        tile_list_.front(&blocking_tile_, &strip_);
+        tile_list_.front(&blocking_tile_, &stripe_);
         tile_list_.pop();
 
         vbuf_.resetTBufOut();
@@ -358,7 +358,8 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
           tc.resetMems();
         }
 
-        shared_eyes_.num = (std::size_t)(strip_.w * strip_.h) * num_pixel_samples;
+        shared_eyes_.num =
+            (std::size_t)(stripe_.w * stripe_.h) * num_pixel_samples;
         if (shared_eyes_.num) {
           shared_eyes_.rays = tcontexts_[0].allocMemIn(shared_eyes_.num);
         }
@@ -376,12 +377,12 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
         if (num_pixel_samples > 1) {  // multi samples
           spray::insitu::genMultiSampleEyeRays(
               *camera_, image_w, cam_pos[0], cam_pos[1], cam_pos[2],
-              num_pixel_samples, blocking_tile_, strip_, &shared_eyes_);
+              num_pixel_samples, blocking_tile_, stripe_, &shared_eyes_);
 
         } else {  // single sample
           spray::insitu::genSingleSampleEyeRays(
               *camera_, image_w, cam_pos[0], cam_pos[1], cam_pos[2],
-              blocking_tile_, strip_, &shared_eyes_);
+              blocking_tile_, stripe_, &shared_eyes_);
         }
 #pragma omp barrier
 
@@ -513,7 +514,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
 #pragma omp barrier
 #pragma omp master
     {
-      tile_list_.front(&blocking_tile_, &strip_);
+      tile_list_.front(&blocking_tile_, &stripe_);
       tile_list_.pop();
 
       vbuf_.resetTBufOut();
@@ -524,7 +525,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
       }
 
       shared_eyes_.num =
-          (std::size_t)(strip_.w * strip_.h) * num_pixel_samples_;
+          (std::size_t)(stripe_.w * stripe_.h) * num_pixel_samples_;
       if (shared_eyes_.num) {
         shared_eyes_.rays = tcontexts_[0].allocMemIn(shared_eyes_.num);
       } else {
@@ -547,12 +548,12 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
       if (num_pixel_samples_ > 1) {  // multi samples
         spray::insitu::genMultiSampleEyeRays(
             *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-            num_pixel_samples_, blocking_tile_, strip_, &shared_eyes_);
+            num_pixel_samples_, blocking_tile_, stripe_, &shared_eyes_);
 
       } else {  // single sample
         spray::insitu::genSingleSampleEyeRays(
             *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-            blocking_tile_, strip_, &shared_eyes_);
+            blocking_tile_, stripe_, &shared_eyes_);
       }
 #pragma omp barrier
 

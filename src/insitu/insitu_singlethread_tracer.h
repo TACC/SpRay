@@ -75,7 +75,7 @@ class SingleThreadTracer {
   spray::RTCRayIntersection rtc_isect_;
   RTCRay rtc_ray_;
 
-  Tile blocking_tile_, strip_;
+  Tile blocking_tile_, stripe_;
   RayBuf<Ray> shared_eyes_;
 
  private:

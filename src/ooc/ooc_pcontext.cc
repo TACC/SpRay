@@ -26,17 +26,12 @@ namespace spray {
 namespace ooc {
 
 void PContext::resize(int ndomains, int max_num_bounces, int num_threads,
-                      const Tile& tile, int num_pixel_samples, int num_lights,
+                      int num_pixel_samples, int num_lights,
                       spray::HdrImage* image) {
   num_domains_ = ndomains;
   max_num_bounces_ = max_num_bounces;
   num_pixel_samples_ = num_pixel_samples;
   image_ = image;
-
-  tile_.x = tile.x;
-  tile_.y = tile.y;
-  tile_.w = tile.w;
-  tile_.h = tile.h;
 
   rstats_.resize(ndomains, false /*stats_only*/);
 

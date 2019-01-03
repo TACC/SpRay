@@ -406,13 +406,14 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::retireBackground() {
 template <typename CacheT, typename ShaderT, typename SceneT>
 void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
   while (!tile_list_.empty()) {
-    tile_list_.front(&blocking_tile_, &strip_);
+    tile_list_.front(&blocking_tile_, &stripe_);
     tile_list_.pop();
 
     vbuf_.resetTBufOut();
     vbuf_.resetOBuf();
 
-    shared_eyes_.num = (std::size_t)(strip_.w * strip_.h) * num_pixel_samples_;
+    shared_eyes_.num =
+        (std::size_t)(stripe_.w * stripe_.h) * num_pixel_samples_;
 
     if (shared_eyes_.num) {
       shared_eyes_.rays = mem_in_->Alloc<Ray>(shared_eyes_.num);
@@ -421,12 +422,12 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
       if (num_pixel_samples_ > 1) {  // multi samples
         spray::insitu::genMultiSampleEyeRays(
             *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-            num_pixel_samples_, blocking_tile_, strip_, &shared_eyes_);
+            num_pixel_samples_, blocking_tile_, stripe_, &shared_eyes_);
 
       } else {  // single sample
         spray::insitu::genSingleSampleEyeRays(
             *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-            blocking_tile_, strip_, &shared_eyes_);
+            blocking_tile_, stripe_, &shared_eyes_);
       }
 
 #ifdef SPRAY_BACKGROUND_COLOR_BLACK
