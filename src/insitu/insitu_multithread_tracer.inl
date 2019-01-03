@@ -374,8 +374,8 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
       if (shared_eyes_.num) {
         glm::vec3 cam_pos = camera_->getPosition();
         if (num_pixel_samples > 1) {  // multi samples
-          spray::insitu::genMultiSampleEyeRays(
-              *camera_, image_w, cam_pos[0], cam_pos[1], cam_pos[2],
+          spray::insitu::genMultiSampleEyeRays2(
+              *camera_, image_w, image_h_, cam_pos[0], cam_pos[1], cam_pos[2],
               num_pixel_samples, blocking_tile_, strip_, &shared_eyes_);
 
         } else {  // single sample
@@ -417,6 +417,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
           {
             for (auto &t : tcontexts_) {
               t.procRetireQ();
+              t.retireBackground();
             }
           }
           break;
@@ -585,6 +586,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
         {
           for (auto &t : tcontexts_) {
             t.procRetireQ();
+            t.retireBackground();
           }
         }
         break;

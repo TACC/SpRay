@@ -226,6 +226,9 @@ void TContext<CacheT, ShaderT, SceneT>::filterRq2(int id) {
   while (!rq2_.empty()) {
     auto* ray = rq2_.front();
     rq2_.pop();
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(ray->pixid, image_->w * image_->h);
+#endif
     auto* isect = mem_out_->Alloc<spray::RTCRayIntersection>(1, false);
     isect->tfar = SPRAY_FLOAT_INF;
     bool is_hit =
@@ -274,6 +277,9 @@ void TContext<CacheT, ShaderT, SceneT>::procFsq2() {
   while (!fsq2_.empty()) {
     auto& item = fsq2_.front();
     auto* ray = item.ray;
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(ray->pixid, image_->w * image_->h);
+#endif
     int samid = ray->samid;
     if (vbuf_->correct(samid, ray->t)) {
       if (ray->occluded) {  // set obuf
@@ -293,6 +299,9 @@ void TContext<CacheT, ShaderT, SceneT>::procFrq2() {
     auto& item = frq2_.front();
     auto* ray = item.ray;
     auto* isect = item.isect;
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(ray->pixid, image_->w * image_->h);
+#endif
     if (vbuf_->correct(ray->samid, ray->t)) {
 #ifdef SPRAY_BACKGROUND_COLOR_BLACK
       auto* isect = item.isect;
@@ -326,6 +335,9 @@ void TContext<CacheT, ShaderT, SceneT>::updateTBufWithCached() {
   while (!cached_rq_.empty()) {
     auto& item = cached_rq_.front();
     auto* ray = item.ray;
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(ray->pixid, image_->w * image_->h);
+#endif
 
     // supposed to be correct since it is not speculative
     auto* isect = item.isect;
@@ -342,7 +354,9 @@ void TContext<CacheT, ShaderT, SceneT>::processCached(int ray_depth) {
   while (!reduced_cached_rq_.empty()) {
     auto& item = reduced_cached_rq_.front();
     auto* ray = item.ray;
-
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(ray->pixid, image_->w * image_->h);
+#endif
     // supposed to be correct since it is not speculative
     auto* isect = item.isect;
 
@@ -359,7 +373,9 @@ void TContext<CacheT, ShaderT, SceneT>::procRetireQ() {
   while (!retire_q_.empty()) {
     auto* ray = retire_q_.front();
     retire_q_.pop();
-
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(ray->pixid, image_->w * image_->h);
+#endif
     if (!vbuf_->occluded(ray->samid, ray->light)) {
       image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
     }
@@ -371,6 +387,9 @@ void TContext<CacheT, ShaderT, SceneT>::retireBackground() {
   while (!bg_retire_q_.empty()) {
     auto* ray = bg_retire_q_.front();
     bg_retire_q_.pop();
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(ray->pixid, image_->w * image_->h);
+#endif
     int oflag = ray->occluded;
     if (vbuf_->tbufOutMiss(ray->samid)) {
       bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *

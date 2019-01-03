@@ -48,6 +48,8 @@ class ShaderPtShapes {
     shininess_ = cfg.shininess;
     scene_ = scene;
     lights_ = scene->getLights();  // copy lights
+
+    num_pixels_ = cfg.image_w * cfg.image_h;
   }
 
  private:
@@ -57,6 +59,9 @@ class ShaderPtShapes {
   int samples_;
   glm::vec3 ks_;
   float shininess_;
+
+  // for debug
+  int num_pixels_;
 
  public:
   bool isAo() { return false; }
@@ -174,6 +179,9 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
         CHECK_NOTNULL(r2);
         RayUtil::makeRay(rayin, pos, wi, Lr, isect.tfar, r2);
         rq->push(r2);
+#ifdef SPRAY_GLOG_CHECK
+        CHECK_LT(r2->pixid, num_pixels_);
+#endif
       }
     }
   }

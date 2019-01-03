@@ -151,9 +151,28 @@ void BlockingTileList::init(int64_t image_w, int64_t image_h,
   CHECK_GT(largest_tile_index, -1);
   CHECK_LT(largest_tile_index, tiles_.size());
 
-  for (const auto& t : tiles_) {
-    CHECK_GT(t.w * t.h, 0);
+#undef DEBUG_SPRAY_TILES
+#define DEBUG_SPRAY_TILES
+#ifdef DEBUG_SPRAY_TILES
+  for (auto& t : tiles_) {
+    std::cout << t << "\n";
   }
+#endif
+#ifdef SPRAY_GLOG_CHECK
+  for (auto& t : tiles_) {
+    if (t.getArea() > 0) {
+      CHECK_GE(t.x, 0) << t;
+      CHECK_LT(t.x, image_w) << t;
+      CHECK_GE(t.y, 0) << t;
+      CHECK_LT(t.y, image_h) << t;
+      //
+      CHECK_GT(t.x + t.w, 0) << t;
+      CHECK_LE(t.x + t.w, image_w) << t;
+      CHECK_GT(t.y + t.h, 0) << t;
+      CHECK_LE(t.y + t.h, image_h) << t;
+    }
+  }
+#endif
 }
 
 void TileList::init(int64_t image_w, int64_t image_h, int64_t num_pixel_samples,
@@ -179,6 +198,22 @@ void TileList::init(int64_t image_w, int64_t image_h, int64_t num_pixel_samples,
     tiles_[i] = makeHorizontalStrip(num_ranks, rank, blocking_tile);
     ++i;
   }
+
+#ifdef SPRAY_GLOG_CHECK
+  for (auto& t : tiles_) {
+    if (t.getArea() > 0) {
+      CHECK_GE(t.x, 0) << t;
+      CHECK_LT(t.x, image_w) << t;
+      CHECK_GE(t.y, 0) << t;
+      CHECK_LT(t.y, image_h) << t;
+      //
+      CHECK_GT(t.x + t.w, 0) << t;
+      CHECK_LE(t.x + t.w, image_w) << t;
+      CHECK_GT(t.y + t.h, 0) << t;
+      CHECK_LE(t.y + t.h, image_h) << t;
+    }
+  }
+#endif
 
   CHECK_EQ(i, blocking_tiles_.size());
 

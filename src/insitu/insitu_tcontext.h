@@ -107,6 +107,9 @@ class TContext {
 
  public:
   void isectDomains(Ray* ray) {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(ray->pixid, image_->w * image_->h);
+#endif
 #ifdef SPRAY_BACKGROUND_COLOR_BLACK
     isector_.intersect(num_domains_, scene_, ray, &rqs_);
 #else
@@ -156,6 +159,7 @@ class TContext {
     CHECK(frq2_.empty());
     CHECK(fsq2_.empty());
     CHECK(retire_q_.empty());
+    CHECK(bg_retire_q_.empty());
     CHECK(cached_rq_.empty());
     CHECK(reduced_cached_rq_.empty());
   }
