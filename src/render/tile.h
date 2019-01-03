@@ -178,9 +178,21 @@ std::vector<Tile> makeTileVector(int image_w, int image_h,
  * \param rank Target rank.
  * \param tile_in Input tile to get a horizontal stripe from.
  * \return Horizontal stripe for the given rank. The stripe can be either valid or
- * invalid.
+ * invalid. The stripe is invalid if its area is zero.
  */
 Tile makeHorizontalStripe(int num_ranks, int rank, const Tile& tile_in);
+
+/**
+ * Given the number of ranks, create a vertical stripe of the input tile for
+ * the given rank.
+ *
+ * \param num_ranks Number of ranks in the cluster.
+ * \param rank Target rank.
+ * \param tile_in Input tile to get a vertical stripe from.
+ * \return Veritcal stripe for the given rank. The stripe can be either valid
+ * or invalid. The stripe is invalid if its area is zero.
+ */
+Tile makeVertialStripe(int num_ranks, int rank, const Tile& tile_in);
 
 class BlockingTileList {
  public:
@@ -295,14 +307,36 @@ class RankTiler {
 class ImageScheduleTileList {
  public:
   void init(int64_t image_w, int64_t image_h, int64_t num_pixel_samples,
-            int64_t num_ranks, int rank, int64_t maximum_num_samples_per_rank) {
-  }
+            int64_t num_ranks, int rank, int64_t maximum_num_samples_per_rank);
 
   void reset() { tile_index_ = 0; }
+
+  const Tile& front() const {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(tile_index_, tiles_.size());
+#endif
+    return tiles_[tile_index_];
+  }
+
+  void pop() {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(tile_index_, tiles_.size());
+#endif
+    ++tile_index_;
+  }
+
+  bool empty() const { return (tile_index_ == tiles_.size()); }
+
+  std::size_t size() const { return tiles_.size(); }
+
+  const Tile& getLargestBlockingTile() const {
+    return tiles_[largest_tile_index_];
+  }
 
  private:
   std::vector<Tile> tiles_;
   int tile_index_;
+  int largest_tile_index_;
 };
 
 }  // namespace spray

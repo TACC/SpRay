@@ -197,7 +197,6 @@ Tile makeHorizontalStripe(int num_ranks, int rank, const Tile& tile_in) {
   int yend = tile_in.y + tile_in.h;
 
   if (tile_out.y >= yend) {  // invalid
-    // tile_out.id = -1;
     tile_out.w = 0;
     tile_out.h = 0;
 
@@ -207,6 +206,29 @@ Tile makeHorizontalStripe(int num_ranks, int rank, const Tile& tile_in) {
                      : h;
     tile_out.x = tile_in.x;
     tile_out.w = tile_in.w;
+  }
+
+  return tile_out;
+}
+
+Tile makeVerticalStripe(int num_ranks, int rank, const Tile& tile_in) {
+  Tile tile_out;
+
+  int w = std::max(tile_in.w / num_ranks, 1);
+  tile_out.x = tile_in.x + (rank * w);
+
+  int xend = tile_in.x + tile_in.w;
+
+  if (tile_out.x >= xend) {  // invalid
+    tile_out.w = 0;
+    tile_out.h = 0;
+
+  } else {  // valid
+    tile_out.w = ((tile_out.x + w > xend) || (rank == num_ranks - 1))
+                     ? xend - tile_out.x
+                     : w;
+    tile_out.y = tile_in.y;
+    tile_out.h = tile_in.h;
   }
 
   return tile_out;
@@ -290,6 +312,82 @@ void RankTiler::make(int num_ranks, int rank, Tile tile_in, int num_tiles_1d,
     area += (t.w * t.h);
   }
   total_area_ = area;
+}
+
+void ImageScheduleTileList::init(int64_t image_w, int64_t image_h,
+                                 int64_t num_pixel_samples, int64_t num_ranks,
+                                 int rank,
+                                 int64_t maximum_num_samples_per_rank) {
+  Tile image;
+  image.x = 0;
+  image.y = 0;
+  image.w = image_w;
+  image.h = image_h;
+
+  Tile vstripe = makeVerticalStripe(num_ranks, rank, image);
+
+  if (vstripe.getArea() > 0) {
+    // evaluate the size of each blocking tile
+
+    int64_t num_samples = static_cast<int64_t>(vstripe.w) *
+                          static_cast<int64_t>(vstripe.h) * num_pixel_samples;
+
+    int64_t estimated_num_tiles =
+        (num_samples + maximum_num_samples_per_rank - 1) /
+        maximum_num_samples_per_rank;
+
+    CHECK_LT(estimated_num_tiles, INT_MAX);
+
+    int ntiles = static_cast<int>(estimated_num_tiles);
+    int tile_h = vstripe.h / ntiles;
+
+    ntiles = (vstripe.h + tile_h - 1) / tile_h;
+
+    tiles_.resize(ntiles);
+
+    // make horizontal stripes
+    std::size_t i = 0;
+
+    int max_area = -1;
+    int largest_tile_index_;
+
+    for (int y = 0; y < vstripe.h; y += tile_h) {
+      int h = std::min(tile_h, vstripe.h - y);
+
+      CHECK_LT(i, tiles_.size());
+
+      Tile& t = tiles_[i];
+      t.x = vstripe.x;
+      t.y = y;
+      t.w = vstripe.w;
+      t.h = h;
+#ifdef DEBUG_PRINT_TILES
+      std::cout << t << "\n";
+#endif
+      int area = t.w * t.h;
+      if (area > max_area) {
+        max_area = area;
+        largest_tile_index_ = i;
+      }
+
+      ++i;
+    }
+
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_EQ(i, tiles_.size());
+    for (auto& t : tiles_) {
+      CHECK_GT(t.w * t.h, 0);
+      CHECK_EQ(t.x, vstripe.x);
+      CHECK_GE(t.y, vstripe.y);
+      CHECK_LT(t.y, vstripe.y + vstripe.h);
+      CHECK_EQ(t.w, vstripe.w);
+      CHECK_GT(t.y + t.h, vstripe.y);
+      CHECK_LE(t.y + t.h, vstripe.y + vstripe.h);
+    }
+#endif
+  }
+
+  tile_index_ = 0;
 }
 
 }  // namespace spray

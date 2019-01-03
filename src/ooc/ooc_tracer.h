@@ -82,9 +82,12 @@ class Tracer {
   Scene<CacheT> *scene_;
   spray::HdrImage *image_;
 
-  spray::Tile image_tile_;
-  spray::Tile mytile_;
+  // spray::Tile image_tile_;
+  // spray::Tile mytile_;
+  spray::Tile blocking_tile_;
   RayBuf<Ray> shared_eyes_;
+
+  spray::ImageScheduleTileList tile_list_;
 
  private:
   int rank_;

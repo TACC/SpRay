@@ -67,23 +67,17 @@ void Tracer<CacheT, ShaderT>::init(const Config &cfg, const Camera &camera,
     num_lights = lights_.size();
   }
 
-  image_tile_.x = 0;
-  image_tile_.y = 0;
-  image_tile_.w = cfg.image_w;
-  image_tile_.h = cfg.image_h;
+  pcontext_.resize(ndomains, cfg.bounces, cfg.nthreads, cfg.pixel_samples,
+                   num_lights, image_);
 
-  pcontext_.resize(ndomains, cfg.bounces, cfg.nthreads, image_tile_,
-                   cfg.pixel_samples, num_lights, image_);
-
-  mytile_ = makeHorizontalStripe(mpi::size(), mpi::rank(), image_tile_);
-
-  int64_t total_num_samples =
-      (int64_t)mytile_.w * mytile_.h * cfg.pixel_samples;
-  CHECK_LT(total_num_samples, INT_MAX);
+  tile_list_.init(cfg.image_w, cfg.image_h, cfg.pixel_samples, nranks, rank,
+                  cfg.maximum_num_screen_space_samples_per_rank);
+  CHECK(!tile_list_.empty());
 
   tcontexts_.resize(cfg.nthreads);
   for (auto &tc : tcontexts_) {
-    tc.resize(ndomains, cfg.pixel_samples, mytile_, image_, cfg.bounces);
+    tc.resize(ndomains, cfg.pixel_samples, tile_list_.getLargestBlockingTile(),
+              image_, cfg.bounces);
   }
 }
 
@@ -189,83 +183,104 @@ void Tracer<CacheT, ShaderT>::isectDomsRads(RayBuf<Ray> buf, TContextType *tc) {
 
 template <typename CacheT, typename ShaderT>
 void Tracer<CacheT, ShaderT>::trace() {
-  RayBuf<Ray> shared_eyes;
-
 #pragma omp parallel
   {
+    while (!tile_list_.empty()) {
+#pragma omp barrier
+#pragma omp single
+      {
+        blocking_tile_ = tile_list_.front();
+        tile_list_.pop();
+      }
+
+      TContextType *tcontext = &tcontexts_[omp_get_thread_num()];
+      tcontext->resetMems();
+
+#pragma omp single
+      {
+        pcontext_.reset();
+
+        shared_eyes_.num = (std::size_t)(blocking_tile_.w * blocking_tile_.h) *
+                           num_pixel_samples_;
+#ifdef SPRAY_GLOG_CHECK
+        CHECK(shared_eyes_.num);
+#endif
+        if (shared_eyes_.num) {
+          shared_eyes_.rays =
+              tcontext->template allocMemIn<Ray>(shared_eyes_.num);
+        }
+      }
+
+      if (shared_eyes_.num) {
+        glm::vec3 cam_pos = camera_->getPosition();
+        if (num_pixel_samples_ > 1) {
+          genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
+                       blocking_tile_, &shared_eyes_);
+
+        } else {
+          genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
+                        blocking_tile_, &shared_eyes_);
+        }
+
+#pragma omp barrier
+        isectDomsRads(shared_eyes_, tcontext);
+#pragma omp barrier
+      }
+
+      pcontext_.isectPrims<CacheT, ShaderT>(scene_, shader_, tcontext);
+    }
+  }
+  tile_list_.reset();
+}
+
+template <typename CacheT, typename ShaderT>
+void Tracer<CacheT, ShaderT>::traceInOmp() {
+  while (!tile_list_.empty()) {
+#pragma omp barrier
+#pragma omp single
+    {
+      blocking_tile_ = tile_list_.front();
+      tile_list_.pop();
+    }
+
     TContextType *tcontext = &tcontexts_[omp_get_thread_num()];
     tcontext->resetMems();
 
 #pragma omp single
     {
-      pcontext_.reset(mytile_);
+      pcontext_.reset();
 
-      shared_eyes.num =
-          (std::size_t)(mytile_.w * mytile_.h) * num_pixel_samples_;
+      shared_eyes_.num = (std::size_t)(blocking_tile_.w * blocking_tile_.h) *
+                         num_pixel_samples_;
 #ifdef SPRAY_GLOG_CHECK
-      CHECK(shared_eyes.num);
+      CHECK(shared_eyes_.num);
 #endif
-      if (shared_eyes.num) {
-        shared_eyes.rays = tcontext->template allocMemIn<Ray>(shared_eyes.num);
+      if (shared_eyes_.num) {
+        shared_eyes_.rays =
+            tcontext->template allocMemIn<Ray>(shared_eyes_.num);
       }
     }
 
-    if (shared_eyes.num) {
+    if (shared_eyes_.num) {
       glm::vec3 cam_pos = camera_->getPosition();
       if (num_pixel_samples_ > 1) {
-        genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2], mytile_,
-                     &shared_eyes);
+        genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
+                     blocking_tile_, &shared_eyes_);
 
       } else {
-        genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2], mytile_,
-                      &shared_eyes);
+        genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
+                      blocking_tile_, &shared_eyes_);
       }
 
 #pragma omp barrier
-      isectDomsRads(shared_eyes, tcontext);
+      isectDomsRads(shared_eyes_, tcontext);
 #pragma omp barrier
     }
 
     pcontext_.isectPrims<CacheT, ShaderT>(scene_, shader_, tcontext);
   }
-}
-
-template <typename CacheT, typename ShaderT>
-void Tracer<CacheT, ShaderT>::traceInOmp() {
-  TContextType *tcontext = &tcontexts_[omp_get_thread_num()];
-  tcontext->resetMems();
-
 #pragma omp single
-  {
-    pcontext_.reset(mytile_);
-
-    shared_eyes_.num =
-        (std::size_t)(mytile_.w * mytile_.h) * num_pixel_samples_;
-#ifdef SPRAY_GLOG_CHECK
-    CHECK(shared_eyes_.num);
-#endif
-    if (shared_eyes_.num) {
-      shared_eyes_.rays = tcontext->template allocMemIn<Ray>(shared_eyes_.num);
-    }
-  }
-
-  if (shared_eyes_.num) {
-    glm::vec3 cam_pos = camera_->getPosition();
-    if (num_pixel_samples_ > 1) {
-      genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2], mytile_,
-                   &shared_eyes_);
-
-    } else {
-      genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2], mytile_,
-                    &shared_eyes_);
-    }
-
-#pragma omp barrier
-    isectDomsRads(shared_eyes_, tcontext);
-#pragma omp barrier
-  }
-
-  pcontext_.isectPrims<CacheT, ShaderT>(scene_, shader_, tcontext);
+  tile_list_.reset();
 }
 
 }  // namespace ooc

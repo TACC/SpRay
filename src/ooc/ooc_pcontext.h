@@ -51,18 +51,16 @@ namespace ooc {
 class PContext {
  public:
   void resize(int ndomains, int max_num_bounces, int num_threads,
-              const Tile& tile, int num_pixel_samples, int num_lights,
-              spray::HdrImage* image);
+              int num_pixel_samples, int num_lights, spray::HdrImage* image);
 
  private:
   int num_domains_;
   int max_num_bounces_;
   int num_pixel_samples_;
   spray::HdrImage* image_;
-  spray::Tile tile_;
 
  public:
-  void reset(const Tile& tile) { bounce_num_ = 0; }
+  void reset() { bounce_num_ = 0; }
 
   void incrementBounceNum() { ++bounce_num_; }
   int getBounceNum() { return bounce_num_; }
