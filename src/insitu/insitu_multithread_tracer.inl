@@ -417,7 +417,9 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
           {
             for (auto &t : tcontexts_) {
               t.procRetireQ();
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
               t.retireBackground();
+#endif
             }
           }
           break;
@@ -586,7 +588,9 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
         {
           for (auto &t : tcontexts_) {
             t.procRetireQ();
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
             t.retireBackground();
+#endif
           }
         }
         break;

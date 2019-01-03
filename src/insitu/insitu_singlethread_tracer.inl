@@ -446,6 +446,9 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
 
       if (work_stats_.allDone()) {
         procRetireQ();
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+        retireBackground();
+#endif
         comm_.waitForSend();
         break;
       }
