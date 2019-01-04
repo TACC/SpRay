@@ -60,7 +60,7 @@ void FreeAligned(void *);
 template <typename T>
 T *AllocAligned(size_t count) {
   T *buf = (T *)allocAligned(count * sizeof(T));
-  CHECK_NOTNULL(buf);
+  // CHECK_NOTNULL(buf);
   return buf;
 }
 

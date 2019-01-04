@@ -49,6 +49,7 @@ HybridGeometryBuffer::HybridGeometryBuffer()
       device_(nullptr),
       scenes_(nullptr),
       embree_mesh_created_(nullptr),
+      shape_created_(nullptr),
       compute_normals_(false) {}
 
 HybridGeometryBuffer::~HybridGeometryBuffer() { cleanup(); }
@@ -101,8 +102,13 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   embree_mesh_created_ = arena_.Alloc<int>(cache_size);
   CHECK_NOTNULL(embree_mesh_created_);
 
+  // shape created
+  shape_created_ = arena_.Alloc<int>(cache_size);
+  CHECK_NOTNULL(shape_created_);
+
   for (std::size_t i = 0; i < cache_size; ++i) {
     embree_mesh_created_[i] = DESTROYED;
+    shape_created_[i] = DESTROYED;
   }
 
   // embree device
@@ -113,9 +119,18 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   scenes_ = arena_.Alloc<RTCScene>(cache_size, false);
   CHECK_NOTNULL(scenes_);
 
+  // RTCSceneFlags sflags = RTC_SCENE_DYNAMIC;
+  RTCSceneFlags sflags = RTC_SCENE_STATIC;
+  RTCAlgorithmFlags aflags = RTC_INTERSECT1;
+
   for (std::size_t i = 0; i < cache_size; ++i) {
-    scenes_[i] = rtcDeviceNewScene(device_, RTC_SCENE_DYNAMIC, RTC_INTERSECT1);
+    scenes_[i] = rtcDeviceNewScene(device_, sflags, aflags);
     CHECK_NOTNULL(scenes_[i]);
+  }
+
+  shapes_.resize(cache_size);
+  for (std::size_t i = 0; i < cache_size; ++i) {
+    shapes_[i] = nullptr;
   }
 }
 
@@ -123,12 +138,17 @@ RTCScene HybridGeometryBuffer::load(const std::string& filename,
                                     int cache_block, const glm::mat4& transform,
                                     bool apply_transform,
                                     std::vector<Shape*>& shapes) {
+  CHECK(!(filename.empty() && shapes.empty()));
+
   if (!filename.empty())
     loadTriangles(filename, cache_block, transform, apply_transform);
 
   if (!shapes.empty()) loadShapes(shapes, cache_block);
 
-  return scenes_[cache_block];
+  RTCScene scene = scenes_[cache_block];
+  rctCommit(scene);
+
+  return scene;
 }
 
 void HybridGeometryBuffer::loadTriangles(const std::string& filename,
@@ -186,16 +206,23 @@ void HybridGeometryBuffer::loadTriangles(const std::string& filename,
 
 void HybridGeometryBuffer::loadShapes(std::vector<Shape*>& shapes,
                                       int cache_block) {
+  CHECK_LT(cache_block, shapes_.size());
+  CHECK(shapes_[cache_block] == nullptr);
+  shapes_[cache_block] = &shapes;
+
+  // TODO: transform
   // TODO: can we somehow not delete geometry? i.e. something similar to how we
   // handle triangles using rtcSetBuffer2?
   // TODO: support ooc (ooc not supported at this moment)
 
-  RTCSceneFlags sflags = RTC_SCENE_STATIC | RTC_SCENE_HIGH_QUALITY;
-  RTCAlgorithmFlags aflags = RTC_INTERSECT1;
   RTCScene scene = scenes_[cache_block];
 
-  // create geometry
-  unsigned int geom_id = rtcNewUserGeometry(scene, shapes.size());
+  if (shape_created_[cache_block] == DESTROYED) {
+    // std::cout<<"shapes.size: "<<shapes.size()<<std::endl;
+    // create geometry
+    unsigned int geom_id = rtcNewUserGeometry(scene, shapes.size());
+    shape_created_[cache_block] = CREATED;
+  }
 
   // set geom id
   void* shape_ptr = (void*)&shapes[0];
@@ -204,24 +231,25 @@ void HybridGeometryBuffer::loadShapes(std::vector<Shape*>& shapes,
     Shape* shape = shapes[i];
     CHECK_EQ(shape->type(), Shape::SPHERE);
     shape->setGeomId(geom_id);
+    // std::cout << ((Sphere*)shape)->radius << "\n";
   }
 
   // set data
   rtcSetUserData(scene, geom_id, shape_ptr);
 
   // callback functions
-  rtcSetBoundsFunction(scene, geom_id,
-                       HybridGeometryBuffer::sphereBoundsCallback);
+  rtcSetBoundsFunction(scene, geom_id, ShapeBuffer::sphereBoundsCallback);
   rtcSetIntersectFunction(scene, geom_id,
-                          HybridGeometryBuffer::sphereIntersect1Callback);
-  rtcSetOccludedFunction(scene, geom_id,
-                         HybridGeometryBuffer::sphereOccluded1Callback);
+                          ShapeBuffer::sphereIntersect1Callback);
+  rtcSetOccludedFunction(scene, geom_id, ShapeBuffer::sphereOccluded1Callback);
 
   // update geometry
-  rtcUpdate(scene, geom_id);
-  rtcEnable(scene, geom_id);
+  // rtcUpdate(scene, geom_id);
+  // rtcEnable(scene, geom_id);
 
   rtcCommit(scene);
+
+  return scene;
 }
 
 void HybridGeometryBuffer::cleanup() {
@@ -232,6 +260,7 @@ void HybridGeometryBuffer::cleanup() {
 
   // embree device
   rtcDeleteDevice(device_);
+  device_ = nullptr;
 
   // arena
   arena_.Reset();
@@ -259,7 +288,7 @@ void HybridGeometryBuffer::mapEmbreeBuffer(int cache_block, float* vertices,
     LOG(INFO) << "created embree triangle mesh geom ID: " << geom_id
               << " cache block " << cache_block;
 #endif
-    CHECK_EQ(geom_id, 0);
+    // CHECK_EQ(geom_id, 0);
     CHECK_NE(geom_id, RTC_INVALID_GEOMETRY_ID);
 
     embree_mesh_created_[cache_block] = CREATED;
@@ -267,18 +296,18 @@ void HybridGeometryBuffer::mapEmbreeBuffer(int cache_block, float* vertices,
 
   // map vertices
 
-  rtcSetBuffer2(scene, 0 /*geomID*/, RTC_VERTEX_BUFFER, vertices, 0,
+  rtcSetBuffer2(scene, geom_id, RTC_VERTEX_BUFFER, vertices, 0,
                 sizeof(float) * 3, num_vertices);
 
   // map faces
 
-  rtcSetBuffer2(scene, 0 /*geomID*/, RTC_INDEX_BUFFER, faces, 0,
+  rtcSetBuffer2(scene, geom_id, RTC_INDEX_BUFFER, faces, 0,
                 sizeof(uint32_t) * NUM_VERTICES_PER_FACE, num_faces);
 
-  rtcUpdate(scene, 0 /*geomID*/);
-  rtcEnable(scene, 0 /*geomID*/);
+  rtcUpdate(scene, geom_id);
+  rtcEnable(scene, geom_id);
 
-  rtcCommit(scene);
+  // rtcCommit(scene);
 }
 
 void HybridGeometryBuffer::sphereBoundsCallback(void* shape_ptr,

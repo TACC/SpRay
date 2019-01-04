@@ -98,6 +98,11 @@ class HybridGeometryBuffer {
   static void sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
                                       std::size_t item);
 
+  Material* getMaterial(int cache_block, int prim_id) const {
+    Shape* shape = shapes_[cache_block]->at(prim_id);
+    return shape->material;
+  }
+
  private:
   enum MeshStatus { CREATED = -1, DESTROYED = 0 };
 
@@ -117,12 +122,15 @@ class HybridGeometryBuffer {
   RTCDevice device_;
   RTCScene* scenes_;  //!< 1D array of per-cache-block Embree scenes.
 
-  int* embree_mesh_created_;  // -1: initialized, 0: not initialized
+  int* embree_mesh_created_;    // -1: initialized, 0: not initialized
+  int* shape_created_;         // -1: initialized, 0: not initialized
 
   MemoryArena arena_;
   PlyLoader loader_;
 
   bool compute_normals_;
+
+  std::vector<std::vector<Shape*>*> shapes_;
 };
 
 }  // namespace spray
