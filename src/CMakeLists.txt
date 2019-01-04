@@ -237,6 +237,7 @@ set(SPRAY_SRC_LIST
     render/tile.cc
     render/trimesh_buffer.cc
     render/shape_buffer.cc
+    render/hybrid_geometry_buffer.cc
 
     # io
     io/ply_loader.cc

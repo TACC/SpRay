@@ -37,10 +37,10 @@ namespace spray {
 class Shape;
 struct RTCRayIntersection;
 
-class TriMeshBuffer {
+class HybridGeometryBuffer {
  public:
-  TriMeshBuffer();
-  ~TriMeshBuffer();
+  HybridGeometryBuffer();
+  ~HybridGeometryBuffer();
 
  public:
   void init(int max_cache_size_ndomains, std::size_t max_nvertices,
@@ -50,6 +50,13 @@ class TriMeshBuffer {
                 const glm::mat4& transform, bool apply_transform,
                 std::vector<Shape*>& shapes);
 
+ private:
+  void loadTriangles(const std::string& filename, int cache_block,
+                     const glm::mat4& transform, bool apply_transform);
+
+  void loadShapes(std::vector<Shape*>& shapes, int cache_block);
+
+ public:
   RTCScene get(int cache_block) { return scenes_[cache_block]; }
 
   void updateIntersection(int cache_block, RTCRayIntersection* isect) const;
@@ -84,6 +91,13 @@ class TriMeshBuffer {
                        std::size_t num_vertices, uint32_t* faces,
                        std::size_t num_faces);
 
+  static void sphereBoundsCallback(void* shape_ptr, std::size_t item,
+                                   RTCBounds& bounds_o);
+  static void sphereIntersect1Callback(void* shape_ptr, RTCRay& ray,
+                                       std::size_t item);
+  static void sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
+                                      std::size_t item);
+
  private:
   enum MeshStatus { CREATED = -1, DESTROYED = 0 };
 
@@ -92,9 +106,9 @@ class TriMeshBuffer {
   std::size_t max_nvertices_;
   std::size_t max_nfaces_;
 
-  float* vertices_;  //!< per-cache-block vertices. 2d array.
-  float* normals_;   //!< per-cache-block normals. unnormalized. 2d array.
-  uint32_t* faces_;  //!< per-cache-block faces. 2d array.
+  float* vertices_;   //!< per-cache-block vertices. 2d array.
+  float* normals_;    //!< per-cache-block normals. unnormalized. 2d array.
+  uint32_t* faces_;   //!< per-cache-block faces. 2d array.
   uint32_t* colors_;  //!< per-cache-block packed rgb colors. 2d array.
 
   std::size_t* num_vertices_;
