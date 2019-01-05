@@ -281,8 +281,8 @@ target_link_libraries(spray_insitu_singlethread_shapes spray ${DEP_LIBS})
 add_executable(spray_insitu_multithread_shapes apps/spray_insitu_multithread_shapes.cc)
 target_link_libraries(spray_insitu_multithread_shapes spray ${DEP_LIBS})
 
-add_executable(spray_insitu_shapes apps/spray_insitu_shapes.cc)
-target_link_libraries(spray_insitu_shapes spray ${DEP_LIBS})
+add_executable(spray_insitu_multithread_hybridgeometry apps/spray_insitu_multithread_hybridgeometry.cc)
+target_link_libraries(spray_insitu_multithread_hybridgeometry spray ${DEP_LIBS})
 
 # ply info reader
 add_executable(ply_header_reader apps/ply_header_reader.cc)
