@@ -85,7 +85,8 @@ class ShapeBuffer {
  private:
   int max_cache_size_;  // in number of domains
 
-  // uint32_t* colors_;  //!< per-cache-block packed rgb colors. 2d array organized as 1d
+  // uint32_t* colors_;  //!< per-cache-block packed rgb colors. 2d array
+  // organized as 1d
 
   RTCDevice device_;
 

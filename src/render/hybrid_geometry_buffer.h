@@ -29,13 +29,15 @@
 #include "pbrt/memory.h"
 
 #include "io/ply_loader.h"
+#include "render/rays.h"
+#include "render/shape.h"
 
 #define NUM_VERTICES_PER_FACE 3  // triangle
 
 namespace spray {
 
-class Shape;
 struct RTCRayIntersection;
+class Material;
 
 class HybridGeometryBuffer {
  public:
@@ -54,12 +56,22 @@ class HybridGeometryBuffer {
   void loadTriangles(const std::string& filename, int cache_block,
                      const glm::mat4& transform, bool apply_transform);
 
-  void loadShapes(std::vector<Shape*>& shapes, int cache_block);
+  void loadShapes(std::vector<Shape*>& shapes, int cache_block,
+                  unsigned int shape_geom_id);
 
  public:
   RTCScene get(int cache_block) { return scenes_[cache_block]; }
 
-  void updateIntersection(int cache_block, RTCRayIntersection* isect) const;
+  void updateIntersection(int cache_block, RTCRayIntersection* isect) const {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK(isect->geomID == 0 || isect->geomID == 1) << isect->geomID;
+#endif
+    if (isect->geomID == shape_geom_ids_[cache_block]) {
+      updateShapeIntersection(cache_block, isect);
+    } else {
+      updateTriangleIntersection(cache_block, isect);
+    }
+  }
 
  private:
   void getColorTuple(int cache_block, uint32_t primID,
@@ -91,16 +103,17 @@ class HybridGeometryBuffer {
                        std::size_t num_vertices, uint32_t* faces,
                        std::size_t num_faces);
 
-  static void sphereBoundsCallback(void* shape_ptr, std::size_t item,
-                                   RTCBounds& bounds_o);
-  static void sphereIntersect1Callback(void* shape_ptr, RTCRay& ray,
-                                       std::size_t item);
-  static void sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
-                                      std::size_t item);
-
   Material* getMaterial(int cache_block, int prim_id) const {
     Shape* shape = shapes_[cache_block]->at(prim_id);
     return shape->material;
+  }
+
+  void updateTriangleIntersection(int cache_block,
+                                  RTCRayIntersection* isect) const;
+
+  void updateShapeIntersection(int cache_block,
+                               RTCRayIntersection* isect) const {
+    isect->material = getMaterial(cache_block, isect->primID);
   }
 
  private:
@@ -111,19 +124,25 @@ class HybridGeometryBuffer {
   std::size_t max_nvertices_;
   std::size_t max_nfaces_;
 
-  float* vertices_;   //!< per-cache-block vertices. 2d array.
-  float* normals_;    //!< per-cache-block normals. unnormalized. 2d array.
-  uint32_t* faces_;   //!< per-cache-block faces. 2d array.
-  uint32_t* colors_;  //!< per-cache-block packed rgb colors. 2d array.
+  float* vertices_;   ///< per-cache-block vertices. 2d array.
+  float* normals_;    ///< per-cache-block normals. unnormalized. 2d array.
+  uint32_t* faces_;   ///< per-cache-block faces. 2d array.
+  uint32_t* colors_;  ///< per-cache-block packed rgb colors. 2d array.
 
   std::size_t* num_vertices_;
   std::size_t* num_faces_;
 
   RTCDevice device_;
-  RTCScene* scenes_;  //!< 1D array of per-cache-block Embree scenes.
+  RTCScene* scenes_;  ///< 1D array of per-cache-block Embree scenes.
 
-  int* embree_mesh_created_;    // -1: initialized, 0: not initialized
-  int* shape_created_;         // -1: initialized, 0: not initialized
+  int* embree_mesh_created_;  // -1: initialized, 0: not initialized
+  // unsigned int* embree_mesh_geom_ids_;
+  int* shape_created_;  // -1: initialized, 0: not initialized
+  // unsigned int* shape_geom_ids_;
+
+  unsigned int* shape_geom_ids_;
+
+  Material** materals_;  ///< Materials indexed by geomID and prim ID. 2D array.
 
   MemoryArena arena_;
   PlyLoader loader_;

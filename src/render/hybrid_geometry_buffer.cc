@@ -23,11 +23,13 @@
 #include <cmath>
 
 #include <embree2/rtcore_geometry.h>
+
 #include "glm/glm.hpp"
 #include "glog/logging.h"
 
 #include "render/rays.h"
 #include "render/shape.h"
+#include "render/sphere.h"
 #include "utils/math.h"
 #include "utils/util.h"
 
@@ -49,7 +51,10 @@ HybridGeometryBuffer::HybridGeometryBuffer()
       device_(nullptr),
       scenes_(nullptr),
       embree_mesh_created_(nullptr),
+      // embree_mesh_geom_ids_(nullptr),
       shape_created_(nullptr),
+      // shape_geom_ids_(nullptr),
+      shape_geom_ids_(nullptr),
       compute_normals_(false) {}
 
 HybridGeometryBuffer::~HybridGeometryBuffer() { cleanup(); }
@@ -102,9 +107,18 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   embree_mesh_created_ = arena_.Alloc<int>(cache_size);
   CHECK_NOTNULL(embree_mesh_created_);
 
+  // embree_mesh_geom_ids_ = arena_.Alloc<unsigned int>(cache_size);
+  // CHECK_NOTNULL(embree_mesh_geom_ids_);
+
   // shape created
   shape_created_ = arena_.Alloc<int>(cache_size);
   CHECK_NOTNULL(shape_created_);
+
+  shape_geom_ids_ = arena_.Alloc<unsigned int>(cache_size);
+  CHECK_NOTNULL(shape_geom_ids_);
+
+  // shape_geom_ids_ = arena_.Alloc<int>(cache_size);
+  // CHECK_NOTNULL(shape_geom_ids_);
 
   for (std::size_t i = 0; i < cache_size; ++i) {
     embree_mesh_created_[i] = DESTROYED;
@@ -140,13 +154,23 @@ RTCScene HybridGeometryBuffer::load(const std::string& filename,
                                     std::vector<Shape*>& shapes) {
   CHECK(!(filename.empty() && shapes.empty()));
 
-  if (!filename.empty())
-    loadTriangles(filename, cache_block, transform, apply_transform);
+  bool has_mash = !filename.empty();
 
-  if (!shapes.empty()) loadShapes(shapes, cache_block);
+  unsigned int shape_geom_id = 0;
+
+  if (!filename.empty()) {
+    shape_geom_id = 1;
+    loadTriangles(filename, cache_block, transform, apply_transform);
+  }
+
+  std::cout << "cache_block " << cache_block << " [shape_geom_id "
+            << shape_geom_id << "\n";
+  shape_geom_ids_[cache_block] = shape_geom_id;
+
+  if (!shapes.empty()) loadShapes(shapes, cache_block, shape_geom_id);
 
   RTCScene scene = scenes_[cache_block];
-  rctCommit(scene);
+  rtcCommit(scene);
 
   return scene;
 }
@@ -205,51 +229,54 @@ void HybridGeometryBuffer::loadTriangles(const std::string& filename,
 }
 
 void HybridGeometryBuffer::loadShapes(std::vector<Shape*>& shapes,
-                                      int cache_block) {
-  CHECK_LT(cache_block, shapes_.size());
-  CHECK(shapes_[cache_block] == nullptr);
-  shapes_[cache_block] = &shapes;
-
-  // TODO: transform
-  // TODO: can we somehow not delete geometry? i.e. something similar to how we
-  // handle triangles using rtcSetBuffer2?
-  // TODO: support ooc (ooc not supported at this moment)
-
+                                      int cache_block,
+                                      unsigned int shape_geom_id) {
   RTCScene scene = scenes_[cache_block];
-
   if (shape_created_[cache_block] == DESTROYED) {
+    CHECK_LT(cache_block, shapes_.size());
+    CHECK(shapes_[cache_block] == nullptr);
+    shapes_[cache_block] = &shapes;
+
+    std::cout << "shapes.size: " << shapes.size()
+              << " shapes pointer: " << &shapes << " cache block "
+              << cache_block << std::endl;
+
     // std::cout<<"shapes.size: "<<shapes.size()<<std::endl;
     // create geometry
     unsigned int geom_id = rtcNewUserGeometry(scene, shapes.size());
     shape_created_[cache_block] = CREATED;
+    // shape_geom_ids_[cache_block] = geom_id;
+
+    CHECK_EQ(geom_id, shape_geom_id);
+
+    // set geom id
+    Shape* shape = shapes[shape_geom_id];
+    // TODO: only spheres are supported
+    CHECK_EQ(shape->type(), Shape::SPHERE);
+    shape->setGeomId(shape_geom_id);
   }
 
-  // set geom id
-  void* shape_ptr = (void*)&shapes[0];
-  for (std::size_t i = 0; i < shapes.size(); ++i) {
-    // TODO: only spheres are supported
-    Shape* shape = shapes[i];
-    CHECK_EQ(shape->type(), Shape::SPHERE);
-    shape->setGeomId(geom_id);
-    // std::cout << ((Sphere*)shape)->radius << "\n";
-  }
+  // unsigned int gid = shape_geom_ids_[cache_block];
 
   // set data
-  rtcSetUserData(scene, geom_id, shape_ptr);
+  void* shape_ptr = (void*)&shapes[0];
+  for (std::size_t i = 0; i < shapes.size(); ++i) {
+    Shape* shape = shapes[i];
+    // TODO: only spheres are supported
+    CHECK_EQ(shape->type(), Shape::SPHERE);
+    shape->setGeomId(shape_geom_id);
+  }
+
+  rtcSetUserData(scene, shape_geom_id, shape_ptr);
 
   // callback functions
-  rtcSetBoundsFunction(scene, geom_id, ShapeBuffer::sphereBoundsCallback);
-  rtcSetIntersectFunction(scene, geom_id,
-                          ShapeBuffer::sphereIntersect1Callback);
-  rtcSetOccludedFunction(scene, geom_id, ShapeBuffer::sphereOccluded1Callback);
+  rtcSetBoundsFunction(scene, shape_geom_id, computeSphereBounds);
+  rtcSetIntersectFunction(scene, shape_geom_id, raySphereIntersectionTest);
+  rtcSetOccludedFunction(scene, shape_geom_id, raySphereOcclusionTest);
 
   // update geometry
-  // rtcUpdate(scene, geom_id);
-  // rtcEnable(scene, geom_id);
-
-  rtcCommit(scene);
-
-  return scene;
+  rtcUpdate(scene, shape_geom_id);
+  rtcEnable(scene, shape_geom_id);
 }
 
 void HybridGeometryBuffer::cleanup() {
@@ -283,131 +310,33 @@ void HybridGeometryBuffer::mapEmbreeBuffer(int cache_block, float* vertices,
     unsigned int geom_id =
         rtcNewTriangleMesh(scene, RTC_GEOMETRY_DYNAMIC, num_faces, num_vertices,
                            1 /*numTimeSteps*/);
+
 // #ifdef DEBUG_MESH
 #ifdef DEBUG_MESH
     LOG(INFO) << "created embree triangle mesh geom ID: " << geom_id
               << " cache block " << cache_block;
 #endif
-    // CHECK_EQ(geom_id, 0);
-    CHECK_NE(geom_id, RTC_INVALID_GEOMETRY_ID);
+    CHECK_EQ(geom_id, 0);
+    // CHECK_NE(geom_id, RTC_INVALID_GEOMETRY_ID);
 
     embree_mesh_created_[cache_block] = CREATED;
+    // embree_mesh_geom_ids_[cache_block] = geom_id;
   }
 
   // map vertices
 
-  rtcSetBuffer2(scene, geom_id, RTC_VERTEX_BUFFER, vertices, 0,
+  // gid = embree_mesh_geom_ids_[cache_block];
+
+  rtcSetBuffer2(scene, 0 /* geomID */, RTC_VERTEX_BUFFER, vertices, 0,
                 sizeof(float) * 3, num_vertices);
 
   // map faces
 
-  rtcSetBuffer2(scene, geom_id, RTC_INDEX_BUFFER, faces, 0,
+  rtcSetBuffer2(scene, 0 /* geomID */, RTC_INDEX_BUFFER, faces, 0,
                 sizeof(uint32_t) * NUM_VERTICES_PER_FACE, num_faces);
 
-  rtcUpdate(scene, geom_id);
-  rtcEnable(scene, geom_id);
-
-  // rtcCommit(scene);
-}
-
-void HybridGeometryBuffer::sphereBoundsCallback(void* shape_ptr,
-                                                std::size_t item,
-                                                RTCBounds& bounds_o) {
-  const Sphere** spheres = static_cast<const Sphere**>(shape_ptr);
-  const Sphere* sphere = spheres[item];
-  bounds_o.lower_x = sphere->center.x - sphere->radius;
-  bounds_o.lower_y = sphere->center.y - sphere->radius;
-  bounds_o.lower_z = sphere->center.z - sphere->radius;
-  bounds_o.upper_x = sphere->center.x + sphere->radius;
-  bounds_o.upper_y = sphere->center.y + sphere->radius;
-  bounds_o.upper_z = sphere->center.z + sphere->radius;
-}
-
-void HybridGeometryBuffer::sphereIntersect1Callback(void* shape_ptr,
-                                                    RTCRay& ray,
-                                                    std::size_t item) {
-  const Sphere** spheres = static_cast<const Sphere**>(shape_ptr);
-  const Sphere* sphere = spheres[item];
-
-  const glm::vec3 center_to_origin(ray.org[0] - sphere->center[0],
-                                   ray.org[1] - sphere->center[1],
-                                   ray.org[2] - sphere->center[2]);
-
-  float a = spray::dot(ray.dir, ray.dir);
-  float b = 2.0f * spray::dot(center_to_origin, ray.dir);
-  float c = glm::dot(center_to_origin, center_to_origin) -
-            (sphere->radius * sphere->radius);
-  float discriminant = (b * b) - (4.0f * a * c);
-  if (discriminant < 0.0f) return;
-
-  float sqrt_d = std::sqrt(discriminant);
-
-  // TODO: use embree's rcp() for 1/a
-  float a2 = 2.0f * a;
-  float root0 = (-b - sqrt_d) / a2;
-  float root1 = (-b + sqrt_d) / a2;
-
-  // root0 between tnear and tfar
-  if (root0 > ray.tnear && root0 < ray.tfar) {
-    // TODO: update u,v with correct values
-    ray.u = 0.0f;
-    ray.v = 0.0f;
-    ray.tfar = root0;
-    ray.geomID = sphere->geom_id;
-    ray.primID = static_cast<unsigned int>(item);
-    // NOTE: Ng not normalized
-    ray.Ng[0] = ray.org[0] + (root0 * ray.dir[0]) - sphere->center[0];
-    ray.Ng[1] = ray.org[1] + (root0 * ray.dir[1]) - sphere->center[1];
-    ray.Ng[2] = ray.org[2] + (root0 * ray.dir[2]) - sphere->center[2];
-  }
-
-  // root1 between tnear and tfar
-  if (root1 > ray.tnear && root1 < ray.tfar) {
-    // TODO: update u,v with correct values
-    ray.u = 0.0f;
-    ray.v = 0.0f;
-    ray.tfar = root1;
-    ray.geomID = sphere->geom_id;
-    ray.primID = static_cast<unsigned int>(item);
-    // NOTE: Ng not normalized
-    ray.Ng[0] = ray.org[0] + (root1 * ray.dir[0]) - sphere->center[0];
-    ray.Ng[1] = ray.org[1] + (root1 * ray.dir[1]) - sphere->center[1];
-    ray.Ng[2] = ray.org[2] + (root1 * ray.dir[2]) - sphere->center[2];
-  }
-}
-
-void HybridGeometryBuffer::sphereOccluded1Callback(void* shape_ptr, RTCRay& ray,
-                                                   std::size_t item) {
-  const Sphere** spheres = static_cast<const Sphere**>(shape_ptr);
-  const Sphere* sphere = spheres[item];
-
-  const glm::vec3 center_to_origin(ray.org[0] - sphere->center[0],
-                                   ray.org[1] - sphere->center[1],
-                                   ray.org[2] - sphere->center[2]);
-
-  float a = spray::dot(ray.dir, ray.dir);
-  float b = 2.0f * spray::dot(center_to_origin, ray.dir);
-  float c = glm::dot(center_to_origin, center_to_origin) -
-            (sphere->radius * sphere->radius);
-  float discriminant = (b * b) - (4.0f * a * c);
-  if (discriminant < 0.0f) return;
-
-  float sqrt_d = std::sqrt(discriminant);
-
-  // TODO: use embree's rcp() for 1/a
-  float a2 = 2.0f * a;
-  float root0 = (-b - sqrt_d) / a2;
-  float root1 = (-b + sqrt_d) / a2;
-
-  // root0 between tnear and tfar
-  if (root0 > ray.tnear && root0 < ray.tfar) {
-    ray.geomID = 0;  // 0 means occluded
-  }
-
-  // root1 between tnear and tfar
-  if (root1 > ray.tnear && root1 < ray.tfar) {
-    ray.geomID = 0;  // 0 means occluded
-  }
+  rtcUpdate(scene, 0 /*geomID*/);
+  rtcEnable(scene, 0 /*geomID*/);
 }
 
 void HybridGeometryBuffer::getColorTuple(int cache_block, uint32_t primID,
@@ -511,8 +440,8 @@ void HybridGeometryBuffer::computeNormals(int cache_block) {
   }
 }
 
-void HybridGeometryBuffer::updateIntersection(int cache_block,
-                                              RTCRayIntersection* isect) const {
+void HybridGeometryBuffer::updateTriangleIntersection(
+    int cache_block, RTCRayIntersection* isect) const {
   // cache_block pointing to the current cache block in the mesh buffer
   // isect->primID, the current primitive intersected
   // colors: per-vertex colors

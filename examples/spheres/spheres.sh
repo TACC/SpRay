@@ -7,6 +7,7 @@ then
 fi
 
 SPRAY_BIN_PATH=$SPRAY_HOME_PATH/build
+SHAPES_APP_HYBRID_BUFFER=$SPRAY_BIN_PATH/spray_insitu_shapes
 SHAPES_APP_SINGLE_THREAD=$SPRAY_BIN_PATH/spray_insitu_singlethread_shapes
 SHAPES_APP_MULTI_THREAD=$SPRAY_BIN_PATH/spray_insitu_multithread_shapes
 EXAMPLE_PATH=$SPRAY_HOME_PATH/examples
@@ -47,18 +48,24 @@ else
   return
 fi
 
-echo "Choose a threading mode (1-2):"
-echo "1. single-thread" 
-echo "2. multi-thread"
+echo "Choose an app  (1-3):"
+echo "1. insitu, multi-thread, hybrid geometry buffer" 
+echo "2. insitu, single-thread, shape buffer" 
+echo "3. insitu, multi-thread, shape buffer"
 
 read THREADING
 
 if [ $THREADING == "1" ] 
 then
+  SHAPES_APP=$SHAPES_APP_HYBRID_BUFFER
+  NUM_THREADS=1
+
+elif [ $THREADING == "2" ] 
+then
   SHAPES_APP=$SHAPES_APP_SINGLE_THREAD
   NUM_THREADS=1
 
-elif [ $THREADING == "2" ]
+elif [ $THREADING == "3" ]
 then
   SHAPES_APP=$SHAPES_APP_MULTI_THREAD
   NUM_THREADS=4

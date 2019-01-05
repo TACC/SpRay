@@ -237,7 +237,7 @@ set(SPRAY_SRC_LIST
     render/tile.cc
     render/trimesh_buffer.cc
     render/shape_buffer.cc
-    # render/hybrid_geometry_buffer.cc
+    render/hybrid_geometry_buffer.cc
 
     # io
     io/ply_loader.cc
@@ -280,6 +280,9 @@ target_link_libraries(spray_insitu_singlethread_shapes spray ${DEP_LIBS})
 
 add_executable(spray_insitu_multithread_shapes apps/spray_insitu_multithread_shapes.cc)
 target_link_libraries(spray_insitu_multithread_shapes spray ${DEP_LIBS})
+
+add_executable(spray_insitu_shapes apps/spray_insitu_shapes.cc)
+target_link_libraries(spray_insitu_shapes spray ${DEP_LIBS})
 
 # ply info reader
 add_executable(ply_header_reader apps/ply_header_reader.cc)
