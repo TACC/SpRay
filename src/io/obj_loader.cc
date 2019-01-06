@@ -56,7 +56,7 @@ void ObjLoader::load(const std::string &filename, Data *data) {
       token = std::strtok(NULL, delim);
     }
 
-    if (!tokens.empty()) parseTokens(original_line, &tokens);
+    if (!tokens.empty()) parseObjTokens(original_line, &tokens);
   }
 
   infile.close();
@@ -69,7 +69,7 @@ void ObjLoader::load(const std::string &filename, Data *data) {
   CHECK(normal_indices_.empty());
 }
 
-void ObjLoader::parseTokens(const std::string &line, StringQ *tokens) {
+void ObjLoader::parseObjTokens(const std::string &line, StringQ *tokens) {
   std::string &token = tokens->front();
   tokens->pop();
 
@@ -79,14 +79,10 @@ void ObjLoader::parseTokens(const std::string &line, StringQ *tokens) {
     parseNormals(tokens);
   } else if (token == "f") {
     parseFaces(line, tokens);
+  } else if (token == "mtllib") {
+    parseMaterialFile(tokens);
   }
   flush(tokens);
-}
-
-void ObjLoader::flush(StringQ *tokens) {
-  while (!tokens->empty()) {
-    tokens->pop();
-  }
 }
 
 void ObjLoader::parseVertices(StringQ *tokens) {
@@ -158,48 +154,124 @@ void ObjLoader::parseFaces(const std::string &line, StringQ *tokens) {
 void ObjLoader::postProcessing() {
   // vertices
   std::vector<float> *vout = data_->vertices;
+
+  if (vout) {
   vout->reserve(vertices_.size());
 
   while (!vertices_.empty()) {
     vout->push_back(vertices_.front());
     vertices_.pop();
   }
+  } else {
+    flush(&vertices_);
+  }
 
   // normals
   vout = data_->normals;
-  vout->reserve(normals_.size());
 
-  while (!normals_.empty()) {
-    vout->push_back(normals_.front());
-    normals_.pop();
+  if (vout) {
+    vout->reserve(normals_.size());
+
+    while (!normals_.empty()) {
+      vout->push_back(normals_.front());
+      normals_.pop();
+    }
+  } else {
+    flush(&normals_);
   }
 
   // vertex indices
   std::vector<int> *iout = data_->vertex_indices;
-  iout->reserve(vertex_indices_.size());
+  if (iout) {
+    iout->reserve(vertex_indices_.size());
 
-  while (!vertex_indices_.empty()) {
-    iout->push_back(vertex_indices_.front());
-    vertex_indices_.pop();
+    while (!vertex_indices_.empty()) {
+      iout->push_back(vertex_indices_.front());
+      vertex_indices_.pop();
+    }
+  } else {
+    flush(&vertex_indices_);
   }
 
   // texture indices
   iout = data_->texture_indices;
-  iout->reserve(texture_indices_.size());
+  if (iout) {
+    iout->reserve(texture_indices_.size());
 
-  while (!texture_indices_.empty()) {
-    iout->push_back(texture_indices_.front());
-    texture_indices_.pop();
+    while (!texture_indices_.empty()) {
+      iout->push_back(texture_indices_.front());
+      texture_indices_.pop();
+    }
+  } else {
+    flush(&texture_indices_);
   }
 
   // normal indices
   iout = data_->normal_indices;
-  iout->reserve(normal_indices_.size());
+  if (iout) {
+    iout->reserve(normal_indices_.size());
 
-  while (!normal_indices_.empty()) {
-    iout->push_back(normal_indices_.front());
-    normal_indices_.pop();
+    while (!normal_indices_.empty()) {
+      iout->push_back(normal_indices_.front());
+      normal_indices_.pop();
+    }
+  } else {
+    flush(&normal_indices_);
   }
+}
+
+void ObjLoader::parseMaterialFile(StringQ *tokens) {
+  CHECK_EQ(tokens->size(), 1);
+  std::string &token = tokens->front();
+  tokens->pop();
+
+  loadMaterialFile(token);
+}
+
+void ObjLoader::loadMaterialFile(const std::string &filename) {
+  std::ifstream infile(filename);
+  CHECK(infile.is_open()) << "unable to open input file " << filename;
+
+  char delim[] = " \t\r\n\v\f/";
+
+  std::queue<std::string> tokens;
+  std::string line;
+
+  while (infile.good()) {
+    getline(infile, line);
+#ifdef SPRAY_PRINT_LINES
+    std::cout << line << "\n";
+#endif
+    char *token = std::strtok(&line[0], delim);
+    CHECK(tokens.empty());
+
+    while (token != NULL) {
+      tokens.push(token);
+      token = std::strtok(NULL, delim);
+    }
+
+    if (!tokens.empty()) parseMaterialTokens(&tokens);
+  }
+
+  infile.close();
+}
+
+void ObjLoader::parseMaterialTokens(StringQ *tokens) {
+  std::string &token = tokens->front();
+  tokens->pop();
+
+  if (token == "newmtl") {
+    parseNewMtl(tokens);
+  }
+
+  flush(tokens);
+}
+
+void ObjLoader::parseNewMtl(StringQ *tokens) {
+  CHECK_EQ(tokens->size(), 1);
+
+  std::string &token = tokens->front();
+  tokens->pop();
 }
 
 }  // namespace spray

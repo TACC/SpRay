@@ -32,7 +32,7 @@ class ObjLoader {
     std::vector<float> *vertices;       // out
     std::vector<float> *normals;        // out
     std::vector<int> *vertex_indices;   // out
-    std::vector<int> *texture_indices;  // out
+    std::vector<int> *texture_indices;  // out (optional)
     std::vector<int> *normal_indices;   // out
   };
 
@@ -41,12 +41,21 @@ class ObjLoader {
  private:
   typedef std::queue<std::string> StringQ;
 
-  void parseTokens(const std::string &line, StringQ *tokens);
+  void parseObjTokens(const std::string &line, StringQ *tokens);
   void parseVertices(StringQ *tokens);
   void parseNormals(StringQ *tokens);
   void parseFaces(const std::string &line, StringQ *tokens);
+  void parseMaterialFile(StringQ *tokens);
+  void loadMaterialFile(const std::string &filename);
   void postProcessing();
-  void flush(StringQ *tokens);
+
+  void parseMaterialTokens(StringQ *tokens);
+  void parseNewMtl(StringQ *tokens);
+
+  template <typename T>
+  void flush(std::queue<T> *q) {
+    while (!q->empty()) q->pop();
+  }
 
  private:
   std::queue<float> vertices_;
@@ -55,6 +64,8 @@ class ObjLoader {
   std::queue<int> texture_indices_;
   std::queue<int> normal_indices_;
   Data *data_;
+
+  // std::map<std::string, Material> materials_;
 };
 
 }  // namespace spray
