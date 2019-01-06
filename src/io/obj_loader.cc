@@ -125,12 +125,12 @@ void ObjLoader::parseFaces(const std::string &line, StringQ *tokens) {
       tokens->pop();
       // std::cout << "token: " << token << "\n";
       if (i == 0) {
-        vertex_indices_.push(atoi(token.c_str()));
+        vertex_indices_.push(atoi(token.c_str()) - 1);
       } else {
         if (has_normals) {
-          normal_indices_.push(atoi(token.c_str()));
+          normal_indices_.push(atoi(token.c_str()) - 1);
         } else {
-          texture_indices_.push(atoi(token.c_str()));
+          texture_indices_.push(atoi(token.c_str()) - 1);
         }
       }
       ++i;

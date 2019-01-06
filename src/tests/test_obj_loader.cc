@@ -141,7 +141,7 @@ TEST_F(CubeTest, FaceVertexIndices) {
   ASSERT_EQ(vertex_indices_.size(), v.size());
 
   for (std::size_t i = 0; i < vertex_indices_.size(); ++i) {
-    ASSERT_EQ(vertex_indices_[i], v[i]);
+    ASSERT_EQ(vertex_indices_[i], v[i] - 1);
   }
 }
 
@@ -165,7 +165,7 @@ TEST_F(CubeTest, FaceNormalIndices) {
   ASSERT_EQ(normal_indices_.size(), v.size());
 
   for (std::size_t i = 0; i < normal_indices_.size(); ++i) {
-    ASSERT_EQ(normal_indices_[i], v[i]);
+    ASSERT_EQ(normal_indices_[i], v[i] - 1);
   }
 }
 
