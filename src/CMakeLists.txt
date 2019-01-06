@@ -242,6 +242,7 @@ set(SPRAY_SRC_LIST
     # io
     io/ply_loader.cc
     io/scene_loader.cc
+    io/obj_loader.cc
     
     # insitu
     insitu/insitu_comm.cc
@@ -287,6 +288,8 @@ target_link_libraries(spray_insitu_multithread_hybridgeometry spray ${DEP_LIBS})
 # ply info reader
 add_executable(ply_header_reader apps/ply_header_reader.cc)
 target_link_libraries(ply_header_reader spray ${PLY_HEADER_READER_LIBS})
+
+add_subdirectory(tests)
 
 # intallation
 install (TARGETS baseline_ooc DESTINATION bin)
