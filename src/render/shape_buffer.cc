@@ -26,6 +26,7 @@
 #include "glm/glm.hpp"
 #include "glog/logging.h"
 
+#include "render/domain.h"
 #include "render/rays.h"
 #include "render/shape.h"
 #include "utils/math.h"
@@ -81,11 +82,11 @@ void ShapeBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
   }
 }
 
-RTCScene ShapeBuffer::load(const std::string& filename, int cache_block,
-                           const glm::mat4& transform, bool apply_transform,
-                           std::vector<Shape*>& shapes) {
+RTCScene ShapeBuffer::load(int cache_block, Domain& domain) {
   CHECK(!loaded_);
   loaded_ = true;
+
+  std::vector<Shape*>& shapes = domain.shapes;
 
   CHECK_LT(cache_block, shapes_.size());
   CHECK(shapes_[cache_block] == nullptr);

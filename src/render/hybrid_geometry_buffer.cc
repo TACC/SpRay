@@ -27,6 +27,7 @@
 #include "glm/glm.hpp"
 #include "glog/logging.h"
 
+#include "render/domain.h"
 #include "render/rays.h"
 #include "render/shape.h"
 #include "render/sphere.h"
@@ -148,26 +149,23 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   }
 }
 
-RTCScene HybridGeometryBuffer::load(const std::string& filename,
-                                    int cache_block, const glm::mat4& transform,
-                                    bool apply_transform,
-                                    std::vector<Shape*>& shapes) {
-  CHECK(!(filename.empty() && shapes.empty()));
+RTCScene HybridGeometryBuffer::load(int cache_block, Domain& domain) {
+  auto& shapes = domain.shapes;
 
-  bool has_mash = !filename.empty();
+  CHECK(!(domain.models.empty() && shapes.empty()));
 
   unsigned int shape_geom_id = 0;
 
-  if (!filename.empty()) {
+  if (!domain.models.empty()) {
     shape_geom_id = 1;
-    loadTriangles(filename, cache_block, transform, apply_transform);
+    loadTriangles(cache_block, domain);
   }
 
-  std::cout << "cache_block " << cache_block << " [shape_geom_id "
-            << shape_geom_id << "\n";
+  // std::cout << "cache_block " << cache_block << " [shape_geom_id "
+  //           << shape_geom_id << "\n";
   shape_geom_ids_[cache_block] = shape_geom_id;
 
-  if (!shapes.empty()) loadShapes(shapes, cache_block, shape_geom_id);
+  if (!shapes.empty()) loadShapes(domain.shapes, cache_block, shape_geom_id);
 
   RTCScene scene = scenes_[cache_block];
   rtcCommit(scene);
@@ -175,48 +173,52 @@ RTCScene HybridGeometryBuffer::load(const std::string& filename,
   return scene;
 }
 
-void HybridGeometryBuffer::loadTriangles(const std::string& filename,
-                                         int cache_block,
-                                         const glm::mat4& transform,
-                                         bool apply_transform) {
+void HybridGeometryBuffer::loadTriangles(int cache_block,
+                                         const Domain& domain) {
   // setup
   PlyLoader::Data d;
   d.vertices_capacity = max_nvertices_ * 3;                // in
   d.faces_capacity = max_nfaces_ * NUM_VERTICES_PER_FACE;  // in
   // d.colors_capacity = 0;                                         // in
-  d.colors_capacity = max_nvertices_;                     // in
-  d.vertices = &vertices_[vertexBaseIndex(cache_block)];  // in/out
-  // num_vertices;  // out
-  d.faces = &faces_[faceBaseIndex(cache_block)];  // in/out
-  // num_faces;  // out
-  // d.colors = nullptr;  // rgb, in/out
-  d.colors = &colors_[colorBaseIndex(cache_block)];  // rgb, in/out
+  d.colors_capacity = max_nvertices_;  // in
 
-  // load
-  loader_.load(filename, &d);
+  std::size_t vertex_offset = vertexBaseIndex(cache_block);
+  std::size_t face_offset = faceBaseIndex(cache_block);
+  std::size_t color_offset = colorBaseIndex(cache_block);
+
+  float* vertices = &vertices_[vertex_offset];
+  uint32_t* faces = &faces_[face_offset];
 
   // update geometry sizes
-  num_vertices_[cache_block] = d.num_vertices;
-  num_faces_[cache_block] = d.num_faces;
+  num_vertices_[cache_block] = domain.num_vertices;
+  num_faces_[cache_block] = domain.num_faces;
 
-  // glm::vec3 origin(0.0f);
+  for (const ModelFile& model : domain.models) {
+    d.vertices = &vertices_[vertex_offset];  // in/out
+    // num_vertices;  // out
+    d.faces = &faces_[face_offset];  // in/out
+    // num_faces;  // out
+    // d.colors = nullptr;  // rgb, in/out
+    d.colors = &colors_[color_offset];  // rgb, in/out
 
-  if (apply_transform) {
-    glm::mat4 x = transform;
-    glm::vec4 v;
-    std::size_t nverts = d.num_vertices * 3;
+    // load
+    loader_.load(model.filename, &d);
 
-    for (std::size_t n = 0; n < nverts; n += 3) {
-      v = x *
-          glm::vec4(d.vertices[n], d.vertices[n + 1], d.vertices[n + 2], 1.0f);
-      d.vertices[n] = v.x;
-      d.vertices[n + 1] = v.y;
-      d.vertices[n + 2] = v.z;
+    bool apply_transform = (model.transform != glm::mat4(1.0));
+
+    if (apply_transform) {
+      // glm::mat4 x = transform;
+      glm::vec4 v;
+      std::size_t nverts = model.num_vertices * 3;
+
+      for (std::size_t n = 0; n < nverts; n += 3) {
+        v = model.transform * glm::vec4(d.vertices[n], d.vertices[n + 1],
+                                        d.vertices[n + 2], 1.0f);
+        d.vertices[n] = v.x;
+        d.vertices[n + 1] = v.y;
+        d.vertices[n + 2] = v.z;
+      }
     }
-    // v = x * glm::vec4(origin, 1.0f);
-    // origin.x = v.x;
-    // origin.y = v.y;
-    // origin.z = v.z;
   }
 
   if (compute_normals_) {
@@ -224,8 +226,8 @@ void HybridGeometryBuffer::loadTriangles(const std::string& filename,
   }
 
   // map buffers
-  mapEmbreeBuffer(cache_block, d.vertices, d.num_vertices, d.faces,
-                  d.num_faces);
+  mapEmbreeBuffer(cache_block, vertices, domain.num_vertices, faces,
+                  domain.num_faces);
 }
 
 void HybridGeometryBuffer::loadShapes(std::vector<Shape*>& shapes,

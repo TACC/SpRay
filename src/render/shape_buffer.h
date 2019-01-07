@@ -34,6 +34,7 @@
 namespace spray {
 
 struct RTCRayIntersection;
+struct Domain;
 class Material;
 
 class ShapeBuffer {
@@ -45,9 +46,7 @@ class ShapeBuffer {
   void init(int max_cache_size_ndomains, std::size_t max_nvertices,
             std::size_t max_nfaces, bool compute_normals);
 
-  RTCScene load(const std::string& filename, int cache_block,
-                const glm::mat4& transform, bool apply_transform,
-                std::vector<Shape*>& shapes);
+  RTCScene load(int cache_block, Domain& domain);
 
  private:
   void loadShapes(std::vector<Shape*>& shapes, int cache_block);

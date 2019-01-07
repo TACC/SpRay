@@ -23,6 +23,7 @@
 #include "glm/glm.hpp"
 #include "glog/logging.h"
 
+#include "render/aabb.h"
 #include "render/material.h"
 
 namespace spray {
@@ -39,6 +40,9 @@ class Shape {
     return UNDEFINED;
   }
   virtual void setGeomId(int id) { LOG(FATAL) << "undefined"; }
+
+  virtual void getBounds(Aabb* aabb) const = 0;
+
   Material* material;
 };
 
@@ -50,9 +54,20 @@ class Sphere : public Shape {
   int type() const override { return Shape::SPHERE; }
   void setGeomId(int id) override { geom_id = id; }
 
+  void getBounds(Aabb* aabb) const override;
+
   const glm::vec3 center;
   const float radius;
   unsigned int geom_id;
 };
+
+void Sphere::getBounds(Aabb* aabb) const {
+  aabb->bounds[0].x = center.x - radius;
+  aabb->bounds[0].y = center.y - radius;
+  aabb->bounds[0].z = center.z - radius;
+  aabb->bounds[1].x = center.x + radius;
+  aabb->bounds[1].y = center.y + radius;
+  aabb->bounds[1].z = center.z + radius;
+}
 
 }  // namespace spray

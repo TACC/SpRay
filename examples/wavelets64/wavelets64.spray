@@ -3,11 +3,14 @@ light point 0 500 1000 1 1 1
 
 # domain 0
 domain
+
+model
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# mtl diffuse 1 1 1
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 0.000000 0.000000
 
 # domain 1

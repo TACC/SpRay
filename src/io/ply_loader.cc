@@ -22,7 +22,9 @@
 
 #include <cstddef>
 #include <cstring>
+#include <fstream>
 #include <iostream>
+#include <queue>
 #include <vector>
 
 #include "glog/logging.h"
@@ -109,6 +111,80 @@ void PlyLoader::quickHeaderRead(const std::string &filename, Header *header) {
 
   // close file
   file.close();
+}
+
+void PlyLoader::readLongHeader(const std::string &filename,
+                               LongHeader *header) {
+  // open file
+  std::ifstream infile;
+  infile.open(filename.c_str(), std::fstream::in | std::fstream::binary);
+  CHECK(infile.is_open());
+
+  char delim[] = " ";
+  std::vector<std::string> tokens;
+  tokens.reserve(20);
+
+  std::string line;
+
+  std::size_t num_vertices = 0;
+  std::size_t num_faces = 0;
+  std::size_t vertex_index = 0;
+  int num_color_components = 0;
+  bool vertices_start = false;
+
+  Aabb bounds;
+  glm::vec3 vertex;
+
+  while (infile.good()) {
+    getline(infile, line);
+#ifdef SPRAY_PRINT_LINES
+    std::cout << line << "\n";
+#endif
+    char *token = std::strtok(&line[0], delim);
+    tokens.clear();
+
+    while (token != NULL) {
+      tokens.push_back(token);
+      token = std::strtok(NULL, delim);
+    }
+
+    if (!tokens.empty()) {
+      if (vertices_start) {
+        vertex[0] = atof(tokens[0].c_str());
+        vertex[1] = atof(tokens[1].c_str());
+        vertex[2] = atof(tokens[2].c_str());
+
+        bounds.merge(vertex);
+        ++vertex_index;
+
+        if (vertex_index == num_vertices) break;
+
+      } else {
+        if (tokens[0] == "end_header") {
+          vertices_start = true;
+
+        } else if (tokens[0] == "element" && tokens[1] == "vertex") {
+          num_vertices = atoi(tokens[2].c_str());
+
+        } else if (tokens[0] == "element" && tokens[1] == "face") {
+          num_faces = atoi(tokens[2].c_str());
+
+        } else if (tokens[0] == "property" && tokens[1] == "uchar" &&
+                   ((tokens[2] == "red") || (tokens[2] == "green") ||
+                    (tokens[2] == "blue"))) {
+          ++num_color_components;
+        }
+      }
+    }
+  }
+
+  header->num_vertices = num_vertices;
+  header->num_faces = num_faces;
+  header->has_color = (num_color_components == 3);
+  header->bounds = bounds;
+
+  // close file
+  infile.close();
 }
 
 void PlyLoader::parseHeader() {

@@ -46,22 +46,24 @@ SceneLoader::DomainTokenType SceneLoader::getTokenType(const std::string& tag) {
     type = DomainTokenType::kComment;
   } else if (tag == "domain") {
     type = DomainTokenType::kDomain;
+  } else if (tag == "ModelBegin") {
+    type = DomainTokenType::kModelBegin;
   } else if (tag == "file") {
     type = DomainTokenType::kFile;
-  } else if (tag == "mtl") {
+  } else if (tag == "material") {
     type = DomainTokenType::kMaterial;
-  } else if (tag == "bound") {
-    type = DomainTokenType::kBound;
+  // } else if (tag == "bound") {
+  //   type = DomainTokenType::kBound;
   } else if (tag == "scale") {
     type = DomainTokenType::kScale;
   } else if (tag == "rotate") {
     type = DomainTokenType::kRotate;
   } else if (tag == "translate") {
     type = DomainTokenType::kTranslate;
-  } else if (tag == "face") {
-    type = DomainTokenType::kFace;
-  } else if (tag == "vertex") {
-    type = DomainTokenType::kVertex;
+  // } else if (tag == "face") {
+  //   type = DomainTokenType::kFace;
+  // } else if (tag == "vertex") {
+  //   type = DomainTokenType::kVertex;
   } else if (tag == "light") {
     type = DomainTokenType::kLight;
   } else if (tag == "sphere") {
@@ -76,19 +78,93 @@ void SceneLoader::parseDomain(const std::vector<std::string>& tokens) {
   nextDomain();
   Domain& d = currentDomain();
   d.id = domain_id_;
-  d.transform = glm::mat4(1.f);
+  // d.transform = glm::mat4(1.f);
+}
+
+void SceneLoader::parseModelBegin() {
+  nextModelFile();
+  ModelFile& m = currentModelFile();
+  m.num_vertices = 0;
+  m.num_faces = 0;
+  m.material = nullptr;
+  m.transform = glm::mat4(1.f);
+}
+
+void SceneLoader::parseModelEnd() {
+  ModelFile& m = currentModelFile();
+  if (m.material == nullptr) {
+    m.material = new Matte();
+  }
+  CHECK(!m.filename.empty());
 }
 
 void SceneLoader::parseFile(const std::string& ply_path,
                             const std::vector<std::string>& tokens) {
-  Domain& d = currentDomain();
+  ModelFile& m = currentModelFile();
+  std::size_t tokens_size = tokens.size();
 
-  CHECK_EQ(tokens.size(), 2);
+  CHECK_GE(tokens_size, 2);
 
-  d.filename = ply_path.empty() ? tokens[1] : ply_path + "/" + tokens[1];
+  m.filename = ply_path.empty() ? tokens[1] : ply_path + "/" + tokens[1];
 }
 
 void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
+  std::size_t tokens_size = tokens.size();
+  CHECK_GT(tokens_size, 1);
+
+  ModelFile& model = currentModelFile();
+  CHECK(model.material == nullptr) << "found more than one material";
+
+  if (tokens[1] == "matte") {
+    if (tokens_size > 2) {
+      CHECK_EQ(tokens_size, 5);
+
+      glm::vec3 albedo;
+      albedo[0] = atof(tokens[2].c_str());
+      albedo[1] = atof(tokens[3].c_str());
+      albedo[2] = atof(tokens[4].c_str());
+
+      model.material = new Matte(albedo);
+
+    } else {
+      model.material = new Matte();
+    }
+
+  } else if (tokens[1] == "metal") {
+    if (tokens_size > 2) {
+      CHECK_EQ(tokens_size, 6);
+
+      glm::vec3 albedo;
+      albedo[0] = atof(tokens[2].c_str());
+      albedo[1] = atof(tokens[3].c_str());
+      albedo[2] = atof(tokens[4].c_str());
+
+      float fuzz = atof(tokens[5].c_str());
+
+      model.material = new Metal(albedo, fuzz);
+
+    } else {
+      model.material = new Metal();
+    }
+
+  } else if (tokens[1] == "dielectric") {
+    if (tokens_size > 2) {
+      CHECK_EQ(tokens_size, 3);
+
+      float index = atof(tokens[2].c_str());
+
+      model.material = new Dielectric(index);
+
+    } else {
+      model.material = new Dielectric();
+    }
+  } else {
+    CHECK(false) << "unsupported material: " << tokens[2];
+  }
+}
+
+/*
+void SceneLoader::parseUnusedMaterial(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
   if (tokens[1] == "diffuse") {
@@ -135,7 +211,9 @@ void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
     LOG(FATAL) << "unknown material type " << tokens[1];
   }
 }
+*/
 
+/*
 void SceneLoader::parseBound(const std::vector<std::string>& tokens) {
   Domain& d = currentDomain();
 
@@ -148,19 +226,22 @@ void SceneLoader::parseBound(const std::vector<std::string>& tokens) {
   d.object_aabb.bounds[0] = min;
   d.object_aabb.bounds[1] = max;
 }
+*/
 
 void SceneLoader::parseScale(const std::vector<std::string>& tokens) {
-  Domain& d = currentDomain();
+  // Domain& d = currentDomain();
+  ModelFile& m = currentModelFile();
 
   CHECK_EQ(tokens.size(), 4);
 
-  d.transform = glm::scale(
-      d.transform, glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
+  m.transform = glm::scale(
+      m.transform, glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
                              atof(tokens[3].c_str())));
 }
 
 void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
-  Domain& d = currentDomain();
+  // Domain& d = currentDomain();
+  ModelFile& m = currentModelFile();
 
   CHECK_EQ(tokens.size(), 3);
 
@@ -174,34 +255,37 @@ void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
   } else {
     LOG(FATAL) << "invalid axis name " << tokens[1];
   }
-  d.transform = glm::rotate(d.transform,
+  m.transform = glm::rotate(m.transform,
                             (float)glm::radians(atof(tokens[2].c_str())), axis);
 }
 
 void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
-  Domain& d = currentDomain();
+  // Domain& d = currentDomain();
+  ModelFile& m = currentModelFile();
 
   CHECK_EQ(tokens.size(), 4);
 
-  d.transform = glm::translate(
-      d.transform, glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
+  m.transform = glm::translate(
+      m.transform, glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
                              atof(tokens[3].c_str())));
 }
 
 void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
-  Domain& d = currentDomain();
+  // Domain& d = currentDomain();
+  ModelFile& m = currentModelFile();
 
   CHECK_EQ(tokens.size(), 2);
 
-  d.num_faces = std::stoul(tokens[1]);
+  m.num_faces = std::stoul(tokens[1]);
 }
 
 void SceneLoader::parseVertex(const std::vector<std::string>& tokens) {
-  Domain& d = currentDomain();
+  // Domain& d = currentDomain();
+  ModelFile& m = currentModelFile();
 
   CHECK_EQ(tokens.size(), 2);
 
-  d.num_vertices = std::stoul(tokens[1]);
+  m.num_vertices = std::stoul(tokens[1]);
 }
 
 void SceneLoader::parseLight(const std::vector<std::string>& tokens) {
@@ -291,9 +375,9 @@ void SceneLoader::parseSphere(const std::vector<std::string>& tokens) {
   d.num_faces = 0;
    
   // object bounds
-  glm::vec3 v(radius);
-  d.object_aabb.bounds[0] = center - v;
-  d.object_aabb.bounds[1] = center + v;
+  // glm::vec3 v(radius);
+  // d.object_aabb.bounds[0] = center - v;
+  // d.object_aabb.bounds[1] = center + v;
 }
 
 void SceneLoader::parseLineTokens(const std::string& ply_path,
@@ -303,15 +387,21 @@ void SceneLoader::parseLineTokens(const std::string& ply_path,
     case DomainTokenType::kDomain:
       parseDomain(tokens);
       break;
+    case DomainTokenType::kModelBegin:
+      parseModelBegin();
+      break;
+    case DomainTokenType::kModelEnd:
+      parseModelEnd();
+      break;
     case DomainTokenType::kFile:
       parseFile(ply_path, tokens);
       break;
     case DomainTokenType::kMaterial:
       parseMaterial(tokens);
       break;
-    case DomainTokenType::kBound:
-      parseBound(tokens);
-      break;
+    // case DomainTokenType::kBound:
+    //   parseBound(tokens);
+    //   break;
     case DomainTokenType::kScale:
       parseScale(tokens);
       break;
@@ -321,12 +411,12 @@ void SceneLoader::parseLineTokens(const std::string& ply_path,
     case DomainTokenType::kTranslate:
       parseTranslate(tokens);
       break;
-    case DomainTokenType::kFace:
-      parseFace(tokens);
-      break;
-    case DomainTokenType::kVertex:
-      parseVertex(tokens);
-      break;
+    // case DomainTokenType::kFace:
+    //   parseFace(tokens);
+    //   break;
+    // case DomainTokenType::kVertex:
+    //   parseVertex(tokens);
+    //   break;
     case DomainTokenType::kLight:
       parseLight(tokens);
       break;
@@ -334,6 +424,7 @@ void SceneLoader::parseLineTokens(const std::string& ply_path,
       parseSphere(tokens);
       break;
     default:
+      CHECK(false);
       break;
   }
 }
@@ -417,12 +508,12 @@ void SceneLoader::load(const std::string& filename, const std::string& ply_path,
   infile.close();
 
   // apply transformation matrix
-  for (auto& d : (*domains_out)) {
-    glm::vec4 min = d.transform * glm::vec4(d.object_aabb.bounds[0], 1.0f);
-    glm::vec4 max = d.transform * glm::vec4(d.object_aabb.bounds[1], 1.0f);
-    d.world_aabb.bounds[0] = glm::vec3(min);
-    d.world_aabb.bounds[1] = glm::vec3(max);
-  }
+  // for (auto& d : (*domains_out)) {
+  //   glm::vec4 min = d.transform * glm::vec4(d.object_aabb.bounds[0], 1.0f);
+  //   glm::vec4 max = d.transform * glm::vec4(d.object_aabb.bounds[1], 1.0f);
+  //   d.world_aabb.bounds[0] = glm::vec3(min);
+  //   d.world_aabb.bounds[1] = glm::vec3(max);
+  // }
 }
 
 }  // namespace spray

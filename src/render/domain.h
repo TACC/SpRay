@@ -24,28 +24,96 @@
 
 #include "glm/glm.hpp"
 
+#include "io/ply_loader.h"
 #include "render/aabb.h"
+#include "render/material.h"
 #include "render/reflection.h"
 #include "render/shape.h"
+#include "utils/util.h"
 
 namespace spray {
 
-struct Domain {
-  Domain() : num_vertices(0), num_faces(0), bsdf(nullptr) {}
-  ~Domain() {
-    delete bsdf;
-    for (std::size_t i = 0; i < shapes.size(); ++i) delete shapes[i];
-  }
-  unsigned id;  // single domain id
+struct ModelFile {
+  ModelFile() : material(nullptr), num_vertices(0), num_faces(0) {}
+  ~ModelFile() { delete material; }
+
+  void populateModelInfo();
+  bool isValid() const { return (num_vertices > 0); }
+
+  std::string filename;
   std::size_t num_vertices;
   std::size_t num_faces;
-  std::string filename;
-  Aabb object_aabb;
-  Aabb world_aabb;
+  Material* material;
   glm::mat4 transform;
-  Bsdf* bsdf;
+  Aabb object_aabb;
+};
+
+struct Domain {
+  Domain() : num_vertices(0), num_faces(0) {}
+
+  ~Domain() {
+    for (std::size_t i = 0; i < shapes.size(); ++i) delete shapes[i];
+  }
+
+  void populateModelInfo();
+
+  unsigned int id;
+  std::size_t num_vertices;
+  std::size_t num_faces;
+
+  std::list<ModelFile> models;
+
+  Aabb world_aabb;
+
   std::vector<Shape*> shapes;
 };
+
+inline void Domain::populateModelInfo() {
+  glm::vec3 bounds_min, bounds_max, world_bounds_min, world_bounds_max;
+  Aabb temp_aabb;
+  std::size_t num_vertices = 0;
+  std::size_t num_faces = 0;
+
+  for (auto& m : models) {
+    if (!m.isValid()) {
+      m.populateModelInfo();
+
+      bounds_min = m.object_aabb.bounds[0];
+      bounds_max = m.object_aabb.bounds[1];
+
+      temp_aabb.bounds[0] = m.transform * glm::vec4(bounds_min, 1.0f);
+      temp_aabb.bounds[1] = m.transform * glm::vec4(bounds_max, 1.0f);
+
+      world_aabb.merge(temp_aabb);
+    }
+    num_vertices += m.num_vertices;
+    num_faces += m.num_faces;
+  }
+
+  for (std::size_t i = 0; i < shapes.size(); ++i) {
+    Shape* shape = shapes[i];
+    shape->getBounds(&temp_aabb);
+    world_aabb.merge(temp_aabb);
+  }
+}
+
+inline void ModelFile::populateModelInfo() {
+  if (!filename.empty()) {
+    std::string ext = spray::util::getFileExtension(filename);
+
+    if (ext == "ply") {
+      PlyLoader::LongHeader header;
+      PlyLoader::readLongHeader(filename, &header);
+
+      num_vertices = header.num_vertices;
+      num_faces = header.num_faces;
+      object_aabb = header.bounds;
+
+    } else {
+      CHECK(false) << "unsupported extension" << ext;
+    }
+  }
+}
 
 }  // namespace spray
 

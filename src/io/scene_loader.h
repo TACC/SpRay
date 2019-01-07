@@ -49,14 +49,16 @@ class SceneLoader {
   enum class DomainTokenType {
     kComment,
     kDomain,
+    kModelBegin,
+    kModelEnd,
     kFile,
     kMaterial,
-    kBound,
+    // kBound,
     kScale,
     kRotate,
     kTranslate,
-    kFace,
-    kVertex,
+    // kFace,
+    // kVertex,
     kLight,
     kSphere
   };
@@ -81,13 +83,16 @@ class SceneLoader {
   DomainTokenType getTokenType(const std::string& tag);
 
   void parseDomain(const std::vector<std::string>& tokens);
+  void parseModelBegin();
+  void parseModelEnd();
 
   void parseFile(const std::string& ply_path,
                  const std::vector<std::string>& tokens);
 
+  // void parseUnusedMaterial(const std::vector<std::string>& tokens);
   void parseMaterial(const std::vector<std::string>& tokens);
 
-  void parseBound(const std::vector<std::string>& tokens);
+  // void parseBound(const std::vector<std::string>& tokens);
 
   void parseScale(const std::vector<std::string>& tokens);
 
@@ -120,6 +125,17 @@ class SceneLoader {
   }
 
   void nextDomain() { ++domain_id_; }
+
+  void nextModelFile() {
+    Domain& d = currentDomain();
+    d.models.push_back(ModelFile());
+  }
+
+  ModelFile& currentModelFile() {
+    Domain& d = currentDomain();
+    CHECK(!d.models.empty());
+    return d.models.back();
+  }
 };
 
 }  // namespace spray

@@ -62,6 +62,7 @@ class Material {
 
 class Matte : public Material {
  public:
+  Matte() : albedo_(glm::vec3(0.5f, 0.5f, 0.5f)) {}
   Matte(const glm::vec3& albedo) : albedo_(albedo) {}
   int type() const override { return MATTE; }
   bool hasDiffuse() const override { return true; }
@@ -101,6 +102,7 @@ inline bool Matte::sample(const glm::vec3& wo, const glm::vec3& normal,
 
 class Metal : public Material {
  public:
+  Metal() : albedo_(glm::vec3(0.5f, 0.5f, 0.5f)), fuzz_(0.0f) {}
   Metal(const glm::vec3& albedo, float fuzz) : albedo_(albedo), fuzz_(fuzz) {}
   int type() const override { return METAL; }
 
@@ -138,6 +140,7 @@ class Metal : public Material {
 
 class Dielectric : public Material {
  public:
+  Dielectric() : index_(1.5f) {}
   Dielectric(float index) : index_(index) {}
   int type() const override { return DIELECTRIC; }
 

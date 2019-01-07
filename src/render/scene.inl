@@ -123,8 +123,10 @@ void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
     cache_.init(domains_.size(), cache_size, insitu_mode);
 
     // initialize mesh buffer
-    surface_buf_.init(cache_.getCacheSize(), max_num_vertices, max_num_faces,
-                      true /* compute_normals */);
+    // surface_buf_.init(cache_.getCacheSize(), max_num_vertices, max_num_faces,
+    //                   true /* compute_normals */);
+    surface_buf_.init(domains_, cache_.getCacheSize(), max_num_vertices,
+                      max_num_faces);
 
     // warm up cache
     if (view_mode == VIEW_MODE_FILM || view_mode == VIEW_MODE_GLFW) {
@@ -191,11 +193,12 @@ void Scene<CacheT, SurfaceBufT>::load(int id) {
               << cache_block << " $size " << cache_.getSize() << " $capacity "
               << cache_.getCacheSize();
 #endif
-    const glm::mat4& x = domains_[id].transform;
-    bool apply_transform = (x != glm::mat4(1.0));
+    // const glm::mat4& x = domains_[id].transform;
+    // bool apply_transform = (x != glm::mat4(1.0));
 
-    scene_ = surface_buf_.load(domains_[id].filename, cache_block, x,
-                               apply_transform, domains_[id].shapes);
+    // scene_ = surface_buf_.load(domains_[id].filename, cache_block, x,
+    //                            apply_transform, domains_[id].shapes);
+    scene_ = surface_buf_.load(cache_block, domains_[id]);
 
     // cache_.setLoaded(cache_block);
   }
@@ -218,11 +221,12 @@ void Scene<CacheT, SurfaceBufT>::load(int id, SceneInfo* sinfo) {
               << cache_block << " $size " << cache_.getSize() << " $capacity "
               << cache_.getCacheSize();
 #endif
-    const glm::mat4& x = domains_[id].transform;
-    bool apply_transform = (x != glm::mat4(1.0));
+    // const glm::mat4& x = domains_[id].transform;
+    // bool apply_transform = (x != glm::mat4(1.0));
 
-    scene_ = surface_buf_.load(domains_[id].filename, cache_block, x,
-                               apply_transform, domains_[id].shapes);
+    // scene_ = surface_buf_.load(domains_[id].filename, cache_block, x,
+    //                            apply_transform, domains_[id].shapes);
+    scene_ = surface_buf_.load(cache_block, domains_[id]);
 
     // cache_.setLoaded(cache_block);
   }
@@ -308,24 +312,27 @@ void Scene<CacheT, SurfaceBufT>::copyAllDomainsToLocalDisk(
     std::cout << cmd_make_dir << " " << res << std::endl;
     CHECK_EQ(res, 0);
 
-    // extract basename
-    std::string bname = std::string(util::getFilename(domain.filename.c_str()));
-    std::string destination_file = new_dir + "/" + bname;
+    for (ModelFile& model : domain.models) {
+      // extract basename
+      std::string bname =
+          std::string(util::getFilename(model.filename.c_str()));
+      std::string destination_file = new_dir + "/" + bname;
 
-    // cp model file to local disk
-    std::string cmd_copy_domain =
-        "cp " + domain.filename + " " + destination_file;
+      // cp model file to local disk
+      std::string cmd_copy_domain =
+          "cp " + model.filename + " " + destination_file;
 
-    int res = std::system(cmd_copy_domain.c_str());
+      int res = std::system(cmd_copy_domain.c_str());
 
 #ifdef SPRAY_GLOG_CHECK
-    LOG(INFO) << cmd_copy_domain << " " << res;
+      LOG(INFO) << cmd_copy_domain << " " << res;
 #endif
-    std::cout << cmd_copy_domain << " " << res << std::endl;
-    CHECK_EQ(res, 0);
+      std::cout << cmd_copy_domain << " " << res << std::endl;
+      CHECK_EQ(res, 0);
 
-    // update the descriptor so it now points to the copied model file
-    domain.filename = destination_file;
+      // update the descriptor so it now points to the copied model file
+      model.filename = destination_file;
+    }
   }
 }
 
@@ -362,6 +369,8 @@ void Scene<CacheT, SurfaceBufT>::mergeDomainBounds(
   for (std::size_t id = 0; id < num_domains; ++id) {
     Domain& d = domains_[id];
 
+    d.populateModelInfo();
+
     // let's enforce that that domain world-space bound and
     // the number of faces are provided through preprocessing.
     CHECK_EQ(d.world_aabb.isValid(), true);
@@ -371,6 +380,7 @@ void Scene<CacheT, SurfaceBufT>::mergeDomainBounds(
     }
 
     // maximum values
+
     if (d.num_vertices > num_vertices) num_vertices = d.num_vertices;
     if (d.num_faces > num_faces) num_faces = d.num_faces;
 

@@ -208,8 +208,8 @@ class Scene {
                  RTCRayIntersection* isect);
   bool occluded(RTCScene rtc_scene, RTCRay* ray);
 
- public:
-  Bsdf* getBsdf(int id) { return domains_[id].bsdf; }
+  // public:
+  // Bsdf* getBsdf(int id) { return domains_[id].bsdf; }
 
  public:
   std::size_t getNumDomains() const { return domains_.size(); }

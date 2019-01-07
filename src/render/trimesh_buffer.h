@@ -35,7 +35,9 @@
 namespace spray {
 
 class Shape;
+class Material;
 struct RTCRayIntersection;
+struct Domain;
 
 class TriMeshBuffer {
  public:
@@ -46,9 +48,7 @@ class TriMeshBuffer {
   void init(int max_cache_size_ndomains, std::size_t max_nvertices,
             std::size_t max_nfaces, bool compute_normals);
 
-  RTCScene load(const std::string& filename, int cache_block,
-                const glm::mat4& transform, bool apply_transform,
-                std::vector<Shape*>& shapes);
+  RTCScene load(int cache_block, Domain& domain);
 
   RTCScene get(int cache_block) { return scenes_[cache_block]; }
 
@@ -79,6 +79,10 @@ class TriMeshBuffer {
     return (cache_block * max_nvertices_);
   }
 
+  std::size_t materialBaseIndex(int cache_block) const {
+    return (cache_block * max_nmodels_);
+  }
+
   void cleanup();
   void mapEmbreeBuffer(int cache_block, float* vertices,
                        std::size_t num_vertices, uint32_t* faces,
@@ -91,11 +95,13 @@ class TriMeshBuffer {
   int max_cache_size_;  // in number of domains
   std::size_t max_nvertices_;
   std::size_t max_nfaces_;
+  std::size_t max_nmodels_;
 
   float* vertices_;  //!< per-cache-block vertices. 2d array.
   float* normals_;   //!< per-cache-block normals. unnormalized. 2d array.
   uint32_t* faces_;  //!< per-cache-block faces. 2d array.
   uint32_t* colors_;  //!< per-cache-block packed rgb colors. 2d array.
+  std::vector<Material*> materials_;
 
   std::size_t* num_vertices_;
   std::size_t* num_faces_;
@@ -107,8 +113,6 @@ class TriMeshBuffer {
 
   MemoryArena arena_;
   PlyLoader loader_;
-
-  bool compute_normals_;
 };
 
 }  // namespace spray
