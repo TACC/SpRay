@@ -36,6 +36,7 @@ class SceneLoader {
  private:
   int num_light_samples_;
   int domain_id_;
+  int model_id_;
   int light_id_;
   std::vector<Domain>* domains_;
   std::vector<Light*>* lights_;
@@ -67,6 +68,7 @@ class SceneLoader {
              std::vector<Light*>* lights) {
     num_light_samples_ = num_light_samples;
     domain_id_ = -1;
+    model_id_ = -1;
     light_id_ = 0;
 
     CHECK_NOTNULL(domains);
@@ -126,15 +128,13 @@ class SceneLoader {
 
   void nextDomain() { ++domain_id_; }
 
-  void nextModelFile() {
-    Domain& d = currentDomain();
-    d.models.push_back(ModelFile());
-  }
+  void nextModel() { ++model_id_; }
 
-  ModelFile& currentModelFile() {
-    Domain& d = currentDomain();
-    CHECK(!d.models.empty());
-    return d.models.back();
+  ModelFile& currentModel() {
+    Domain& domain = currentDomain();
+    CHECK_GT(model_id_, -1);
+    CHECK_LT(model_id_, domain.models.size());
+    return domain.models[model_id_];
   }
 };
 

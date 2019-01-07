@@ -61,29 +61,57 @@ class TriMeshBuffer {
   void getNormalTuple(int cache_block, uint32_t primID,
                       float normals_out[9]) const;
 
-  void computeNormals(int cache_block);
+  void computeNormals(int cache_block, int model_id, const ModelFile& model);
 
-  std::size_t vertexBaseIndex(int cache_block) const {
-    return (cache_block * max_nvertices_ * 3);
+  std::size_t prefixSumNumVertices(int cache_block, int model_id) const {
+    return prefix_sum_num_vertices_[cache_block * max_nmodels_ + model_id];
+  }
+
+  std::size_t prefixSumNumFaces(int cache_block, int model_id) const {
+    return prefix_sum_num_faces_[cache_block * max_nmodels_ + model_id];
+  }
+
+  void setPrefixSumNumVertices(int cache_block, int model_id, std::size_t n) {
+    prefix_sum_num_vertices_[cache_block * max_nmodels_ + model_id] = n;
+  }
+
+  void setPrefixSumNumFaces(int cache_block, int model_id, std::size_t n) {
+    prefix_sum_num_faces_[cache_block * max_nmodels_ + model_id] = n;
+  }
+
+  void setNumVertices(int cache_block, int model_id, std::size_t n) {
+    num_vertices_[cache_block * max_nmodels_ + model_id] = n;
+  }
+
+  void setNumFaces(int cache_block, int model_id, std::size_t n) {
+    num_faces_[cache_block * max_nmodels_ + model_id] = n;
+  }
+
+  std::size_t vertexBaseIndex(int cache_block, int model_id) const {
+    return 3 * (cache_block * max_nvertices_ +
+                prefixSumNumVertices(cache_block, model_id));
   }
 
   std::size_t normalBaseIndex(int cache_block) const {
     return (cache_block * max_nvertices_ * 3);
   }
 
-  std::size_t faceBaseIndex(int cache_block) const {
-    return (cache_block * max_nfaces_ * NUM_VERTICES_PER_FACE);
+  std::size_t faceBaseIndex(int cache_block, int model_id) const {
+    return NUM_VERTICES_PER_FACE * (cache_block * max_nfaces_ +
+                                    prefixSumNumFaces(cache_block, model_id));
   }
 
-  std::size_t colorBaseIndex(int cache_block) const {
-    return (cache_block * max_nvertices_);
+  std::size_t colorBaseIndex(int cache_block, int model_id) const {
+    return cache_block * max_nvertices_ +
+           prefixSumNumVertices(cache_block, model_id);
   }
 
-  std::size_t materialBaseIndex(int cache_block) const {
-    return (cache_block * max_nmodels_);
+  std::size_t materialBaseIndex(int cache_block, int model_id) const {
+    return cache_block * max_nmodels_ + model_id;
   }
 
   void cleanup();
+
   void mapEmbreeBuffer(int cache_block, float* vertices,
                        std::size_t num_vertices, uint32_t* faces,
                        std::size_t num_faces);
@@ -101,10 +129,14 @@ class TriMeshBuffer {
   float* normals_;   //!< per-cache-block normals. unnormalized. 2d array.
   uint32_t* faces_;  //!< per-cache-block faces. 2d array.
   uint32_t* colors_;  //!< per-cache-block packed rgb colors. 2d array.
-  std::vector<Material*> materials_;
+
+  std::size_t materials_size_;
+  Material** materials_;
 
   std::size_t* num_vertices_;
   std::size_t* num_faces_;
+  std::size_t* prefix_sum_num_vertices_;
+  std::size_t* prefix_sum_num_faces_;
 
   RTCDevice device_;
   RTCScene* scenes_;  //!< 1D array of per-cache-block Embree scenes.

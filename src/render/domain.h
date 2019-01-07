@@ -34,7 +34,11 @@
 namespace spray {
 
 struct ModelFile {
-  ModelFile() : material(nullptr), num_vertices(0), num_faces(0) {}
+  ModelFile()
+      : material(nullptr),
+        num_vertices(0),
+        num_faces(0),
+        transform(glm::mat4(1.0f)) {}
   ~ModelFile() { delete material; }
 
   void populateModelInfo();
@@ -61,7 +65,7 @@ struct Domain {
   std::size_t num_vertices;
   std::size_t num_faces;
 
-  std::list<ModelFile> models;
+  std::vector<ModelFile> models;
 
   Aabb world_aabb;
 

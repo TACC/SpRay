@@ -57,57 +57,74 @@ void TriMeshBuffer::init(const std::vector<Domain>& domains,
 
   // sizes
   max_cache_size_ = max_cache_size_ndomains;
-  max_nvertices_ = max_nvertices;
-  max_nfaces_ = max_nfaces;
-
+  max_nvertices_ = max_nvertices;  // max num of vertices per domain
+  max_nfaces_ = max_nfaces;        // max num of faces per domain
+  
   std::size_t cache_size = static_cast<std::size_t>(max_cache_size_ndomains);
 
+  max_nmodels_ = 0;  // max number of models per domain
+  std::size_t model_count;
+
+  for (const Domain& domain : domains) {
+    const auto& models = domain.models;
+    model_count = models.size();
+    if (model_count > max_nmodels_) {
+      max_nmodels_ = model_count;
+    }
+  }
+
+  // resize prefix sums
+  prefix_sum_num_vertices_ =
+      arena_.Alloc<std::size_t>(cache_size * max_nmodels_, false);
+  CHECK_NOTNULL(prefix_sum_num_vertices_);
+
+  prefix_sum_num_faces_ =
+      arena_.Alloc<std::size_t>(cache_size * max_nmodels_, false);
+  CHECK_NOTNULL(prefix_sum_num_faces_);
+
   // number of vertices for each domain
-  num_vertices_ = arena_.Alloc<std::size_t>(cache_size, false);
+  num_vertices_ = arena_.Alloc<std::size_t>(cache_size * max_nmodels_, false);
   CHECK_NOTNULL(num_vertices_);
 
   // vertices
-  vertices_ = arena_.Alloc<float>(cache_size * max_nvertices * 3, false);
+  vertices_ = arena_.Alloc<float>(cache_size * max_nvertices_ * 3, false);
   CHECK_NOTNULL(vertices_);
 
   // per-vertex normals
   if (compute_normals) {
-    normals_ = arena_.Alloc<float>(cache_size * max_nvertices * 3, false);
+    normals_ = arena_.Alloc<float>(cache_size * max_nvertices_ * 3, false);
     CHECK_NOTNULL(normals_);
   } else {
     normals_ = nullptr;
   }
 
   // number of faces for each domain
-  num_faces_ = arena_.Alloc<std::size_t>(cache_size, false);
+  num_faces_ = arena_.Alloc<std::size_t>(cache_size * max_nmodels_, false);
   CHECK_NOTNULL(num_faces_);
 
   // faces
   faces_ = arena_.Alloc<uint32_t>(
-      cache_size * max_nfaces * NUM_VERTICES_PER_FACE, false);
+      cache_size * max_nfaces_ * NUM_VERTICES_PER_FACE, false);
   CHECK_NOTNULL(faces_);
 
   // colors
-  colors_ = arena_.Alloc<uint32_t>(cache_size * max_nvertices, false);
+  colors_ = arena_.Alloc<uint32_t>(cache_size * max_nvertices_, false);
   CHECK_NOTNULL(colors_);
 
   // materials
-  std::size_t max_num_models = 0;
-  std::size_t num_models;
-  for (const auto& domain : domains) {
-    num_models = domain.models.size();
-    if (num_models > max_num_models) {
-      max_num_models = num_models;
-    }
+  materials_size_ = cache_size * max_nmodels_;
+  materials_ = arena_.Alloc<Material*>(materials_size_, false);
+  CHECK_NOTNULL(materials_);
+  for (std::size_t i = 0; i < material_size_; ++i) {
+    materials_[i] = nullptr;
   }
-  max_nmodels_ = max_num_models;
-  materials_.resize(cache_size * max_num_models, nullptr);
 
   // embree mesh created
-  embree_mesh_created_ = arena_.Alloc<int>(cache_size);
+  std::size_t num_meshes = cache_size * max_nmodels_;
+  embree_mesh_created_ = arena_.Alloc<int>(num_meshes);
   CHECK_NOTNULL(embree_mesh_created_);
 
-  for (std::size_t i = 0; i < cache_size; ++i) {
+  for (std::size_t i = 0; i < num_meshes; ++i) {
     embree_mesh_created_[i] = DESTROYED;
   }
 
@@ -183,32 +200,54 @@ RTCScene TriMeshBuffer::load(const std::string& filename, int cache_block,
 */
 
 RTCScene TriMeshBuffer::load(int cache_block, Domain& domain) {
-  // setup
-  PlyLoader::Data d;
-  d.vertices_capacity = max_nvertices_ * 3;                // in
-  d.faces_capacity = max_nfaces_ * NUM_VERTICES_PER_FACE;  // in
-  d.colors_capacity = max_nvertices_;                      // in
+  // init vertex/face counts and prefix sums
+  std::size_t sum_num_vertices=0;
+  std::size_t sum_num_faces=0;
 
-  std::size_t vertex_offset = vertexBaseIndex(cache_block);
-  std::size_t face_offset = faceBaseIndex(cache_block);
-  std::size_t color_offset = colorBaseIndex(cache_block);
+  const auto& models = domain.models;
 
-  float* vertices = &vertices_[vertex_offset];
-  uint32_t* faces = &faces_[face_offset];
+  for (std::size_t i = 0; i < models.size(); ++i) {
+    setPrefixSumNumVertices(cache_block, i, sum_num_vertices);
+    setPrefixSumNumFaces(cache_block, i, sum_num_faces);
 
-  // update geometry sizes
-  num_vertices_[cache_block] = domain.num_vertices;
-  num_faces_[cache_block] = domain.num_faces;
+    const auto& model = models[i];
+    setNumVertices(cache_block, i, model.num_vertices);
+    setNumFaces(cache_block, i, model.num_faces);
 
-  for (const ModelFile& model : domain.models) {
-    d.vertices = &vertices_[vertex_offset];  // in/out
+    sum_num_vertices += model.num_vertices;
+    sum_num_faces += model.num_faces;
+  }
+
+  // TODO: support other model types
+  // setup ply data
+  PlyLoader::Data data;
+  data.vertices_capacity = max_nvertices_ * 3;                // in
+  data.faces_capacity = max_nfaces_ * NUM_VERTICES_PER_FACE;  // in
+  data.colors_capacity = max_nvertices_;                      // in
+
+  // std::size_t vertex_offset = vertexBaseIndex(cache_block);
+  // std::size_t face_offset = faceBaseIndex(cache_block);
+  // std::size_t color_offset = colorBaseIndex(cache_block);
+
+  // float* vertices = &vertices_[vertex_offset];
+  // uint32_t* faces = &faces_[face_offset];
+
+  // load models
+  for (std::size_t i = 0; i < models.size(); ++i) {
+    const auto& model = domain.models[i];
+
+    std::size_t vertex_offset = vertexBaseIndex(cache_block, i);
+    std::size_t face_offset = faceBaseIndex(cache_block, i);
+    std::size_t color_offset = colorBaseIndex(cache_block, i);
+
+    data.vertices = &vertices_[vertex_offset];  // in/out
     // num_vertices;  // out
-    d.faces = &faces_[face_offset];  // in/out
+    data.faces = &faces_[face_offset];  // in/out
     // num_faces;  // out
-    d.colors = &colors_[color_offset];  // rgb, in/out
+    data.colors = &colors_[color_offset];  // rgb, in/out
 
     // load
-    loader_.load(model.filename, &d);
+    loader_.load(model.filename, &data);
 
     bool apply_transform = (model.transform != glm::mat4(1.0));
 
@@ -218,20 +257,20 @@ RTCScene TriMeshBuffer::load(int cache_block, Domain& domain) {
       std::size_t nverts = model.num_vertices * 3;
 
       for (std::size_t n = 0; n < nverts; n += 3) {
-        v = model.transform * glm::vec4(d.vertices[n], d.vertices[n + 1],
-                                        d.vertices[n + 2], 1.0f);
-        d.vertices[n] = v.x;
-        d.vertices[n + 1] = v.y;
-        d.vertices[n + 2] = v.z;
+        v = model.transform * glm::vec4(data.vertices[n], data.vertices[n + 1],
+                                        data.vertices[n + 2], 1.0f);
+        data.vertices[n] = v.x;
+        data.vertices[n + 1] = v.y;
+        data.vertices[n + 2] = v.z;
       }
     }
-
-    vertex_offset += (model.num_vertices * 3);
-    face_offset += (model.num_faces * 3);
-    color_offset += model.num_vertices;
   }
 
-  computeNormals(cache_block);
+  // update normals
+  for (std::size_t i = 0; i < models.size(); ++i) {
+    const auto& model = domain.models[i];
+    computeNormals(cache_block, i, model);
+  }
 
   // map buffers
   mapEmbreeBuffer(cache_block, vertices, domain.num_vertices, faces,
@@ -263,7 +302,7 @@ void TriMeshBuffer::cleanup() {
   // embree device
   rtcDeleteDevice(device_);
 
-  for (std::size_t i = 0; i < materials_.size(); ++i) {
+  for (std::size_t i = 0; i < total_num_models_; ++i) {
     delete materials_[i];
     materials_[i] = nullptr;
   }
@@ -355,7 +394,9 @@ void TriMeshBuffer::getNormalTuple(int cache_block, uint32_t primID,
   normals_out[8] = normals[vid[2] + 2];
 }
 
-void TriMeshBuffer::computeNormals(int cache_block) {
+void TriMeshBuffer::computeNormals(int cache_block, int model_id,
+                                   const ModelFile& model) {
+  //
   const float* vertices = &vertices_[vertexBaseIndex(cache_block)];
   const uint32_t* faces = &faces_[faceBaseIndex(cache_block)];
 

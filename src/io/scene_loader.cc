@@ -44,7 +44,7 @@ SceneLoader::DomainTokenType SceneLoader::getTokenType(const std::string& tag) {
   DomainTokenType type;
   if (tag[0] == '#') {
     type = DomainTokenType::kComment;
-  } else if (tag == "domain") {
+  } else if (tag == "DomainBegin") {
     type = DomainTokenType::kDomain;
   } else if (tag == "ModelBegin") {
     type = DomainTokenType::kModelBegin;
@@ -82,16 +82,12 @@ void SceneLoader::parseDomain(const std::vector<std::string>& tokens) {
 }
 
 void SceneLoader::parseModelBegin() {
-  nextModelFile();
-  ModelFile& m = currentModelFile();
-  m.num_vertices = 0;
-  m.num_faces = 0;
-  m.material = nullptr;
-  m.transform = glm::mat4(1.f);
+  nextModel();
+  ModelFile& m = currentModel();
 }
 
 void SceneLoader::parseModelEnd() {
-  ModelFile& m = currentModelFile();
+  ModelFile& m = currentModel();
   if (m.material == nullptr) {
     m.material = new Matte();
   }
@@ -100,7 +96,7 @@ void SceneLoader::parseModelEnd() {
 
 void SceneLoader::parseFile(const std::string& ply_path,
                             const std::vector<std::string>& tokens) {
-  ModelFile& m = currentModelFile();
+  ModelFile& m = currentModel();
   std::size_t tokens_size = tokens.size();
 
   CHECK_GE(tokens_size, 2);
@@ -112,7 +108,7 @@ void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
   std::size_t tokens_size = tokens.size();
   CHECK_GT(tokens_size, 1);
 
-  ModelFile& model = currentModelFile();
+  ModelFile& model = currentModel();
   CHECK(model.material == nullptr) << "found more than one material";
 
   if (tokens[1] == "matte") {
@@ -229,8 +225,7 @@ void SceneLoader::parseBound(const std::vector<std::string>& tokens) {
 */
 
 void SceneLoader::parseScale(const std::vector<std::string>& tokens) {
-  // Domain& d = currentDomain();
-  ModelFile& m = currentModelFile();
+  ModelFile& m = currentModel();
 
   CHECK_EQ(tokens.size(), 4);
 
@@ -240,8 +235,7 @@ void SceneLoader::parseScale(const std::vector<std::string>& tokens) {
 }
 
 void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
-  // Domain& d = currentDomain();
-  ModelFile& m = currentModelFile();
+  ModelFile& m = currentModel();
 
   CHECK_EQ(tokens.size(), 3);
 
@@ -260,8 +254,7 @@ void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
 }
 
 void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
-  // Domain& d = currentDomain();
-  ModelFile& m = currentModelFile();
+  ModelFile& m = currentModel();
 
   CHECK_EQ(tokens.size(), 4);
 
@@ -271,8 +264,7 @@ void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
 }
 
 void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
-  // Domain& d = currentDomain();
-  ModelFile& m = currentModelFile();
+  ModelFile& m = currentModel();
 
   CHECK_EQ(tokens.size(), 2);
 
@@ -280,8 +272,7 @@ void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
 }
 
 void SceneLoader::parseVertex(const std::vector<std::string>& tokens) {
-  // Domain& d = currentDomain();
-  ModelFile& m = currentModelFile();
+  ModelFile& m = currentModel();
 
   CHECK_EQ(tokens.size(), 2);
 
@@ -434,21 +425,48 @@ void SceneLoader::countAndAllocate(std::ifstream& infile) {
   int nlights = 0;
 
   std::string line;
+  std::queue<int> num_models_q;  // domain 0 to N-1
+
+  int num_models_per_domain = 0;
+  int num_files_per_model = 0;
 
   while (infile.good()) {
     getline(infile, line);
     char* token = std::strtok(&line[0], " ");
     if (token != NULL) {
-      if (strcmp(token, "domain") == 0) {
+      if (strcmp(token, "DomainBegin") == 0) {
         ++ndomains;
+        num_models_per_domain = 0;
+
+      } else if (strcmp(token, "DomainEnd") == 0) {
+        num_models_q.push(num_models_per_domain);
+
+      } else if (strcmp(token, "ModelBegin") == 0) {
+        ++num_models_per_domain;
+        num_files_per_model = 0;
+
+      } else if (strcmp(token, "ModelEnd") == 0) {
+        CHECK_EQ(num_files_per_model, 1)
+
       } else if (strcmp(token, "light") == 0) {
         ++nlights;
+
+      } else if (strcmp(token, "file") == 0) {
+        ++num_files_per_model;
       }
     }
   }
 
   CHECK_GT(ndomains, 0);
   domains_->resize(ndomains);
+
+  CHECK_EQ(num_models_q.size(), ndomains);
+
+  for (int i = 0; i < ndomains; ++i) {
+    Domain& domain = domains_->at(i);
+    domain.models.resize(num_models_q.front());
+    num_models_q.pop();
+  }
 
   if (nlights)
     lights_->resize(nlights);
@@ -458,18 +476,6 @@ void SceneLoader::countAndAllocate(std::ifstream& infile) {
   std::cout << "[INFO] number of domains: " << ndomains << "\n";
   std::cout << "[INFO] number of lights: " << nlights << "\n";
 }
-
-// # domain 0
-// domain
-// file CornellBox-Original.obj
-// mtl 1
-// bound -1 -1 -1 1 1 1
-// scale 1 1 1
-// rotate 0 0 0
-// translate 0 0 0
-//
-// # domain 1
-// # tbd
 
 void SceneLoader::load(const std::string& filename, const std::string& ply_path,
                        int num_light_samples, std::vector<Domain>* domains_out,
