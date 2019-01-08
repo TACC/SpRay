@@ -123,10 +123,7 @@ void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
     cache_.init(domains_.size(), cache_size, insitu_mode);
 
     // initialize mesh buffer
-    // surface_buf_.init(cache_.getCacheSize(), max_num_vertices, max_num_faces,
-    //                   true /* compute_normals */);
-    surface_buf_.init(domains_, cache_.getCacheSize(), max_num_vertices,
-                      max_num_faces);
+    surface_buf_.init(cache_.getCacheSize(), max_num_vertices, max_num_faces);
 
     // warm up cache
     if (view_mode == VIEW_MODE_FILM || view_mode == VIEW_MODE_GLFW) {
@@ -312,7 +309,7 @@ void Scene<CacheT, SurfaceBufT>::copyAllDomainsToLocalDisk(
     std::cout << cmd_make_dir << " " << res << std::endl;
     CHECK_EQ(res, 0);
 
-    for (ModelFile& model : domain.models) {
+    for (SurfaceModel& model : domain.models) {
       // extract basename
       std::string bname =
           std::string(util::getFilename(model.filename.c_str()));

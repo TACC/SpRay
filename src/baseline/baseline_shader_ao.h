@@ -51,6 +51,31 @@ class ShaderAo {
                   RTCRayIntersection *isect, spray::ArenaQs<DRayQItem> *qs,
                   spray::ArenaQs<DRayQItem> *sqs, spray::MemoryArena *arena,
                   DomainIntersector<CacheT, SceneT> *domain_isector,
+                  CommitBufferB *retire_buf, DRayQ *temp_q);
+
+ private:
+  SceneT *scene_;
+  std::vector<Light *> lights_;  // copied lights
+  int bounces_;
+  int samples_;
+};
+
+template <typename CacheT, typename SceneT>
+void ShaderAo<CacheT, SceneT>::operator()(
+    int id, int ndomains, const DRay &rayin, RTCRay *rtc_ray,
+    RTCRayIntersection *isect, spray::ArenaQs<DRayQItem> *qs,
+    spray::ArenaQs<DRayQItem> *sqs, spray::MemoryArena *arena,
+    DomainIntersector<CacheT, SceneT> *domain_isector,
+    CommitBufferB *retire_buf, DRayQ *temp_q) {
+  // TODO
+}
+
+/*
+template <typename CacheT, typename SceneT>
+void ShaderAo<CacheT, SceneT>::operator()(int id, int ndomains, const
+DRay &rayin, RTCRay *rtc_ray, RTCRayIntersection *isect,
+spray::ArenaQs<DRayQItem> *qs, spray::ArenaQs<DRayQItem> *sqs,
+spray::MemoryArena *arena, DomainIntersector<CacheT, SceneT> *domain_isector,
                   CommitBufferB *retire_buf, DRayQ *temp_q) {
     // temporary variables
     glm::vec3 pos, wi, light_radiance, Lr;
@@ -99,13 +124,7 @@ class ShaderAo {
       }
     }
   }
-
- private:
-  SceneT *scene_;
-  std::vector<Light *> lights_;  // copied lights
-  int bounces_;
-  int samples_;
-};
+*/
 
 }  // namespace baseline
 }  // namespace spray

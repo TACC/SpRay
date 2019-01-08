@@ -130,7 +130,7 @@ class SceneLoader {
 
   void nextModel() { ++model_id_; }
 
-  ModelFile& currentModel() {
+  SurfaceModel& currentModel() {
     Domain& domain = currentDomain();
     CHECK_GT(model_id_, -1);
     CHECK_LT(model_id_, domain.models.size());

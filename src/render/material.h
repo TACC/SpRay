@@ -30,6 +30,7 @@
 
 #include "render/sampler.h"
 #include "render/spray.h"
+#include "utils/util.h"
 
 namespace spray {
 
@@ -142,6 +143,9 @@ class Dielectric : public Material {
  public:
   Dielectric() : index_(1.5f) {}
   Dielectric(float index) : index_(index) {}
+
+  float getIndex() const { return index_; }
+
   int type() const override { return DIELECTRIC; }
 
   glm::vec3 shade(const glm::vec3& wi, const glm::vec3& wo,
@@ -214,6 +218,29 @@ class Dielectric : public Material {
 
  private:
   const float index_;  ///< Refraction index.
+};
+
+class HybridMaterial {
+ public:
+  int getType() const { return type_; }
+
+  void set(const Material* material, uint32_t color) {
+    type_ = material->type();
+    if (type_ == Material::MATTE) {
+      spray::util::unpack(color, &albedo_);
+
+    } else if (type_ == Material::METAL) {
+      spray::util::unpack(color, &albedo_);
+
+    } else if (type_ == Material::DIELECTRIC) {
+      index_ = static_cast<const Dielectric*>(material)->getIndex();
+    }
+  }
+
+ private:
+  int type_;
+  glm::vec3 albedo_;
+  float index_;
 };
 
 }  // namespace spray

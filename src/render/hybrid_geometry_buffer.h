@@ -47,7 +47,7 @@ class HybridGeometryBuffer {
 
  public:
   void init(int max_cache_size_ndomains, std::size_t max_nvertices,
-            std::size_t max_nfaces, bool compute_normals);
+            std::size_t max_nfaces);
 
   RTCScene load(int cache_block, Domain& domain);
 
@@ -144,8 +144,6 @@ class HybridGeometryBuffer {
 
   MemoryArena arena_;
   PlyLoader loader_;
-
-  bool compute_normals_;
 
   std::vector<std::vector<Shape*>*> shapes_;
 };

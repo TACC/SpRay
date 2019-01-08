@@ -55,18 +55,15 @@ HybridGeometryBuffer::HybridGeometryBuffer()
       // embree_mesh_geom_ids_(nullptr),
       shape_created_(nullptr),
       // shape_geom_ids_(nullptr),
-      shape_geom_ids_(nullptr),
-      compute_normals_(false) {}
+      shape_geom_ids_(nullptr) {}
 
 HybridGeometryBuffer::~HybridGeometryBuffer() { cleanup(); }
 
 void HybridGeometryBuffer::init(int max_cache_size_ndomains,
                                 std::size_t max_nvertices,
-                                std::size_t max_nfaces, bool compute_normals) {
+                                std::size_t max_nfaces) {
   // cleanup
   cleanup();
-
-  compute_normals_ = compute_normals;
 
   // sizes
   max_cache_size_ = max_cache_size_ndomains;
@@ -84,12 +81,8 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   CHECK_NOTNULL(vertices_);
 
   // per-vertex normals
-  if (compute_normals) {
-    normals_ = arena_.Alloc<float>(cache_size * max_nvertices * 3, false);
-    CHECK_NOTNULL(normals_);
-  } else {
-    normals_ = nullptr;
-  }
+  normals_ = arena_.Alloc<float>(cache_size * max_nvertices * 3, false);
+  CHECK_NOTNULL(normals_);
 
   // number of faces for each domain
   num_faces_ = arena_.Alloc<std::size_t>(cache_size, false);
@@ -175,59 +168,7 @@ RTCScene HybridGeometryBuffer::load(int cache_block, Domain& domain) {
 
 void HybridGeometryBuffer::loadTriangles(int cache_block,
                                          const Domain& domain) {
-  // setup
-  PlyLoader::Data d;
-  d.vertices_capacity = max_nvertices_ * 3;                // in
-  d.faces_capacity = max_nfaces_ * NUM_VERTICES_PER_FACE;  // in
-  // d.colors_capacity = 0;                                         // in
-  d.colors_capacity = max_nvertices_;  // in
-
-  std::size_t vertex_offset = vertexBaseIndex(cache_block);
-  std::size_t face_offset = faceBaseIndex(cache_block);
-  std::size_t color_offset = colorBaseIndex(cache_block);
-
-  float* vertices = &vertices_[vertex_offset];
-  uint32_t* faces = &faces_[face_offset];
-
-  // update geometry sizes
-  num_vertices_[cache_block] = domain.num_vertices;
-  num_faces_[cache_block] = domain.num_faces;
-
-  for (const ModelFile& model : domain.models) {
-    d.vertices = &vertices_[vertex_offset];  // in/out
-    // num_vertices;  // out
-    d.faces = &faces_[face_offset];  // in/out
-    // num_faces;  // out
-    // d.colors = nullptr;  // rgb, in/out
-    d.colors = &colors_[color_offset];  // rgb, in/out
-
-    // load
-    loader_.load(model.filename, &d);
-
-    bool apply_transform = (model.transform != glm::mat4(1.0));
-
-    if (apply_transform) {
-      // glm::mat4 x = transform;
-      glm::vec4 v;
-      std::size_t nverts = model.num_vertices * 3;
-
-      for (std::size_t n = 0; n < nverts; n += 3) {
-        v = model.transform * glm::vec4(d.vertices[n], d.vertices[n + 1],
-                                        d.vertices[n + 2], 1.0f);
-        d.vertices[n] = v.x;
-        d.vertices[n + 1] = v.y;
-        d.vertices[n + 2] = v.z;
-      }
-    }
-  }
-
-  if (compute_normals_) {
-    computeNormals(cache_block);
-  }
-
-  // map buffers
-  mapEmbreeBuffer(cache_block, vertices, domain.num_vertices, faces,
-                  domain.num_faces);
+  // TODO
 }
 
 void HybridGeometryBuffer::loadShapes(std::vector<Shape*>& shapes,

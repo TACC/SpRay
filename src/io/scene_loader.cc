@@ -52,18 +52,18 @@ SceneLoader::DomainTokenType SceneLoader::getTokenType(const std::string& tag) {
     type = DomainTokenType::kFile;
   } else if (tag == "material") {
     type = DomainTokenType::kMaterial;
-  // } else if (tag == "bound") {
-  //   type = DomainTokenType::kBound;
+    // } else if (tag == "bound") {
+    //   type = DomainTokenType::kBound;
   } else if (tag == "scale") {
     type = DomainTokenType::kScale;
   } else if (tag == "rotate") {
     type = DomainTokenType::kRotate;
   } else if (tag == "translate") {
     type = DomainTokenType::kTranslate;
-  // } else if (tag == "face") {
-  //   type = DomainTokenType::kFace;
-  // } else if (tag == "vertex") {
-  //   type = DomainTokenType::kVertex;
+    // } else if (tag == "face") {
+    //   type = DomainTokenType::kFace;
+    // } else if (tag == "vertex") {
+    //   type = DomainTokenType::kVertex;
   } else if (tag == "light") {
     type = DomainTokenType::kLight;
   } else if (tag == "sphere") {
@@ -83,11 +83,11 @@ void SceneLoader::parseDomain(const std::vector<std::string>& tokens) {
 
 void SceneLoader::parseModelBegin() {
   nextModel();
-  ModelFile& m = currentModel();
+  SurfaceModel& m = currentModel();
 }
 
 void SceneLoader::parseModelEnd() {
-  ModelFile& m = currentModel();
+  SurfaceModel& m = currentModel();
   if (m.material == nullptr) {
     m.material = new Matte();
   }
@@ -96,7 +96,7 @@ void SceneLoader::parseModelEnd() {
 
 void SceneLoader::parseFile(const std::string& ply_path,
                             const std::vector<std::string>& tokens) {
-  ModelFile& m = currentModel();
+  SurfaceModel& m = currentModel();
   std::size_t tokens_size = tokens.size();
 
   CHECK_GE(tokens_size, 2);
@@ -108,7 +108,7 @@ void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
   std::size_t tokens_size = tokens.size();
   CHECK_GT(tokens_size, 1);
 
-  ModelFile& model = currentModel();
+  SurfaceModel& model = currentModel();
   CHECK(model.material == nullptr) << "found more than one material";
 
   if (tokens[1] == "matte") {
@@ -225,7 +225,7 @@ void SceneLoader::parseBound(const std::vector<std::string>& tokens) {
 */
 
 void SceneLoader::parseScale(const std::vector<std::string>& tokens) {
-  ModelFile& m = currentModel();
+  SurfaceModel& m = currentModel();
 
   CHECK_EQ(tokens.size(), 4);
 
@@ -235,7 +235,7 @@ void SceneLoader::parseScale(const std::vector<std::string>& tokens) {
 }
 
 void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
-  ModelFile& m = currentModel();
+  SurfaceModel& m = currentModel();
 
   CHECK_EQ(tokens.size(), 3);
 
@@ -254,7 +254,7 @@ void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
 }
 
 void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
-  ModelFile& m = currentModel();
+  SurfaceModel& m = currentModel();
 
   CHECK_EQ(tokens.size(), 4);
 
@@ -264,7 +264,7 @@ void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
 }
 
 void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
-  ModelFile& m = currentModel();
+  SurfaceModel& m = currentModel();
 
   CHECK_EQ(tokens.size(), 2);
 
@@ -272,7 +272,7 @@ void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
 }
 
 void SceneLoader::parseVertex(const std::vector<std::string>& tokens) {
-  ModelFile& m = currentModel();
+  SurfaceModel& m = currentModel();
 
   CHECK_EQ(tokens.size(), 2);
 
@@ -355,7 +355,7 @@ void SceneLoader::parseSphere(const std::vector<std::string>& tokens) {
     m = new Dielectric(index);
   } else {
     CHECK(false) << "unknown material " << tokens[5];
-   }
+  }
 
   CHECK_NOTNULL(m);
 
@@ -364,7 +364,7 @@ void SceneLoader::parseSphere(const std::vector<std::string>& tokens) {
   // vertices, faces
   d.num_vertices = 0;
   d.num_faces = 0;
-   
+
   // object bounds
   // glm::vec3 v(radius);
   // d.object_aabb.bounds[0] = center - v;
@@ -446,7 +446,7 @@ void SceneLoader::countAndAllocate(std::ifstream& infile) {
         num_files_per_model = 0;
 
       } else if (strcmp(token, "ModelEnd") == 0) {
-        CHECK_EQ(num_files_per_model, 1)
+        CHECK_EQ(num_files_per_model, 1);
 
       } else if (strcmp(token, "light") == 0) {
         ++nlights;

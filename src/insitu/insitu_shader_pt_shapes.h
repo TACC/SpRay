@@ -111,9 +111,6 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
 
   std::size_t color_idx = sq->size();
 
-  Bsdf *bsdf = scene_->getBsdf(domain_id);
-  // bool delta_dist = bsdf->isDelta();
-
   int next_ray_depth = ray_depth + 1;
 
   RandomSampler sampler;

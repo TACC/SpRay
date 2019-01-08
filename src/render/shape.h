@@ -61,7 +61,7 @@ class Sphere : public Shape {
   unsigned int geom_id;
 };
 
-void Sphere::getBounds(Aabb* aabb) const {
+inline void Sphere::getBounds(Aabb* aabb) const {
   aabb->bounds[0].x = center.x - radius;
   aabb->bounds[0].y = center.y - radius;
   aabb->bounds[0].z = center.z - radius;

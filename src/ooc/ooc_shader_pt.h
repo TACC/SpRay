@@ -92,6 +92,15 @@ void ShaderPt<CacheT, SceneT>::operator()(
     int domain_id, const Ray &rayin, const spray::RTCRayIntersection &isect,
     spray::MemoryArena *mem, std::queue<Ray *> *sq, std::queue<Ray *> *rq,
     std::queue<Ray *> *pending_q, int ray_depth) {
+  // TODO
+}
+
+/*
+template <typename CacheT, typename SceneT>
+void ShaderPt<CacheT, SceneT>::operator()(
+    int domain_id, const Ray &rayin, const spray::RTCRayIntersection &isect,
+    spray::MemoryArena *mem, std::queue<Ray *> *sq, std::queue<Ray *> *rq,
+    std::queue<Ray *> *pending_q, int ray_depth) {
   glm::vec3 pos = RTCRayUtil::hitPosition(rayin.org, rayin.dir, isect.tfar);
   glm::vec3 surf_radiance;
   util::unpack(isect.color, surf_radiance);
@@ -221,6 +230,7 @@ void ShaderPt<CacheT, SceneT>::operator()(
     }
   }
 }
+*/
 
 }  // namespace ooc
 }  // namespace spray

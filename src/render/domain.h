@@ -33,13 +33,13 @@
 
 namespace spray {
 
-struct ModelFile {
-  ModelFile()
+struct SurfaceModel {
+  SurfaceModel()
       : material(nullptr),
         num_vertices(0),
         num_faces(0),
         transform(glm::mat4(1.0f)) {}
-  ~ModelFile() { delete material; }
+  ~SurfaceModel() { delete material; }
 
   void populateModelInfo();
   bool isValid() const { return (num_vertices > 0); }
@@ -65,7 +65,7 @@ struct Domain {
   std::size_t num_vertices;
   std::size_t num_faces;
 
-  std::vector<ModelFile> models;
+  std::vector<SurfaceModel> models;
 
   Aabb world_aabb;
 
@@ -101,7 +101,7 @@ inline void Domain::populateModelInfo() {
   }
 }
 
-inline void ModelFile::populateModelInfo() {
+inline void SurfaceModel::populateModelInfo() {
   if (!filename.empty()) {
     std::string ext = spray::util::getFileExtension(filename);
 
