@@ -86,7 +86,7 @@ RTCScene ShapeBuffer::load(int cache_block, Domain& domain) {
   CHECK(!loaded_);
   loaded_ = true;
 
-  std::vector<Shape*>& shapes = domain.shapes;
+  const std::vector<Shape*>& shapes = domain.getShapes();
 
   CHECK_LT(cache_block, shapes_.size());
   CHECK(shapes_[cache_block] == nullptr);

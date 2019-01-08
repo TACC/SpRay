@@ -143,13 +143,13 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
 }
 
 RTCScene HybridGeometryBuffer::load(int cache_block, Domain& domain) {
-  auto& shapes = domain.shapes;
+  auto& shapes = domain.getShapes();
 
-  CHECK(!(domain.models.empty() && shapes.empty()));
+  CHECK(domain.hasModels() || !shapes.empty());
 
   unsigned int shape_geom_id = 0;
 
-  if (!domain.models.empty()) {
+  if (domain.hasModels()) {
     shape_geom_id = 1;
     loadTriangles(cache_block, domain);
   }
@@ -158,7 +158,7 @@ RTCScene HybridGeometryBuffer::load(int cache_block, Domain& domain) {
   //           << shape_geom_id << "\n";
   shape_geom_ids_[cache_block] = shape_geom_id;
 
-  if (!shapes.empty()) loadShapes(domain.shapes, cache_block, shape_geom_id);
+  if (!shapes.empty()) loadShapes(shapes, cache_block, shape_geom_id);
 
   RTCScene scene = scenes_[cache_block];
   rtcCommit(scene);
@@ -171,7 +171,7 @@ void HybridGeometryBuffer::loadTriangles(int cache_block,
   // TODO
 }
 
-void HybridGeometryBuffer::loadShapes(std::vector<Shape*>& shapes,
+void HybridGeometryBuffer::loadShapes(const std::vector<Shape*>& shapes,
                                       int cache_block,
                                       unsigned int shape_geom_id) {
   RTCScene scene = scenes_[cache_block];

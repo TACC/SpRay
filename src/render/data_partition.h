@@ -89,7 +89,7 @@ class InsituPartition {
 
     for (int i = 0; i < ndomains; ++i) {
       // comptue centroids
-      glm::vec3 center = domains[i].world_aabb.getCenter();
+      glm::vec3 center = domains[i].getWorldAabb().getCenter();
       glm::vec3 c = glm::vec3(trasform * glm::vec4(center, 1.0f));
 
       // morton codes
@@ -100,10 +100,10 @@ class InsituPartition {
       CHECK_GE(c.x, 0.0f);
       CHECK_GE(c.y, 0.0f);
       CHECK_GE(c.z, 0.0f);
-      CHECK_LT(domains[i].id, ndomains_);
+      CHECK_LT(domains[i].getId(), ndomains_);
 #endif
 
-      m.domain = domains[i].id;
+      m.domain = domains[i].getId();
       m.code = Morton::compute(c.x, c.y, c.z);
       codes_[i] = m;
     }

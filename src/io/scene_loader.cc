@@ -45,9 +45,13 @@ SceneLoader::DomainTokenType SceneLoader::getTokenType(const std::string& tag) {
   if (tag[0] == '#') {
     type = DomainTokenType::kComment;
   } else if (tag == "DomainBegin") {
-    type = DomainTokenType::kDomain;
+    type = DomainTokenType::kDomainBegin;
+  } else if (tag == "DomainEnd") {
+    type = DomainTokenType::kDomainEnd;
   } else if (tag == "ModelBegin") {
     type = DomainTokenType::kModelBegin;
+  } else if (tag == "ModelEnd") {
+    type = DomainTokenType::kModelEnd;
   } else if (tag == "file") {
     type = DomainTokenType::kFile;
   } else if (tag == "material") {
@@ -74,24 +78,28 @@ SceneLoader::DomainTokenType SceneLoader::getTokenType(const std::string& tag) {
   return type;
 }
 
-void SceneLoader::parseDomain(const std::vector<std::string>& tokens) {
-  nextDomain();
+void SceneLoader::parseDomainBegin() {
   Domain& d = currentDomain();
-  d.id = domain_id_;
+  d.setId(domain_id_);
   // d.transform = glm::mat4(1.f);
 }
 
+void SceneLoader::parseDomainEnd() {
+  nextDomain();
+  resetModelId();
+}
+
 void SceneLoader::parseModelBegin() {
-  nextModel();
   SurfaceModel& m = currentModel();
 }
 
 void SceneLoader::parseModelEnd() {
   SurfaceModel& m = currentModel();
-  if (m.material == nullptr) {
-    m.material = new Matte();
+  if (!m.hasMaterial()) {
+    m.setMaterial(new Matte());
   }
-  CHECK(!m.filename.empty());
+  CHECK(m.hasFile());
+  nextModel();
 }
 
 void SceneLoader::parseFile(const std::string& ply_path,
@@ -101,7 +109,7 @@ void SceneLoader::parseFile(const std::string& ply_path,
 
   CHECK_GE(tokens_size, 2);
 
-  m.filename = ply_path.empty() ? tokens[1] : ply_path + "/" + tokens[1];
+  m.setFilename(ply_path.empty() ? tokens[1] : ply_path + "/" + tokens[1]);
 }
 
 void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
@@ -109,7 +117,9 @@ void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
   CHECK_GT(tokens_size, 1);
 
   SurfaceModel& model = currentModel();
-  CHECK(model.material == nullptr) << "found more than one material";
+  CHECK(!model.hasMaterial())
+      << "found more than one material [domain " << getDomainId() << "][model "
+      << getModelId() << "]";
 
   if (tokens[1] == "matte") {
     if (tokens_size > 2) {
@@ -120,10 +130,10 @@ void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
       albedo[1] = atof(tokens[3].c_str());
       albedo[2] = atof(tokens[4].c_str());
 
-      model.material = new Matte(albedo);
+      model.setMaterial(new Matte(albedo));
 
     } else {
-      model.material = new Matte();
+      model.setMaterial(new Matte());
     }
 
   } else if (tokens[1] == "metal") {
@@ -137,10 +147,10 @@ void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
 
       float fuzz = atof(tokens[5].c_str());
 
-      model.material = new Metal(albedo, fuzz);
+      model.setMaterial(new Metal(albedo, fuzz));
 
     } else {
-      model.material = new Metal();
+      model.setMaterial(new Metal());
     }
 
   } else if (tokens[1] == "dielectric") {
@@ -149,10 +159,10 @@ void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
 
       float index = atof(tokens[2].c_str());
 
-      model.material = new Dielectric(index);
+      model.setMaterial(new Dielectric(index));
 
     } else {
-      model.material = new Dielectric();
+      model.setMaterial(new Dielectric());
     }
   } else {
     CHECK(false) << "unsupported material: " << tokens[2];
@@ -229,9 +239,10 @@ void SceneLoader::parseScale(const std::vector<std::string>& tokens) {
 
   CHECK_EQ(tokens.size(), 4);
 
-  m.transform = glm::scale(
-      m.transform, glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
-                             atof(tokens[3].c_str())));
+  m.setTransform(
+      glm::scale(m.getTransform(),
+                 glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
+                           atof(tokens[3].c_str()))));
 }
 
 void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
@@ -249,8 +260,8 @@ void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
   } else {
     LOG(FATAL) << "invalid axis name " << tokens[1];
   }
-  m.transform = glm::rotate(m.transform,
-                            (float)glm::radians(atof(tokens[2].c_str())), axis);
+  m.setTransform(glm::rotate(
+      m.getTransform(), (float)glm::radians(atof(tokens[2].c_str())), axis));
 }
 
 void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
@@ -258,9 +269,10 @@ void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
 
   CHECK_EQ(tokens.size(), 4);
 
-  m.transform = glm::translate(
-      m.transform, glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
-                             atof(tokens[3].c_str())));
+  m.setTransform(
+      glm::translate(m.getTransform(),
+                     glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
+                               atof(tokens[3].c_str()))));
 }
 
 void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
@@ -268,7 +280,7 @@ void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
 
   CHECK_EQ(tokens.size(), 2);
 
-  m.num_faces = std::stoul(tokens[1]);
+  m.setNumFaces(std::stoul(tokens[1]));
 }
 
 void SceneLoader::parseVertex(const std::vector<std::string>& tokens) {
@@ -276,7 +288,7 @@ void SceneLoader::parseVertex(const std::vector<std::string>& tokens) {
 
   CHECK_EQ(tokens.size(), 2);
 
-  m.num_vertices = std::stoul(tokens[1]);
+  m.setNumVertices(std::stoul(tokens[1]));
 }
 
 void SceneLoader::parseLight(const std::vector<std::string>& tokens) {
@@ -359,11 +371,11 @@ void SceneLoader::parseSphere(const std::vector<std::string>& tokens) {
 
   CHECK_NOTNULL(m);
 
-  d.shapes.push_back(new Sphere(center, radius, m));
+  d.push(new Sphere(center, radius, m));
 
   // vertices, faces
-  d.num_vertices = 0;
-  d.num_faces = 0;
+  d.setNumVertices(0);
+  d.setNumFaces(0);
 
   // object bounds
   // glm::vec3 v(radius);
@@ -375,8 +387,14 @@ void SceneLoader::parseLineTokens(const std::string& ply_path,
                                   const std::vector<std::string>& tokens) {
   DomainTokenType type = getTokenType(tokens[0]);
   switch (type) {
-    case DomainTokenType::kDomain:
-      parseDomain(tokens);
+    case DomainTokenType::kComment:
+      // do nothing
+      break;
+    case DomainTokenType::kDomainBegin:
+      parseDomainBegin();
+      break;
+    case DomainTokenType::kDomainEnd:
+      parseDomainEnd();
       break;
     case DomainTokenType::kModelBegin:
       parseModelBegin();
@@ -415,7 +433,7 @@ void SceneLoader::parseLineTokens(const std::string& ply_path,
       parseSphere(tokens);
       break;
     default:
-      CHECK(false);
+      CHECK(false) "unsupported token: " << static_cast<int>(type);
       break;
   }
 }
@@ -464,7 +482,7 @@ void SceneLoader::countAndAllocate(std::ifstream& infile) {
 
   for (int i = 0; i < ndomains; ++i) {
     Domain& domain = domains_->at(i);
-    domain.models.resize(num_models_q.front());
+    domain.resizeModels(num_models_q.front());
     num_models_q.pop();
   }
 

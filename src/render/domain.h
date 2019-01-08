@@ -33,89 +33,139 @@
 
 namespace spray {
 
-struct SurfaceModel {
+class SurfaceModel {
+ public:
   SurfaceModel()
-      : material(nullptr),
-        num_vertices(0),
-        num_faces(0),
-        transform(glm::mat4(1.0f)) {}
-  ~SurfaceModel() { delete material; }
+      : material_(nullptr),
+        num_vertices_(0),
+        num_faces_(0),
+        transform_(glm::mat4(1.0f)) {}
+  ~SurfaceModel() { delete material_; }
 
   void populateModelInfo();
-  bool isValid() const { return (num_vertices > 0); }
+  bool isValid() const { return (num_vertices_ > 0); }
 
-  std::string filename;
-  std::size_t num_vertices;
-  std::size_t num_faces;
-  Material* material;
-  glm::mat4 transform;
-  Aabb object_aabb;
+  const std::string& getFilename() const { return filename_; }
+  std::size_t getNumVertices() const { return num_vertices_; }
+  std::size_t getNumFaces() const { return num_faces_; }
+  const glm::mat4& getTransform() const { return transform_; }
+  const Aabb& getObjectAabb() const { return object_aabb_; }
+  const Material* getMaterial() const { return material_; }
+  bool hasMaterial() const { return material_; }
+  bool hasFile() const { return !filename_.empty(); }
+
+ private:
+  friend class SceneLoader;
+  void setMaterial(Material* m) { material_ = m; }
+  void setFilename(const std::string& filename) { filename_ = filename; }
+  void setTransform(const glm::mat4& transform) { transform_ = transform; }
+  void setNumVertices(std::size_t n) { num_vertices_ = n; }
+  void setNumFaces(std::size_t n) { num_faces_ = n; }
+
+ private:
+  std::string filename_;
+  std::size_t num_vertices_;
+  std::size_t num_faces_;
+  Material* material_;
+  glm::mat4 transform_;
+  Aabb object_aabb_;
 };
 
-struct Domain {
-  Domain() : num_vertices(0), num_faces(0) {}
+inline void SurfaceModel::populateModelInfo() {
+  if (!filename_.empty()) {
+    std::string ext = spray::util::getFileExtension(filename_);
+
+    if (ext == "ply") {
+      PlyLoader::LongHeader header;
+      PlyLoader::readLongHeader(filename_, &header);
+
+      num_vertices_ = header.num_vertices;
+      num_faces_ = header.num_faces;
+      object_aabb_ = header.bounds;
+
+    } else {
+      CHECK(false) << "unsupported extension" << ext;
+    }
+  }
+}
+
+class Domain {
+ public:
+  Domain() : num_vertices_(0), num_faces_(0) {}
 
   ~Domain() {
-    for (std::size_t i = 0; i < shapes.size(); ++i) delete shapes[i];
+    for (std::size_t i = 0; i < shapes_.size(); ++i) {
+      delete shapes_[i];
+    }
   }
 
   void populateModelInfo();
 
-  unsigned int id;
-  std::size_t num_vertices;
-  std::size_t num_faces;
+  unsigned int getId() const { return id_; }
+  std::size_t getNumVertices() const { return num_vertices_; }
+  std::size_t getNumFaces() const { return num_faces_; }
 
-  std::vector<SurfaceModel> models;
+  const std::vector<SurfaceModel>& getModels() const { return models_; }
+  const Aabb& getWorldAabb() const { return world_aabb_; }
+  const std::vector<Shape*>& getShapes() const { return shapes_; }
 
-  Aabb world_aabb;
+  const Material* getMaterial(std::size_t model_id) const {
+    return models_[model_id].getMaterial();
+  }
 
-  std::vector<Shape*> shapes;
+  bool hasModels() const { return !models_.empty(); }
+  std::size_t getNumModels() const { return models_.size(); }
+
+  bool hasShapes() const { return !shapes_.empty(); }
+  std::size_t getNumShapes() const { return shapes_.size(); }
+
+  // void load(float* vertices, uint32_t* faces, uint32_t* colors);
+ private:
+  friend class SceneLoader;
+
+  SurfaceModel& getModel(std::size_t i) { return models_[i]; }
+  void setId(int id) { id_ = id; }
+  void push(Shape* shape) { shapes_.push_back(shape); }
+  void setNumVertices(std::size_t n) { num_vertices_ = n; }
+  void setNumFaces(std::size_t n) { num_faces_ = n; }
+  void resizeModels(std::size_t n) { models_.resize(n); }
+
+ private:
+  int id_;
+  std::size_t num_vertices_;
+  std::size_t num_faces_;
+
+  std::vector<SurfaceModel> models_;
+  Aabb world_aabb_;
+  std::vector<Shape*> shapes_;
 };
 
 inline void Domain::populateModelInfo() {
   glm::vec3 bounds_min, bounds_max, world_bounds_min, world_bounds_max;
   Aabb temp_aabb;
-  std::size_t num_vertices = 0;
-  std::size_t num_faces = 0;
+  num_vertices_ = 0;
+  num_faces_ = 0;
 
-  for (auto& m : models) {
+  for (auto& m : models_) {
     if (!m.isValid()) {
       m.populateModelInfo();
 
-      bounds_min = m.object_aabb.bounds[0];
-      bounds_max = m.object_aabb.bounds[1];
+      bounds_min = m.getObjectAabb().bounds[0];
+      bounds_max = m.getObjectAabb().bounds[1];
 
-      temp_aabb.bounds[0] = m.transform * glm::vec4(bounds_min, 1.0f);
-      temp_aabb.bounds[1] = m.transform * glm::vec4(bounds_max, 1.0f);
+      temp_aabb.bounds[0] = m.getTransform() * glm::vec4(bounds_min, 1.0f);
+      temp_aabb.bounds[1] = m.getTransform() * glm::vec4(bounds_max, 1.0f);
 
-      world_aabb.merge(temp_aabb);
+      world_aabb_.merge(temp_aabb);
     }
-    num_vertices += m.num_vertices;
-    num_faces += m.num_faces;
+    num_vertices_ += m.getNumVertices();
+    num_faces_ += m.getNumFaces();
   }
 
-  for (std::size_t i = 0; i < shapes.size(); ++i) {
-    Shape* shape = shapes[i];
+  for (std::size_t i = 0; i < shapes_.size(); ++i) {
+    Shape* shape = shapes_[i];
     shape->getBounds(&temp_aabb);
-    world_aabb.merge(temp_aabb);
-  }
-}
-
-inline void SurfaceModel::populateModelInfo() {
-  if (!filename.empty()) {
-    std::string ext = spray::util::getFileExtension(filename);
-
-    if (ext == "ply") {
-      PlyLoader::LongHeader header;
-      PlyLoader::readLongHeader(filename, &header);
-
-      num_vertices = header.num_vertices;
-      num_faces = header.num_faces;
-      object_aabb = header.bounds;
-
-    } else {
-      CHECK(false) << "unsupported extension" << ext;
-    }
+    world_aabb_.merge(temp_aabb);
   }
 }
 

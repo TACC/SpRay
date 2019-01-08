@@ -84,8 +84,8 @@ class TriMeshBuffer {
   //   return (cache_block * max_nvertices_);
   // }
 
-  Material* getMaterial(int cache_block, unsigned int geom_id) const {
-    return domains_[cache_block]->models[geom_id].material;
+  const Material* getMaterial(int cache_block, unsigned int geom_id) const {
+    return domains_[cache_block]->getMaterial(geom_id);
   }
 
   void cleanup();

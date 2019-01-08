@@ -98,7 +98,7 @@ class Scene {
     CHECK_GE(glfw_domain_idx_, 0);
     CHECK_LT(glfw_domain_idx_, getNumDomains());
 #endif
-    return domains_[glfw_domain_idx_].id;
+    return domains_[glfw_domain_idx_].getId();
   }
 
   int prevDomain(int decrement) {
@@ -112,7 +112,7 @@ class Scene {
     CHECK_GE(glfw_domain_idx_, 0);
     CHECK_LT(glfw_domain_idx_, getNumDomains());
 #endif
-    return domains_[glfw_domain_idx_].id;
+    return domains_[glfw_domain_idx_].getId();
   }
 
   void setPartitionNumber(int num) { partition_num_ = num; }
@@ -139,9 +139,9 @@ class Scene {
 
     for (std::size_t i = 0; i < domains_.size(); ++i) {
       const Domain& d = domains_[i];
-      int p = domain_to_partition[d.id];
-      partition_to_vertices[p] += d.num_vertices;
-      partition_to_faces[p] += d.num_faces;
+      int p = domain_to_partition[d.getId()];
+      partition_to_vertices[p] += d.getNumVertices();
+      partition_to_faces[p] += d.getNumFaces();
     }
     for (int i = 0; i < num_partitions_; ++i) {
       std::cout << "parti[" << i << "]: v " << partition_to_vertices[i] << " f "
@@ -222,8 +222,8 @@ class Scene {
   void mergeDomainBounds(std::size_t* max_num_vertices,
                          std::size_t* max_num_faces);
 
-  void copyAllDomainsToLocalDisk(const std::string& dest_path,
-                                 bool insitu_mode);
+  // void copyAllDomainsToLocalDisk(const std::string& dest_path,
+  //                                bool insitu_mode);
   void deleteAllDomainsFromLocalDisk();
 
  private:

@@ -124,7 +124,7 @@ RTCScene TriMeshBuffer::load(int cache_block, Domain& domain) {
   // setup
   PlyLoader::Data d;
 
-  const auto& models = domain.models;
+  const auto& models = domain.getModels();
 
   std::size_t sum_num_vertices = 0;
   std::size_t sum_num_faces = 0;
@@ -137,25 +137,25 @@ RTCScene TriMeshBuffer::load(int cache_block, Domain& domain) {
   for (std::size_t i = 0; i < models.size(); ++i) {
     const auto& model = models[i];
 
-    d.vertices_capacity = model.num_vertices * 3;
-    d.faces_capacity = model.num_faces * NUM_VERTICES_PER_FACE;
-    d.colors_capacity = model.num_vertices;
+    d.vertices_capacity = model.getNumVertices() * 3;
+    d.faces_capacity = model.getNumFaces() * NUM_VERTICES_PER_FACE;
+    d.colors_capacity = model.getNumVertices();
 
     d.vertices = &vertices_base[sum_num_vertices * 3];
     d.faces = &faces_base[sum_num_faces * 3];
     d.colors = &colors_base[sum_num_vertices];
 
-    loader_.load(model.filename, &d);
+    loader_.load(model.getFilename(), &d);
 
-    sum_num_vertices += model.num_vertices;
-    sum_num_faces += model.num_faces;
+    sum_num_vertices += model.getNumVertices();
+    sum_num_faces += model.getNumFaces();
 
-    CHECK_EQ(d.num_vertices, model.num_vertices);
-    CHECK_EQ(d.num_faces, model.num_faces);
+    CHECK_EQ(d.num_vertices, model.getNumVertices());
+    CHECK_EQ(d.num_faces, model.getNumFaces());
   }
 
-  CHECK_EQ(sum_num_vertices, domain.num_vertices);
-  CHECK_EQ(sum_num_faces, domain.num_faces);
+  CHECK_EQ(sum_num_vertices, domain.getNumVertices());
+  CHECK_EQ(sum_num_faces, domain.getNumFaces());
 
   // update surface size
   num_vertices_[cache_block] = sum_num_vertices;
@@ -175,11 +175,11 @@ RTCScene TriMeshBuffer::load(int cache_block, Domain& domain) {
     uint32_t* faces = &faces_base[sum_num_faces * 3];
 
     // transform vertices
-    bool apply_transform = (model.transform != glm::mat4(1.0));
+    bool apply_transform = (model.getTransform() != glm::mat4(1.0));
     if (apply_transform) {
-      const glm::mat4& x = model.transform;
+      const glm::mat4& x = model.getTransform();
 
-      std::size_t nverts = model.num_vertices * 3;
+      std::size_t nverts = model.getNumVertices() * 3;
 
       for (std::size_t n = 0; n < nverts; n += 3) {
         v = x * glm::vec4(vertices[n], vertices[n + 1], vertices[n + 2], 1.0f);
@@ -190,8 +190,8 @@ RTCScene TriMeshBuffer::load(int cache_block, Domain& domain) {
     }
 
     // map buffers
-    mapEmbreeBuffer(cache_block, vertices, model.num_vertices, faces,
-                    model.num_faces, i);
+    mapEmbreeBuffer(cache_block, vertices, model.getNumVertices(), faces,
+                    model.getNumFaces(), i);
 
     // // populate materials
     // uint32_t* colors = &colors_base[sum_num_vertices];
@@ -204,8 +204,8 @@ RTCScene TriMeshBuffer::load(int cache_block, Domain& domain) {
     // }
 
     // update sums
-    sum_num_vertices += model.num_vertices;
-    sum_num_faces += model.num_faces;
+    sum_num_vertices += model.getNumVertices();
+    sum_num_faces += model.getNumFaces();
   }
 
   RTCScene scene = scenes_[cache_block];

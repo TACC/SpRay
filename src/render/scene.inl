@@ -80,7 +80,7 @@ void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
   // TODO: support ooc (ooc not supported at this moment)
   // see notes in TriMeshBuffer::loadShapes
   for (std::size_t i = 0; i < domains_.size(); ++i) {
-    if (!domains_[i].shapes.empty()) {
+    if (domains_[i].hasShapes()) {
       CHECK_LT(cache_size, 0);
     }
   }
@@ -111,12 +111,15 @@ void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
     cache_size = partition_.getNumDomains(mpi::rank());
   }
 
-  // copy to local disk
-  if (!storage_basepath.empty()) {
-    storage_basepath_ = storage_basepath;
+  // TODO: enable this
+  /*
+    // copy to local disk
+    if (!storage_basepath.empty()) {
+      storage_basepath_ = storage_basepath;
 
-    copyAllDomainsToLocalDisk(storage_basepath, insitu_mode);
-  }
+      copyAllDomainsToLocalDisk(storage_basepath, insitu_mode);
+    }
+  */
 
   // initialize cache
   if (!(view_mode == VIEW_MODE_DOMAIN || view_mode == VIEW_MODE_PARTITION)) {
@@ -261,6 +264,8 @@ bool Scene<CacheT, SurfaceBufT>::occluded(RTCScene rtc_scene, RTCRay* ray) {
   return false;  // unoccluded
 }
 
+/*
+// TODO: enable this, move this to scene loader
 // copy only those domains mapped to this process.
 // we don't have to copy everything in some cases.
 template <typename CacheT, typename SurfaceBufT>
@@ -294,7 +299,7 @@ void Scene<CacheT, SurfaceBufT>::copyAllDomainsToLocalDisk(
   for (std::size_t i = 0; i < ids.size(); ++i) {
     int id = ids[i];
     Domain& domain = domains_[id];
-    CHECK_EQ(id, domain.id);
+    CHECK_EQ(id, domain.getId());
 
     // create a new folder
     std::string new_dir = dest_path + "/proc" + std::to_string(mpi::rank()) +
@@ -309,15 +314,15 @@ void Scene<CacheT, SurfaceBufT>::copyAllDomainsToLocalDisk(
     std::cout << cmd_make_dir << " " << res << std::endl;
     CHECK_EQ(res, 0);
 
-    for (SurfaceModel& model : domain.models) {
+    for (auto& model : domain.getModels()) {
       // extract basename
       std::string bname =
-          std::string(util::getFilename(model.filename.c_str()));
+          std::string(util::getFilename(model.getFilename().c_str()));
       std::string destination_file = new_dir + "/" + bname;
 
       // cp model file to local disk
       std::string cmd_copy_domain =
-          "cp " + model.filename + " " + destination_file;
+          "cp " + model.getFilename() + " " + destination_file;
 
       int res = std::system(cmd_copy_domain.c_str());
 
@@ -328,10 +333,11 @@ void Scene<CacheT, SurfaceBufT>::copyAllDomainsToLocalDisk(
       CHECK_EQ(res, 0);
 
       // update the descriptor so it now points to the copied model file
-      model.filename = destination_file;
+      model.setFilename(destination_file);
     }
   }
 }
+*/
 
 template <typename CacheT, typename SurfaceBufT>
 void Scene<CacheT, SurfaceBufT>::deleteAllDomainsFromLocalDisk() {
@@ -370,30 +376,30 @@ void Scene<CacheT, SurfaceBufT>::mergeDomainBounds(
 
     // let's enforce that that domain world-space bound and
     // the number of faces are provided through preprocessing.
-    CHECK_EQ(d.world_aabb.isValid(), true);
-    if (d.shapes.empty()) {
-      CHECK_GT(d.num_vertices, 0);
-      CHECK_GT(d.num_faces, 0);
+    CHECK_EQ(d.getWorldAabb().isValid(), true);
+    if (!d.hasShapes()) {
+      CHECK_GT(d.getNumVertices(), 0);
+      CHECK_GT(d.getNumFaces(), 0);
     }
 
     // maximum values
 
-    if (d.num_vertices > num_vertices) num_vertices = d.num_vertices;
-    if (d.num_faces > num_faces) num_faces = d.num_faces;
+    if (d.getNumVertices() > num_vertices) num_vertices = d.getNumVertices();
+    if (d.getNumFaces() > num_faces) num_faces = d.getNumFaces();
 
 #if defined(PRINT_DOMAIN_BOUNDS) && defined(SPRAY_GLOG_CHECK)
     if (mpi::isRootProcess()) {
-      total_faces += d.num_faces;
-      LOG(INFO) << "[domain " << id << "] [bounds " << d.world_aabb
-                << "] [faces " << d.num_faces << "]";
+      total_faces += d.getNumFaces();
+      LOG(INFO) << "[domain " << id << "] [bounds " << d.getWorldAabb()
+                << "] [faces " << d.getNumFaces() << "]";
     }
 #endif
 
-    world_space_bound.merge(d.world_aabb);
+    world_space_bound.merge(d.getWorldAabb());
 
 #if defined(PRINT_DOMAIN_BOUNDS) && defined(SPRAY_GLOG_CHECK)
-    LOG(INFO) << " [Scene::load()] [domain " << domains_[id].id
-              << "] bound: " << domains_[id].world_aabb;
+    LOG(INFO) << " [Scene::load()] [domain " << domains_[id].getId()
+              << "] bound: " << domains_[id].getWorldAabb();
 #endif
   }
 
@@ -426,7 +432,7 @@ void Scene<CacheT, SurfaceBufT>::drawDomains() {
   for (std::size_t i = 0; i < domains_.size(); ++i) {
     const Domain& d = domains_[i];
     if (i != glfw_domain_idx_) {
-      d.world_aabb.draw(color);
+      d.getWorldAabb().draw(color);
     }
   }
 
@@ -434,7 +440,7 @@ void Scene<CacheT, SurfaceBufT>::drawDomains() {
   for (std::size_t i = 0; i < domains_.size(); ++i) {
     const Domain& d = domains_[i];
     if (i == glfw_domain_idx_) {
-      d.world_aabb.draw(select);
+      d.getWorldAabb().draw(select);
     }
   }
 
@@ -461,15 +467,15 @@ void Scene<CacheT, SurfaceBufT>::drawPartitions() {
 
   for (std::size_t i = 0; i < domains_.size(); ++i) {
     const Domain& d = domains_[i];
-    if (domain_to_partition[d.id] != partition_num_) {
-      d.world_aabb.draw(color);
+    if (domain_to_partition[d.getId()] != partition_num_) {
+      d.getWorldAabb().draw(color);
     }
   }
   glLineWidth(2.0);
   for (std::size_t i = 0; i < domains_.size(); ++i) {
     const Domain& d = domains_[i];
-    if (domain_to_partition[d.id] == partition_num_) {
-      d.world_aabb.draw(select);
+    if (domain_to_partition[d.getId()] == partition_num_) {
+      d.getWorldAabb().draw(select);
     }
   }
 

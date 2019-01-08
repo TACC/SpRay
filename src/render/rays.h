@@ -214,7 +214,7 @@ struct SPRAY_ALIGN(16) RTCRayIntersection {
   /* extension*/
  public:
   float Ns[3];
-  Material* material;
+  const Material* material;
 };
 
 struct RTCRayUtil {

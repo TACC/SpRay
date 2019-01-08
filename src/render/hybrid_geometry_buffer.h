@@ -54,7 +54,7 @@ class HybridGeometryBuffer {
  private:
   void loadTriangles(int cache_block, const Domain& domain);
 
-  void loadShapes(std::vector<Shape*>& shapes, int cache_block,
+  void loadShapes(const std::vector<Shape*>& shapes, int cache_block,
                   unsigned int shape_geom_id);
 
  public:
@@ -145,7 +145,7 @@ class HybridGeometryBuffer {
   MemoryArena arena_;
   PlyLoader loader_;
 
-  std::vector<std::vector<Shape*>*> shapes_;
+  std::vector<const std::vector<Shape*>*> shapes_;
 };
 
 }  // namespace spray

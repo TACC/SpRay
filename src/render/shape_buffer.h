@@ -95,7 +95,7 @@ class ShapeBuffer {
   // MemoryArena arena_;
 
   bool loaded_;
-  std::vector<std::vector<Shape*>*> shapes_;
+  std::vector<const std::vector<Shape*>*> shapes_;
 };
 
 }  // namespace spray

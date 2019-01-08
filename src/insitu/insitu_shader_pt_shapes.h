@@ -84,7 +84,7 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
 
   glm::vec3 surf_radiance;
 
-  Material* material = isect.material;
+  auto *material = isect.material;
 
   // if (isect.material->type() == Material::MATTE) {
   //   surf_radiance = static_cast<Matte *>(isect.material)->albedo;

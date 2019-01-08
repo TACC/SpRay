@@ -33,14 +33,6 @@ namespace spray {
 class Light;
 
 class SceneLoader {
- private:
-  int num_light_samples_;
-  int domain_id_;
-  int model_id_;
-  int light_id_;
-  std::vector<Domain>* domains_;
-  std::vector<Light*>* lights_;
-
  public:
   void load(const std::string& filename, const std::string& ply_path,
             int num_light_samples, std::vector<Domain>* domains_out,
@@ -49,7 +41,8 @@ class SceneLoader {
  private:
   enum class DomainTokenType {
     kComment,
-    kDomain,
+    kDomainBegin,
+    kDomainEnd,
     kModelBegin,
     kModelEnd,
     kFile,
@@ -67,8 +60,8 @@ class SceneLoader {
   void reset(int num_light_samples, std::vector<Domain>* domains,
              std::vector<Light*>* lights) {
     num_light_samples_ = num_light_samples;
-    domain_id_ = -1;
-    model_id_ = -1;
+    domain_id_ = 0;
+    model_id_ = 0;
     light_id_ = 0;
 
     CHECK_NOTNULL(domains);
@@ -80,11 +73,14 @@ class SceneLoader {
     lights_ = lights;
   }
 
+  void resetModelId() { model_id_ = 0; }
+
   void countAndAllocate(std::ifstream& infile);
 
   DomainTokenType getTokenType(const std::string& tag);
 
-  void parseDomain(const std::vector<std::string>& tokens);
+  void parseDomainBegin();
+  void parseDomainEnd();
   void parseModelBegin();
   void parseModelEnd();
 
@@ -114,7 +110,7 @@ class SceneLoader {
                        const std::vector<std::string>& tokens);
 
   Domain& currentDomain() {
-    CHECK_GT(domain_id_, -1);
+    CHECK_GE(domain_id_, 0);
     CHECK_LT(domain_id_, domains_->size());
     return (*domains_)[domain_id_];
   }
@@ -128,14 +124,25 @@ class SceneLoader {
 
   void nextDomain() { ++domain_id_; }
 
+  int getDomainId() const { return domain_id_; }
+  int getModelId() const { return model_id_; }
+
   void nextModel() { ++model_id_; }
 
   SurfaceModel& currentModel() {
     Domain& domain = currentDomain();
-    CHECK_GT(model_id_, -1);
-    CHECK_LT(model_id_, domain.models.size());
-    return domain.models[model_id_];
+    CHECK_GE(model_id_, 0);
+    CHECK_LT(model_id_, domain.getNumModels());
+    return domain.getModel(model_id_);
   }
+
+ private:
+  int num_light_samples_;
+  int domain_id_;
+  int model_id_;
+  int light_id_;
+  std::vector<Domain>* domains_;
+  std::vector<Light*>* lights_;
 };
 
 }  // namespace spray
