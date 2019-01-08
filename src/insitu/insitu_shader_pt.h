@@ -95,11 +95,8 @@ void ShaderPt<CacheT, SceneT>::operator()(
 
   auto *material = isect.material;
 
-  // if (isect.material->type() == Material::MATTE) {
-  //   surf_radiance = static_cast<Matte *>(isect.material)->albedo;
-  // }
-  // glm::vec3 surf_radiance;
-  // util::unpack(isect.color, surf_radiance);
+  glm::vec3 albedo;
+  util::unpack(isect.color, albedo);
 
   glm::vec3 normal(isect.Ng[0], isect.Ng[1], isect.Ng[2]);
 
@@ -108,11 +105,14 @@ void ShaderPt<CacheT, SceneT>::operator()(
 
   glm::vec3 Lin(rayin.w[0], rayin.w[1], rayin.w[2]);
 
-  // float cos_theta_i = glm::dot(wo, normal);
-  // bool entering = (cos_theta_i > 0.0f);
-  // glm::vec3 normal_ff = entering ? normal : -normal;
-  // normal_ff = glm::normalize(normal_ff);
+#ifdef SPRAY_FACE_FORARD_OFF
   glm::vec3 normal_ff = glm::normalize(normal);
+#else
+  float cos_theta_i = glm::dot(wo, normal);
+  bool entering = (cos_theta_i > 0.0f);
+  glm::vec3 normal_ff = entering ? normal : -normal;
+  normal_ff = glm::normalize(normal_ff);
+#endif
 
   glm::vec3 wi, light_color, Lr;
   float pdf, inv_shade_pdf, costheta;
@@ -146,7 +146,7 @@ void ShaderPt<CacheT, SceneT>::operator()(
 
         if (pdf > 0.0f) {
           // wi, wo, normal_ff: all normalized
-          shade_color = material->shade(wi, wo, normal_ff);
+          shade_color = material->shade(albedo, wi, wo, normal_ff);
 
           Lr = Lin * light_color * shade_color *
                (1.0f / (pdf * num_light_samples));
@@ -179,7 +179,8 @@ void ShaderPt<CacheT, SceneT>::operator()(
   if (next_ray_depth < bounces_) {
     RandomSampler_init(sampler, rayin.samid * next_ray_depth);
     glm::vec3 weight;
-    bool valid = material->sample(wo, normal_ff, sampler, &wi, &weight, &pdf);
+    bool valid =
+        material->sample(albedo, wo, normal_ff, sampler, &wi, &weight, &pdf);
     if (valid) {
       Lr = Lin * weight * (1.0f / pdf);
       if (hasPositive(Lr)) {
