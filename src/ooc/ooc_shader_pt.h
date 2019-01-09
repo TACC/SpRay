@@ -43,22 +43,11 @@ class ShaderPt {
   void init(const spray::Config &cfg, const SceneT &scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;  // number of samples for area lights
-    ks_ = cfg.ks;
-    shininess_ = cfg.shininess;
     lights_ = scene.getLights();  // copy lights
   }
 
- private:
-  std::vector<Light *> lights_;
-  int bounces_;
-  int samples_;
-  glm::vec3 ks_;
-  float shininess_;
-
- public:
   bool isAo() { return false; }
 
- public:
   void operator()(int domain_id, const Ray &rayin,
                   const spray::RTCRayIntersection &isect,
                   spray::MemoryArena *mem, std::queue<Ray *> *sq,
@@ -84,6 +73,11 @@ class ShaderPt {
       rq->push(r2);
     }
   }
+
+ private:
+  std::vector<Light *> lights_;
+  int bounces_;
+  int samples_;
 };
 
 template <typename SceneT>

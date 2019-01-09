@@ -44,35 +44,26 @@ class ShaderPtShapes {
   void init(const spray::Config &cfg, SceneT *scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;  // number of samples for area lights
-    ks_ = cfg.ks;
-    shininess_ = cfg.shininess;
-    scene_ = scene;
     lights_ = scene->getLights();  // copy lights
 #ifdef SPRAY_GLOG_CHECK
     num_pixels_ = cfg.image_w * cfg.image_h;
 #endif
   }
 
- private:
-  SceneT *scene_;
-  std::vector<Light *> lights_;
-  int bounces_;
-  int samples_;
-  glm::vec3 ks_;
-  float shininess_;
-
-#ifdef SPRAY_GLOG_CHECK
-  int num_pixels_;
-#endif
-
- public:
   bool isAo() { return false; }
 
- public:
   void operator()(int domain_id, const Ray &rayin,
                   const spray::RTCRayIntersection &isect,
                   spray::MemoryArena *mem, std::queue<Ray *> *sq,
                   std::queue<Ray *> *rq, int ray_depth);
+
+ private:
+  std::vector<Light *> lights_;
+  int bounces_;
+  int samples_;
+#ifdef SPRAY_GLOG_CHECK
+  int num_pixels_;
+#endif
 };
 
 template <typename CacheT, typename SceneT>

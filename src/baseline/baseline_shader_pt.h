@@ -42,8 +42,6 @@ class ShaderPt {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;
     lights_ = scene.getLights();  // copy lights
-    ks_ = cfg.ks;
-    shininess_ = cfg.shininess;
 #ifdef SPRAY_GLOG_CHECK
     num_pixels_ = cfg.image_w * cfg.image_h;
 #endif
@@ -61,8 +59,6 @@ class ShaderPt {
   std::vector<Light *> lights_;  // copied lights
   int bounces_;
   int samples_;
-  glm::vec3 ks_;
-  float shininess_;
 #ifdef SPRAY_GLOG_CHECK
   int num_pixels_;
 #endif
