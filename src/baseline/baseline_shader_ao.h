@@ -38,11 +38,10 @@ namespace baseline {
 template <typename CacheT, typename SceneT>
 class ShaderAo {
  public:
-  void init(const spray::Config &cfg, SceneT *scene) {
+  void init(const spray::Config &cfg, const SceneT &scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;
-    scene_ = scene;
-    lights_ = scene->getLights();  // copy lights
+    lights_ = scene.getLights();  // copy lights
   }
 
   bool isAo() { return true; }
@@ -54,7 +53,6 @@ class ShaderAo {
                   CommitBufferB *retire_buf, DRayQ *temp_q);
 
  private:
-  SceneT *scene_;
   std::vector<Light *> lights_;  // copied lights
   int bounces_;
   int samples_;

@@ -117,8 +117,6 @@ void ShaderPt<SceneT>::operator()(int domain_id, const Ray &rayin,
   float pdf, inv_shade_pdf, costheta;
   int nlights = lights_.size();
 
-  std::size_t color_idx = sq->size();
-
   int next_ray_depth = ray_depth + 1;
 
   RandomSampler sampler;

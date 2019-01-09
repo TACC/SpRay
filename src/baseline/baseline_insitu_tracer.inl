@@ -87,7 +87,7 @@ void InsituTracer<CacheT, ScheduleT, ShaderT, SceneT>::initCommon(
   ray_sched_.init(ndomains, scene->getInsituPartition());
 
   // shader
-  shader_.init(cfg, scene);
+  shader_.init(cfg, *scene);
 }
 
 template <typename CacheT, typename ScheduleT, typename ShaderT,
