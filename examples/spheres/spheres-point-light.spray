@@ -1,11 +1,6 @@
 light point 10 10 10 .2 .2 .2
 
-# domain
-# sphere 0 0 0 1
-# mtl diffuse 1 1 1
-# bound -1 -1 -1 1 1 1
-
-domain
+DomainBegin
 # big metal ball
 # sphere -5 1 0 2 metal 0.7 0.6 0.5 0.0
 sphere -5 2 0 2 matte 0.8 0.8 0.8
@@ -30,7 +25,4 @@ sphere 5 2 0 2 metal .7 .5 .5 0
 sphere -4 0.8 5 0.8 dielectric 1.5
 # ground ball
 sphere 0 -1000 0 1000 matte 1 1 1
-mtl diffuse 1 1 1
-bound -1000 -2000 -1000 1000 4 1000
-# bound widhtout floor
-#### bound -7 0 -2 7 4 3.5
+DomainEnd
