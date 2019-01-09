@@ -117,7 +117,8 @@ void PlyLoader::readLongHeader(const std::string &filename,
                                LongHeader *header) {
   // open file
   std::ifstream infile;
-  infile.open(filename.c_str(), std::fstream::in | std::fstream::binary);
+  // infile.open(filename.c_str(), std::fstream::in | std::fstream::binary);
+  infile.open(filename.c_str(), std::fstream::in);
   CHECK(infile.is_open());
 
   char delim[] = " ";
@@ -133,8 +134,6 @@ void PlyLoader::readLongHeader(const std::string &filename,
   bool vertices_start = false;
 
   Aabb bounds;
-  glm::vec3 vertex;
-
   while (infile.good()) {
     getline(infile, line);
 #ifdef SPRAY_PRINT_LINES
@@ -149,38 +148,43 @@ void PlyLoader::readLongHeader(const std::string &filename,
     }
 
     if (!tokens.empty()) {
-      if (vertices_start) {
-        vertex[0] = atof(tokens[0].c_str());
-        vertex[1] = atof(tokens[1].c_str());
-        vertex[2] = atof(tokens[2].c_str());
+      if (tokens[0] == "end_header") {
+        vertices_start = true;
+        break;
 
-        bounds.merge(vertex);
-        ++vertex_index;
+      } else if (tokens[0] == "element" && tokens[1] == "vertex") {
+        num_vertices = atoi(tokens[2].c_str());
 
-        if (vertex_index == num_vertices) break;
+      } else if (tokens[0] == "element" && tokens[1] == "face") {
+        num_faces = atoi(tokens[2].c_str());
 
-      } else {
-        if (tokens[0] == "end_header") {
-          vertices_start = true;
-
-        } else if (tokens[0] == "element" && tokens[1] == "vertex") {
-          num_vertices = atoi(tokens[2].c_str());
-
-        } else if (tokens[0] == "element" && tokens[1] == "face") {
-          num_faces = atoi(tokens[2].c_str());
-
-        } else if (tokens[0] == "property" && tokens[1] == "uchar" &&
-                   ((tokens[2] == "red") || (tokens[2] == "green") ||
-                    (tokens[2] == "blue"))) {
-          ++num_color_components;
-        }
+      } else if (tokens[0] == "property" && tokens[1] == "uchar" &&
+                 ((tokens[2] == "red") || (tokens[2] == "green") ||
+                  (tokens[2] == "blue"))) {
+        ++num_color_components;
       }
+    }
+  }
+
+  bool has_color = (num_color_components == 3);
+  glm::vec3 vertex;
+  float x;
+
+  for (std::size_t i = 0; i < num_vertices; ++i) {
+    infile.read((char *)&vertex[0], 4);  // assume float
+    infile.read((char *)&vertex[1], 4);
+    infile.read((char *)&vertex[2], 4);
+
+    bounds.merge(vertex);
+
+    if (has_color) {
+      infile.read((char *)&x, 3);  // assume unsigned char
     }
   }
 
   header->num_vertices = num_vertices;
   header->num_faces = num_faces;
-  header->has_color = (num_color_components == 3);
+  header->has_color = has_color;
   header->bounds = bounds;
 
   // close file

@@ -23,8 +23,8 @@ material matte
 # vertex 2840
 translate 20.000000 0.000000 0.000000
 ModelEnd
-
 DomainEnd
+
 # domain 2
 DomainBegin
 ModelBegin

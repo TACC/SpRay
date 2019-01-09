@@ -193,11 +193,6 @@ void Scene<CacheT, SurfaceBufT>::load(int id) {
               << cache_block << " $size " << cache_.getSize() << " $capacity "
               << cache_.getCacheSize();
 #endif
-    // const glm::mat4& x = domains_[id].transform;
-    // bool apply_transform = (x != glm::mat4(1.0));
-
-    // scene_ = surface_buf_.load(domains_[id].filename, cache_block, x,
-    //                            apply_transform, domains_[id].shapes);
     scene_ = surface_buf_.load(cache_block, domains_[id]);
 
     // cache_.setLoaded(cache_block);
@@ -221,11 +216,6 @@ void Scene<CacheT, SurfaceBufT>::load(int id, SceneInfo* sinfo) {
               << cache_block << " $size " << cache_.getSize() << " $capacity "
               << cache_.getCacheSize();
 #endif
-    // const glm::mat4& x = domains_[id].transform;
-    // bool apply_transform = (x != glm::mat4(1.0));
-
-    // scene_ = surface_buf_.load(domains_[id].filename, cache_block, x,
-    //                            apply_transform, domains_[id].shapes);
     scene_ = surface_buf_.load(cache_block, domains_[id]);
 
     // cache_.setLoaded(cache_block);
@@ -376,7 +366,7 @@ void Scene<CacheT, SurfaceBufT>::mergeDomainBounds(
 
     // let's enforce that that domain world-space bound and
     // the number of faces are provided through preprocessing.
-    CHECK_EQ(d.getWorldAabb().isValid(), true);
+    CHECK_EQ(d.getWorldAabb().isValid(), true) << d.getWorldAabb();
     if (!d.hasShapes()) {
       CHECK_GT(d.getNumVertices(), 0);
       CHECK_GT(d.getNumFaces(), 0);
@@ -405,9 +395,8 @@ void Scene<CacheT, SurfaceBufT>::mergeDomainBounds(
 
   *max_num_vertices = num_vertices;
   *max_num_faces = num_faces;
-
   bound_ = world_space_bound;
-  CHECK(bound_.isValid());
+  CHECK_EQ(bound_.isValid(), true) << bound_;
 
 #if defined(PRINT_DOMAIN_BOUNDS) && defined(SPRAY_GLOG_CHECK)
   LOG_IF(INFO, mpi::isRootProcess()) << "total faces: " << total_faces;

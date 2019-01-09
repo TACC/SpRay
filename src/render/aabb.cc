@@ -144,8 +144,8 @@ float Aabb::getHalfArea() const {
 }
 
 bool Aabb::isValid() const {
-  return (bounds[0].x <= bounds[1].x && bounds[0].y <= bounds[1].y &&
-          bounds[0].z <= bounds[1].z);
+  return (bounds[0].x < bounds[1].x && bounds[0].y < bounds[1].y &&
+          bounds[0].z < bounds[1].z);
 }
 
 void Aabb::draw(const glm::vec4& color) const {

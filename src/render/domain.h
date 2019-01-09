@@ -83,6 +83,8 @@ inline void SurfaceModel::populateModelInfo() {
       num_faces_ = header.num_faces;
       object_aabb_ = header.bounds;
 
+      CHECK(object_aabb_.isValid()) << object_aabb_;
+
     } else {
       CHECK(false) << "unsupported extension" << ext;
     }
