@@ -82,6 +82,7 @@ void Tracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
   }
 }
 
+/*
 template <typename CacheT, typename ShaderT, typename SceneT>
 void Tracer<CacheT, ShaderT, SceneT>::genSingleEyes(int image_w, float orgx,
                                                     float orgy, float orgz,
@@ -173,6 +174,7 @@ void Tracer<CacheT, ShaderT, SceneT>::genMultiEyes(int image_w, float orgx,
     }
   }
 }
+*/
 
 template <typename CacheT, typename ShaderT, typename SceneT>
 void Tracer<CacheT, ShaderT, SceneT>::isectDomsRads(RayBuf<Ray> buf,
@@ -218,12 +220,13 @@ void Tracer<CacheT, ShaderT, SceneT>::trace() {
       if (shared_eyes_.num) {
         glm::vec3 cam_pos = camera_->getPosition();
         if (num_pixel_samples_ > 1) {
-          genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-                       blocking_tile_, &shared_eyes_);
+          genMultiSampleEyeRays(*camera_, image_w_, cam_pos[0], cam_pos[1],
+                                cam_pos[2], num_pixel_samples_, blocking_tile_,
+                                &shared_eyes_);
 
         } else {
-          genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-                        blocking_tile_, &shared_eyes_);
+          genSingleSampleEyeRays(*camera_, image_w_, cam_pos[0], cam_pos[1],
+                                 cam_pos[2], blocking_tile_, &shared_eyes_);
         }
 
 #pragma omp barrier
@@ -268,12 +271,13 @@ void Tracer<CacheT, ShaderT, SceneT>::traceInOmp() {
     if (shared_eyes_.num) {
       glm::vec3 cam_pos = camera_->getPosition();
       if (num_pixel_samples_ > 1) {
-        genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-                     blocking_tile_, &shared_eyes_);
+        genMultiSampleEyeRays(*camera_, image_w_, cam_pos[0], cam_pos[1],
+                              cam_pos[2], num_pixel_samples_, blocking_tile_,
+                              &shared_eyes_);
 
       } else {
-        genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-                      blocking_tile_, &shared_eyes_);
+        genSingleSampleEyeRays(*camera_, image_w_, cam_pos[0], cam_pos[1],
+                               cam_pos[2], blocking_tile_, &shared_eyes_);
       }
 
 #pragma omp barrier

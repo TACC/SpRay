@@ -67,11 +67,6 @@ class Tracer {
   std::vector<TContextType> tcontexts_;
 
  private:
-  void genSingleEyes(int image_w, float orgx, float orgy, float orgz,
-                     spray::Tile tile, RayBuf<Ray> *ray_buf);
-  void genMultiEyes(int image_w, float orgx, float orgy, float orgz,
-                    spray::Tile tile, RayBuf<Ray> *ray_buf);
-
   void isectDomsRads(RayBuf<Ray> buf, TContextType *tc);
   void isectPrimsRads(TContextType *tc);
 

@@ -20,7 +20,9 @@
 
 #pragma once
 
+#include "render/camera.h"
 #include "render/spray.h"
+#include "render/tile.h"
 
 namespace spray {
 namespace ooc {
@@ -121,5 +123,83 @@ struct RayUtil {
   }
 };
 
+inline void genSingleSampleEyeRays(const Camera& camera, int image_w,
+                                   float orgx, float orgy, float orgz,
+                                   spray::Tile tile, RayBuf<Ray>* ray_buf) {
+  Ray *rays = ray_buf->rays;
+#pragma omp for collapse(2) schedule(static, 1)
+  for (int y = tile.y; y < tile.y + tile.h; ++y) {
+    for (int x = tile.x; x < tile.x + tile.w; ++x) {
+      int bufid = tile.w * (y - tile.y) + (x - tile.x);
+#ifdef SPRAY_GLOG_CHECK
+      CHECK_LT(bufid, ray_buf->num);
+#endif
+      auto *ray = &rays[bufid];
+      //
+      ray->org[0] = orgx;
+      ray->org[1] = orgy;
+      ray->org[2] = orgz;
+
+      ray->pixid = image_w * y + x;
+
+      camera.generateRay((float)x, (float)y, ray->dir);
+
+      ray->samid = bufid;
+
+      ray->w[0] = 1.f;
+      ray->w[1] = 1.f;
+      ray->w[2] = 1.f;
+
+      ray->depth = 0;
+      ray->history[0] = SPRAY_FLOAT_INF;
+      ray->committed = 0;
+    }
+  }
+}
+
+inline void genMultiSampleEyeRays(const Camera& camera, int image_w, float orgx,
+                                  float orgy, float orgz, int num_pixel_samples,
+                                  spray::Tile tile, RayBuf<Ray>* ray_buf) {
+  Ray *rays = ray_buf->rays;
+
+#pragma omp for collapse(3) schedule(static, 1)
+  for (int y = tile.y; y < tile.y + tile.h; ++y) {
+    for (int x = tile.x; x < tile.x + tile.w; ++x) {
+      for (int s = 0; s < num_pixel_samples; ++s) {
+        int bufid =
+            (tile.w * (y - tile.y) + (x - tile.x)) * num_pixel_samples + s;
+#ifdef SPRAY_GLOG_CHECK
+        CHECK_LT(bufid, ray_buf->num);
+#endif
+        Ray* ray = &rays[bufid];
+
+        ray->org[0] = orgx;
+        ray->org[1] = orgy;
+        ray->org[2] = orgz;
+
+        ray->pixid = image_w * y + x;
+
+        RandomSampler sampler;
+        RandomSampler_init(sampler, bufid);
+
+        float fx = (float)(x) + RandomSampler_get1D(sampler);
+        float fy = (float)(y) + RandomSampler_get1D(sampler);
+
+        camera.generateRay(fx, fy, ray->dir);
+
+        ray->samid = bufid;
+
+        ray->w[0] = 1.f;
+        ray->w[1] = 1.f;
+        ray->w[2] = 1.f;
+
+        ray->depth = 0;
+
+        ray->history[0] = SPRAY_FLOAT_INF;
+        ray->committed = 0;
+      }
+    }
+  }
+}
 }  // namespace ooc
 }  // namespace spray
