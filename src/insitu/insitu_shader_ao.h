@@ -123,7 +123,7 @@ void ShaderAo<SceneT>::operator()(int domain_id, const Ray &rayin,
   }
 #endif
 
-  glm::vec3 wi, Lr, color;
+  glm::vec3 wi, Lr, weight;
   float pdf;
 
   int next_ray_depth = ray_depth + 1;
@@ -135,10 +135,10 @@ void ShaderAo<SceneT>::operator()(int domain_id, const Ray &rayin,
 
   for (int s = 0; s < samples_; ++s) {
     bool valid =
-        material->sample(albedo, wo, normal_ff, sampler, &wi, &color, &pdf);
+        material->sample(albedo, wo, normal_ff, sampler, &wi, &weight, &pdf);
 
     if (valid) {
-      Lr = Lin * color * ao_weight_ * (1.0f / pdf);
+      Lr = Lin * weight * ao_weight_ * (1.0f / pdf);
       if (hasPositive(Lr)) {
         // create shadow ray
         Ray *shadow = mem->Alloc<Ray>(1, false);
@@ -160,9 +160,9 @@ void ShaderAo<SceneT>::operator()(int domain_id, const Ray &rayin,
   if (next_ray_depth < bounces_) {
     RandomSampler_init(sampler, rayin.samid * next_ray_depth);
     bool valid =
-        material->sample(albedo, wo, normal_ff, sampler, &wi, &color, &pdf);
+        material->sample(albedo, wo, normal_ff, sampler, &wi, &weight, &pdf);
     if (valid) {
-      Lr = Lin * color * (1.0f / pdf);
+      Lr = Lin * weight * (1.0f / pdf);
       if (hasPositive(Lr)) {
         Ray *r2 = mem->Alloc<Ray>(1, false);
         CHECK_NOTNULL(r2);
