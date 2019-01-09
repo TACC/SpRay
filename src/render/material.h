@@ -67,6 +67,8 @@ class Material {
                       glm::vec3* wi, glm::vec3* color, float* pdf) const = 0;
 
   virtual bool hasDiffuse() const { return false; }
+
+  virtual glm::vec3 getAlbedo() const = 0;
 };
 
 class Matte : public Material {
@@ -89,6 +91,8 @@ class Matte : public Material {
   bool sample(const glm::vec3& albedo, const glm::vec3& wo,
               const glm::vec3& normal, RandomSampler& sampler, glm::vec3* wi,
               glm::vec3* color, float* pdf) const override;
+
+  glm::vec3 getAlbedo() const override { return albedo_; }
 
  private:
   const glm::vec3 albedo_;
@@ -172,6 +176,8 @@ class Metal : public Material {
     return false;
   }
 
+  glm::vec3 getAlbedo() const override { return albedo_; }
+
  private:
   const glm::vec3 albedo_;
   const float fuzz_;
@@ -244,6 +250,8 @@ class Dielectric : public Material {
 
     return true;
   }
+
+  glm::vec3 getAlbedo() const override { return glm::vec3(); }
 
  private:
   float schlick(float cosine, float index) const {

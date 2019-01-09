@@ -54,7 +54,6 @@ HybridGeometryBuffer::HybridGeometryBuffer()
       embree_mesh_created_(nullptr),
       // embree_mesh_geom_ids_(nullptr),
       shape_created_(nullptr),
-      // shape_geom_ids_(nullptr),
       shape_geom_ids_(nullptr) {}
 
 HybridGeometryBuffer::~HybridGeometryBuffer() { cleanup(); }
@@ -97,6 +96,13 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   colors_ = arena_.Alloc<uint32_t>(cache_size * max_nvertices, false);
   CHECK_NOTNULL(colors_);
 
+  // materials
+  // materials_ = arena_.Alloc<HybridMaterial>(cache_size * max_nvertices,
+  // false); CHECK_NOTNULL(materials_);
+
+  // domains
+  domains_.resize(cache_size);
+
   // embree mesh created
   embree_mesh_created_ = arena_.Alloc<int>(cache_size);
   CHECK_NOTNULL(embree_mesh_created_);
@@ -111,9 +117,6 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   shape_geom_ids_ = arena_.Alloc<unsigned int>(cache_size);
   CHECK_NOTNULL(shape_geom_ids_);
 
-  // shape_geom_ids_ = arena_.Alloc<int>(cache_size);
-  // CHECK_NOTNULL(shape_geom_ids_);
-
   for (std::size_t i = 0; i < cache_size; ++i) {
     embree_mesh_created_[i] = DESTROYED;
     shape_created_[i] = DESTROYED;
@@ -127,8 +130,8 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   scenes_ = arena_.Alloc<RTCScene>(cache_size, false);
   CHECK_NOTNULL(scenes_);
 
-  // RTCSceneFlags sflags = RTC_SCENE_DYNAMIC;
-  RTCSceneFlags sflags = RTC_SCENE_STATIC;
+  // RTCSceneFlags sflags = RTC_SCENE_STATIC; // dont use this
+  RTCSceneFlags sflags = RTC_SCENE_DYNAMIC;
   RTCAlgorithmFlags aflags = RTC_INTERSECT1;
 
   for (std::size_t i = 0; i < cache_size; ++i) {
@@ -150,7 +153,7 @@ RTCScene HybridGeometryBuffer::load(int cache_block, Domain& domain) {
   unsigned int shape_geom_id = 0;
 
   if (domain.hasModels()) {
-    shape_geom_id = 1;
+    shape_geom_id = domain.getNumModels();
     loadTriangles(cache_block, domain);
   }
 
@@ -158,7 +161,9 @@ RTCScene HybridGeometryBuffer::load(int cache_block, Domain& domain) {
   //           << shape_geom_id << "\n";
   shape_geom_ids_[cache_block] = shape_geom_id;
 
-  if (!shapes.empty()) loadShapes(shapes, cache_block, shape_geom_id);
+  if (!shapes.empty()) {
+    loadShapes(shapes, cache_block, shape_geom_id);
+  }
 
   RTCScene scene = scenes_[cache_block];
   rtcCommit(scene);
@@ -168,7 +173,103 @@ RTCScene HybridGeometryBuffer::load(int cache_block, Domain& domain) {
 
 void HybridGeometryBuffer::loadTriangles(int cache_block,
                                          const Domain& domain) {
-  // TODO
+  // set domain
+  domains_[cache_block] = &domain;
+
+  // setup
+  PlyLoader::Data d;
+
+  const auto& models = domain.getModels();
+
+  std::size_t sum_num_vertices = 0;
+  std::size_t sum_num_faces = 0;
+
+  float* vertices_base = &vertices_[vertexBaseIndex(cache_block)];
+  uint32_t* faces_base = &faces_[faceBaseIndex(cache_block)];
+  uint32_t* colors_base = &colors_[colorBaseIndex(cache_block)];
+
+  // load surface data
+  for (std::size_t i = 0; i < models.size(); ++i) {
+    const auto& model = models[i];
+
+    d.vertices_capacity = model.getNumVertices() * 3;
+    d.faces_capacity = model.getNumFaces() * NUM_VERTICES_PER_FACE;
+    d.colors_capacity = model.getNumVertices();
+
+    d.vertices = &vertices_base[sum_num_vertices * 3];
+    d.faces = &faces_base[sum_num_faces * 3];
+    d.colors = &colors_base[sum_num_vertices];
+
+    loader_.load(model.getFilename(), &d);
+
+    sum_num_vertices += model.getNumVertices();
+    sum_num_faces += model.getNumFaces();
+
+    CHECK_EQ(d.num_vertices, model.getNumVertices());
+    CHECK_EQ(d.num_faces, model.getNumFaces());
+  }
+
+  CHECK_EQ(sum_num_vertices, domain.getNumVertices());
+  CHECK_EQ(sum_num_faces, domain.getNumFaces());
+
+  // update surface size
+  num_vertices_[cache_block] = sum_num_vertices;
+  num_faces_[cache_block] = sum_num_faces;
+
+  // transform vertices, map embree buffers, and populate materials
+  sum_num_vertices = 0;
+  sum_num_faces = 0;
+
+  // HybridMaterial* material_base =
+  // &materials_[materialBaseIndex(cache_block)];
+
+  glm::vec4 v;
+  for (std::size_t i = 0; i < models.size(); ++i) {
+    const auto& model = models[i];
+
+    float* vertices = &vertices_base[sum_num_vertices * 3];
+    uint32_t* faces = &faces_base[sum_num_faces * 3];
+
+    // transform vertices
+    bool apply_transform = (model.getTransform() != glm::mat4(1.0));
+    if (apply_transform) {
+      const glm::mat4& x = model.getTransform();
+
+      std::size_t nverts = model.getNumVertices() * 3;
+
+      for (std::size_t n = 0; n < nverts; n += 3) {
+        v = x * glm::vec4(vertices[n], vertices[n + 1], vertices[n + 2], 1.0f);
+        vertices[n] = v.x;
+        vertices[n + 1] = v.y;
+        vertices[n + 2] = v.z;
+      }
+    }
+
+    // map buffers
+    mapEmbreeBuffer(cache_block, vertices, model.getNumVertices(), faces,
+                    model.getNumFaces(), i);
+
+    // // populate materials
+    // uint32_t* colors = &colors_base[sum_num_vertices];
+    // HybridMaterial* hybrid_materials = &material_base[sum_num_vertices];
+
+    // const Material* model_material = model.material;
+
+    // for (std::size_t i = 0; i < model.num_vertices; ++i) {
+    //   hybrid_materials[i].set(model_material, color[i]);
+    // }
+
+    // update sums
+    sum_num_vertices += model.getNumVertices();
+    sum_num_faces += model.getNumFaces();
+  }
+
+  // RTCScene scene = scenes_[cache_block];
+  // rtcCommit(scene);
+
+  computeNormals(cache_block);
+
+  // return scene;
 }
 
 void HybridGeometryBuffer::loadShapes(const std::vector<Shape*>& shapes,
@@ -180,15 +281,14 @@ void HybridGeometryBuffer::loadShapes(const std::vector<Shape*>& shapes,
     CHECK(shapes_[cache_block] == nullptr);
     shapes_[cache_block] = &shapes;
 
-    std::cout << "shapes.size: " << shapes.size()
-              << " shapes pointer: " << &shapes << " cache block "
-              << cache_block << std::endl;
+    // std::cout << "shapes.size: " << shapes.size()
+    //           << " shapes pointer: " << &shapes << " cache block "
+    //           << cache_block << std::endl;
 
     // std::cout<<"shapes.size: "<<shapes.size()<<std::endl;
     // create geometry
     unsigned int geom_id = rtcNewUserGeometry(scene, shapes.size());
     shape_created_[cache_block] = CREATED;
-    // shape_geom_ids_[cache_block] = geom_id;
 
     CHECK_EQ(geom_id, shape_geom_id);
 
@@ -198,8 +298,6 @@ void HybridGeometryBuffer::loadShapes(const std::vector<Shape*>& shapes,
     CHECK_EQ(shape->type(), Shape::SPHERE);
     shape->setGeomId(shape_geom_id);
   }
-
-  // unsigned int gid = shape_geom_ids_[cache_block];
 
   // set data
   void* shape_ptr = (void*)&shapes[0];
@@ -244,7 +342,8 @@ void HybridGeometryBuffer::cleanup() {
 void HybridGeometryBuffer::mapEmbreeBuffer(int cache_block, float* vertices,
                                            std::size_t num_vertices,
                                            uint32_t* faces,
-                                           std::size_t num_faces) {
+                                           std::size_t num_faces,
+                                           std::size_t model_id) {
   // select scene
   RTCScene scene = scenes_[cache_block];
 
@@ -254,32 +353,28 @@ void HybridGeometryBuffer::mapEmbreeBuffer(int cache_block, float* vertices,
         rtcNewTriangleMesh(scene, RTC_GEOMETRY_DYNAMIC, num_faces, num_vertices,
                            1 /*numTimeSteps*/);
 
-// #ifdef DEBUG_MESH
 #ifdef DEBUG_MESH
     LOG(INFO) << "created embree triangle mesh geom ID: " << geom_id
               << " cache block " << cache_block;
 #endif
-    CHECK_EQ(geom_id, 0);
-    // CHECK_NE(geom_id, RTC_INVALID_GEOMETRY_ID);
+    CHECK_EQ(geom_id, model_id);
+    CHECK_NE(geom_id, RTC_INVALID_GEOMETRY_ID);
 
     embree_mesh_created_[cache_block] = CREATED;
-    // embree_mesh_geom_ids_[cache_block] = geom_id;
   }
 
   // map vertices
 
-  // gid = embree_mesh_geom_ids_[cache_block];
-
-  rtcSetBuffer2(scene, 0 /* geomID */, RTC_VERTEX_BUFFER, vertices, 0,
+  rtcSetBuffer2(scene, model_id /* geomID */, RTC_VERTEX_BUFFER, vertices, 0,
                 sizeof(float) * 3, num_vertices);
 
   // map faces
 
-  rtcSetBuffer2(scene, 0 /* geomID */, RTC_INDEX_BUFFER, faces, 0,
+  rtcSetBuffer2(scene, model_id /* geomID */, RTC_INDEX_BUFFER, faces, 0,
                 sizeof(uint32_t) * NUM_VERTICES_PER_FACE, num_faces);
 
-  rtcUpdate(scene, 0 /*geomID*/);
-  rtcEnable(scene, 0 /*geomID*/);
+  rtcUpdate(scene, model_id /*geomID*/);
+  rtcEnable(scene, model_id /*geomID*/);
 }
 
 void HybridGeometryBuffer::getColorTuple(int cache_block, uint32_t primID,
@@ -406,6 +501,9 @@ void HybridGeometryBuffer::updateTriangleIntersection(
   uint32_t b = (rgb[2] * w) + (rgb[5] * u) + (rgb[8] * v);
 
   isect->color = util::pack(r, g, b);
+
+  // material
+  isect->material = getTriMeshMaterial(cache_block, isect->geomID);
 
   // shading normal
 

@@ -89,8 +89,8 @@ void TriMeshBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
   CHECK_NOTNULL(colors_);
 
   // materials
-  // materials_ = arena_.Alloc<HybridMaterial>(cache_size * max_nvertices, false);
-  // CHECK_NOTNULL(materials_);
+  // materials_ = arena_.Alloc<HybridMaterial>(cache_size * max_nvertices,
+  // false); CHECK_NOTNULL(materials_);
 
   // domains
   domains_.resize(cache_size);
@@ -111,8 +111,12 @@ void TriMeshBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
   scenes_ = arena_.Alloc<RTCScene>(cache_size, false);
   CHECK_NOTNULL(scenes_);
 
+  // RTCSceneFlags sflags = RTC_SCENE_STATIC; // dont use this
+  RTCSceneFlags sflags = RTC_SCENE_DYNAMIC;
+  RTCAlgorithmFlags aflags = RTC_INTERSECT1;
+
   for (std::size_t i = 0; i < cache_size; ++i) {
-    scenes_[i] = rtcDeviceNewScene(device_, RTC_SCENE_DYNAMIC, RTC_INTERSECT1);
+    scenes_[i] = rtcDeviceNewScene(device_, sflags, aflags);
     CHECK_NOTNULL(scenes_[i]);
   }
 }

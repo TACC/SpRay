@@ -157,7 +157,10 @@ inline void Domain::populateModelInfo() {
 
       temp_aabb.bounds[0] = m.getTransform() * glm::vec4(bounds_min, 1.0f);
       temp_aabb.bounds[1] = m.getTransform() * glm::vec4(bounds_max, 1.0f);
-
+#ifdef PRINT_DOMAIN_BOUNDS
+      std::cout << "object: " << m.getObjectAabb() << "\n";
+      std::cout << "world: " << temp_aabb << "\n";
+#endif
       world_aabb_.merge(temp_aabb);
     }
     num_vertices_ += m.getNumVertices();
@@ -169,6 +172,10 @@ inline void Domain::populateModelInfo() {
     shape->getBounds(&temp_aabb);
     world_aabb_.merge(temp_aabb);
   }
+
+#ifdef PRINT_DOMAIN_BOUNDS
+  std::cout << "scene bound (world): " << world_aabb_ << "\n";
+#endif
 }
 
 }  // namespace spray

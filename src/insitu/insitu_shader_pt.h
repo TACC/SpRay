@@ -95,24 +95,35 @@ void ShaderPt<CacheT, SceneT>::operator()(
 
   auto *material = isect.material;
 
-  glm::vec3 albedo;
-  util::unpack(isect.color, albedo);
+  bool is_shape = (isect.color == SPRAY_INVALID_COLOR);
 
-  glm::vec3 normal(isect.Ng[0], isect.Ng[1], isect.Ng[2]);
+  glm::vec3 albedo;
+  if (is_shape) {
+    albedo = material->getAlbedo();
+  } else {
+    util::unpack(isect.color, albedo);
+  }
+
+  glm::vec3 normal(isect.Ns[0], isect.Ns[1], isect.Ns[2]);
 
   glm::vec3 wo(-rayin.dir[0], -rayin.dir[1], -rayin.dir[2]);
   wo = glm::normalize(wo);
 
   glm::vec3 Lin(rayin.w[0], rayin.w[1], rayin.w[2]);
 
-#ifdef SPRAY_FACE_FORARD_OFF
+#ifdef SPRAY_FACE_FORWARD_OFF
   glm::vec3 normal_ff = glm::normalize(normal);
 #else
-  float cos_theta_i = glm::dot(wo, normal);
-  bool entering = (cos_theta_i > 0.0f);
-  glm::vec3 normal_ff = entering ? normal : -normal;
-  normal_ff = glm::normalize(normal_ff);
+  glm::vec3 normal_ff;
+  if (is_shape) {
+    normal_ff = glm::normalize(normal);
+  } else {
+    float cos_theta_i = glm::dot(wo, normal);
+    bool entering = (cos_theta_i > 0.0f);
+    normal_ff = glm::normalize(entering ? normal : -normal);
+  }
 #endif
+
 
   glm::vec3 wi, light_color, Lr;
   float pdf, inv_shade_pdf, costheta;

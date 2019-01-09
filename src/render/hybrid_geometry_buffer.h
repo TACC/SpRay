@@ -29,8 +29,10 @@
 #include "pbrt/memory.h"
 
 #include "io/ply_loader.h"
+#include "render/domain.h"
 #include "render/rays.h"
 #include "render/shape.h"
+#include "render/spray.h"
 
 #define NUM_VERTICES_PER_FACE 3  // triangle
 
@@ -96,13 +98,22 @@ class HybridGeometryBuffer {
     return (cache_block * max_nvertices_);
   }
 
+  // std::size_t materialBaseIndex(int cache_block) const {
+  //   return (cache_block * max_nvertices_);
+  // }
+
+  const Material* getTriMeshMaterial(int cache_block,
+                                     unsigned int geom_id) const {
+    return domains_[cache_block]->getMaterial(geom_id);
+  }
+
   void cleanup();
   void mapEmbreeBuffer(int cache_block, float* vertices,
                        std::size_t num_vertices, uint32_t* faces,
-                       std::size_t num_faces);
+                       std::size_t num_faces, std::size_t model_id);
 
-  Material* getMaterial(int cache_block, int prim_id) const {
-    Shape* shape = shapes_[cache_block]->at(prim_id);
+  const Material* getShapeMaterial(int cache_block, int prim_id) const {
+    const Shape* shape = shapes_[cache_block]->at(prim_id);
     return shape->material;
   }
 
@@ -111,7 +122,11 @@ class HybridGeometryBuffer {
 
   void updateShapeIntersection(int cache_block,
                                RTCRayIntersection* isect) const {
-    isect->material = getMaterial(cache_block, isect->primID);
+    isect->color = SPRAY_INVALID_COLOR;
+    isect->Ns[0] = isect->Ng[0];
+    isect->Ns[1] = isect->Ng[1];
+    isect->Ns[2] = isect->Ng[2];
+    isect->material = getShapeMaterial(cache_block, isect->primID);
   }
 
  private:
@@ -126,6 +141,8 @@ class HybridGeometryBuffer {
   float* normals_;    ///< per-cache-block normals. unnormalized. 2d array.
   uint32_t* faces_;   ///< per-cache-block faces. 2d array.
   uint32_t* colors_;  ///< per-cache-block packed rgb colors. 2d array.
+  // HybridMaterial* materials_;
+  std::vector<const Domain*> domains_;
 
   std::size_t* num_vertices_;
   std::size_t* num_faces_;
@@ -134,9 +151,7 @@ class HybridGeometryBuffer {
   RTCScene* scenes_;  ///< 1D array of per-cache-block Embree scenes.
 
   int* embree_mesh_created_;  // -1: initialized, 0: not initialized
-  // unsigned int* embree_mesh_geom_ids_;
   int* shape_created_;  // -1: initialized, 0: not initialized
-  // unsigned int* shape_geom_ids_;
 
   unsigned int* shape_geom_ids_;
 
