@@ -30,7 +30,6 @@
 #include "render/config.h"
 #include "render/material.h"
 #include "render/rays.h"
-#include "render/reflection.h"
 #include "utils/util.h"
 
 namespace spray {
@@ -124,8 +123,8 @@ void ShaderAo<SceneT>::operator()(int domain_id, const Ray &rayin,
   }
 #endif
 
-  glm::vec3 wi, light_color, Lr;
-  float pdf, inv_shade_pdf, costheta;
+  glm::vec3 wi, Lr, color;
+  float pdf;
 
   int next_ray_depth = ray_depth + 1;
 
@@ -134,13 +133,12 @@ void ShaderAo<SceneT>::operator()(int domain_id, const Ray &rayin,
 
   // direct illumination
 
-  glm::vec3 shade_color;
   for (int s = 0; s < samples_; ++s) {
-    bool valid = material->sample(albedo, wo, normal_ff, sampler, &wi,
-                                  &shade_color, &pdf);
+    bool valid =
+        material->sample(albedo, wo, normal_ff, sampler, &wi, &color, &pdf);
 
     if (valid) {
-      Lr = Lin * shade_color * ao_weight_ * (1.0f / pdf);
+      Lr = Lin * color * ao_weight_ * (1.0f / pdf);
       if (hasPositive(Lr)) {
         // create shadow ray
         Ray *shadow = mem->Alloc<Ray>(1, false);
@@ -161,11 +159,10 @@ void ShaderAo<SceneT>::operator()(int domain_id, const Ray &rayin,
 
   if (next_ray_depth < bounces_) {
     RandomSampler_init(sampler, rayin.samid * next_ray_depth);
-    glm::vec3 weight;
     bool valid =
-        material->sample(albedo, wo, normal_ff, sampler, &wi, &weight, &pdf);
+        material->sample(albedo, wo, normal_ff, sampler, &wi, &color, &pdf);
     if (valid) {
-      Lr = Lin * weight * (1.0f / pdf);
+      Lr = Lin * color * (1.0f / pdf);
       if (hasPositive(Lr)) {
         Ray *r2 = mem->Alloc<Ray>(1, false);
         CHECK_NOTNULL(r2);
