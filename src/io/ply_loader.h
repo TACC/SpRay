@@ -128,7 +128,7 @@ class PlyLoader {
   void parseProperty(std::size_t elem_idx, std::istringstream &ss);
 
   int getDataType(const std::string &s) const;
-  int getFormat(const std::string &s) const;
+  static int getFormat(const std::string &s);
 
   void parseVertices(const Element &e, Data *d);
   void parseFaces(const Element &e, Data *d);
