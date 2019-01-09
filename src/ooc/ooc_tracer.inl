@@ -58,7 +58,7 @@ void Tracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
   CHECK_GT(image_w_, 0);
   CHECK_GT(image_h_, 0);
 
-  shader_.init(cfg, scene);
+  shader_.init(cfg, *scene);
 
   int num_lights;
   if (shader_.isAo()) {

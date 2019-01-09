@@ -63,14 +63,14 @@ int main(int argc, char** argv) {
   typedef spray::Scene<CacheT, SurfaceBufT> SceneT;
 
   // ao
-  typedef spray::insitu::ShaderAo<CacheT, SceneT> ShaderAoT;
+  typedef spray::insitu::ShaderAo<SceneT> ShaderAoT;
   typedef spray::insitu::MultiThreadTracer<CacheT, ShaderAoT, SceneT>
       TracerAoT;
   typedef spray::SprayRenderer<TracerAoT, SceneT> RenderAoT;
 
   // pt
   // typedef spray::insitu::ShaderPtShapes<CacheT, SceneT> ShaderPtT;
-  typedef spray::insitu::ShaderPt<CacheT, SceneT> ShaderPtT;
+  typedef spray::insitu::ShaderPt<SceneT> ShaderPtT;
   typedef spray::insitu::MultiThreadTracer<CacheT, ShaderPtT, SceneT>
       TracerPtT;
   typedef spray::SprayRenderer<TracerPtT, SceneT> RenderPtT;

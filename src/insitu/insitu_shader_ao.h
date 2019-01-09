@@ -36,20 +36,18 @@
 namespace spray {
 namespace insitu {
 
-template <typename CacheT, typename SceneT>
+template <typename SceneT>
 class ShaderAo {
  public:
-  void init(const spray::Config &cfg, SceneT *scene) {
+  void init(const spray::Config &cfg, const SceneT &scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;  // number of samples for area lights
     ks_ = cfg.ks;
     shininess_ = cfg.shininess;
-    scene_ = scene;
-    lights_ = scene->getLights();  // copy lights
+    lights_ = scene.getLights();  // copy lights
   }
 
  private:
-  SceneT *scene_;
   std::vector<Light *> lights_;
   int bounces_;
   int samples_;
@@ -75,12 +73,13 @@ class ShaderAo {
   }
 };
 
-template <typename CacheT, typename SceneT>
-void ShaderAo<CacheT, SceneT>::operator()(
-    int domain_id, const Ray &rayin, const spray::RTCRayIntersection &isect,
-    spray::MemoryArena *mem, std::queue<Ray *> *sq, std::queue<Ray *> *rq,
-    int ray_depth) {
- // TODO
+template <typename SceneT>
+void ShaderAo<SceneT>::operator()(int domain_id, const Ray &rayin,
+                                  const spray::RTCRayIntersection &isect,
+                                  spray::MemoryArena *mem,
+                                  std::queue<Ray *> *sq, std::queue<Ray *> *rq,
+                                  int ray_depth) {
+  // TODO
 }
 
 /*

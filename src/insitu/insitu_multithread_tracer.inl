@@ -63,7 +63,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
   CHECK_GT(image_h_, 0);
 
   // shader
-  shader_.init(cfg, scene);
+  shader_.init(cfg, *scene);
 
   // process context
   int total_num_light_samples;

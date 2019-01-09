@@ -38,7 +38,7 @@ void TContext<CacheT, ShaderT, SceneT>::init(
   rqs_.resize(ndomains);
   sqs_.resize(ndomains);
 
-  shader_.init(cfg, scene);
+  shader_.init(cfg, *scene);
 
   one_over_num_pixel_samples_ = 1.0 / (double)cfg.pixel_samples;
 }

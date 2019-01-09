@@ -36,20 +36,18 @@
 namespace spray {
 namespace ooc {
 
-template <typename CacheT, typename SceneT>
+template<typename SceneT>
 class ShaderPt {
  public:
-  void init(const spray::Config &cfg, SceneT *scene) {
+  void init(const spray::Config &cfg, const SceneT &scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;  // number of samples for area lights
     ks_ = cfg.ks;
     shininess_ = cfg.shininess;
-    scene_ = scene;
-    lights_ = scene->getLights();  // copy lights
+    lights_ = scene.getLights();  // copy lights
   }
 
  private:
-  SceneT *scene_;
   std::vector<Light *> lights_;
   int bounces_;
   int samples_;
@@ -87,11 +85,12 @@ class ShaderPt {
   }
 };
 
-template <typename CacheT, typename SceneT>
-void ShaderPt<CacheT, SceneT>::operator()(
-    int domain_id, const Ray &rayin, const spray::RTCRayIntersection &isect,
-    spray::MemoryArena *mem, std::queue<Ray *> *sq, std::queue<Ray *> *rq,
-    std::queue<Ray *> *pending_q, int ray_depth) {
+template <typename SceneT>
+void ShaderPt<SceneT>::operator()(int domain_id, const Ray &rayin,
+                                  const spray::RTCRayIntersection &isect,
+                                  spray::MemoryArena *mem,
+                                  std::queue<Ray *> *sq, std::queue<Ray *> *rq,
+                                  std::queue<Ray *> *pending_q, int ray_depth) {
   // TODO
 }
 
