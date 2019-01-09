@@ -23,6 +23,7 @@
 #include "insitu/insitu_multithread_tracer.h"
 #include "insitu/insitu_ray.h"
 #include "insitu/insitu_shader_ao.h"
+#include "insitu/insitu_shader_pt.h"
 #include "insitu/insitu_shader_pt_shapes.h"
 #include "render/caches.h"
 #include "render/config.h"
@@ -67,7 +68,8 @@ int main(int argc, char** argv) {
   typedef spray::SprayRenderer<TracerAoT, SceneT> RenderAoT;
 
   // pt
-  typedef spray::insitu::ShaderPtShapes<CacheT, SceneT> ShaderPtT;
+  // typedef spray::insitu::ShaderPtShapes<CacheT, SceneT> ShaderPtT;
+  typedef spray::insitu::ShaderPt<CacheT, SceneT> ShaderPtT;
   typedef spray::insitu::MultiThreadTracer<CacheT, ShaderPtT, SceneT> TracerPtT;
   typedef spray::SprayRenderer<TracerPtT, SceneT> RenderPtT;
 
