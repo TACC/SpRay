@@ -353,67 +353,71 @@ void ImageScheduleTileList::init(int64_t image_w, int64_t image_h,
   image.h = image_h;
 
   Tile vstripe = makeVerticalStripe(num_ranks, rank, image);
+  CHECK_GT(vstripe.getArea(), 0);
 
-  if (vstripe.getArea() > 0) {
-    // evaluate the size of each blocking tile
+  // evaluate the size of each blocking tile
 
-    int64_t num_samples = static_cast<int64_t>(vstripe.w) *
-                          static_cast<int64_t>(vstripe.h) * num_pixel_samples;
+  int64_t num_samples = static_cast<int64_t>(vstripe.w) *
+                        static_cast<int64_t>(vstripe.h) * num_pixel_samples;
 
-    int64_t estimated_num_tiles =
-        (num_samples + maximum_num_samples_per_rank - 1) /
-        maximum_num_samples_per_rank;
+  int64_t estimated_num_tiles =
+      (num_samples + maximum_num_samples_per_rank - 1) /
+      maximum_num_samples_per_rank;
 
-    CHECK_LT(estimated_num_tiles, INT_MAX);
+  CHECK_LT(estimated_num_tiles, INT_MAX);
 
-    int ntiles = static_cast<int>(estimated_num_tiles);
-    int tile_h = vstripe.h / ntiles;
+  int ntiles = static_cast<int>(estimated_num_tiles);
+  int tile_h = vstripe.h / ntiles;
 
-    ntiles = (vstripe.h + tile_h - 1) / tile_h;
+  ntiles = (vstripe.h + tile_h - 1) / tile_h;
 
-    tiles_.resize(ntiles);
+  CHECK_GT(ntiles, 0);
+  tiles_.resize(ntiles);
 
-    // make horizontal stripes
-    std::size_t i = 0;
+  // make horizontal stripes
+  std::size_t i = 0;
 
-    int max_area = -1;
-    int largest_tile_index_;
+  int max_area = -1;
+  largest_tile_index_ = -1;
 
-    for (int y = 0; y < vstripe.h; y += tile_h) {
-      int h = std::min(tile_h, vstripe.h - y);
+  for (int y = 0; y < vstripe.h; y += tile_h) {
+    int h = std::min(tile_h, vstripe.h - y);
 
-      CHECK_LT(i, tiles_.size());
+    CHECK_LT(i, tiles_.size());
 
-      Tile& t = tiles_[i];
-      t.x = vstripe.x;
-      t.y = y;
-      t.w = vstripe.w;
-      t.h = h;
+    Tile& t = tiles_[i];
+    t.x = vstripe.x;
+    t.y = y;
+    t.w = vstripe.w;
+    t.h = h;
 #ifdef DEBUG_PRINT_TILES
-      std::cout << t << "\n";
+    std::cout << "[" << i << "]" << t << "\n";
 #endif
-      int area = t.w * t.h;
-      if (area > max_area) {
-        max_area = area;
-        largest_tile_index_ = i;
-      }
-
-      ++i;
+    int area = t.w * t.h;
+    CHECK_GT(area, 0);
+    if (area > max_area) {
+      max_area = area;
+      largest_tile_index_ = i;
     }
+
+    ++i;
+  }
+
+  CHECK_GE(largest_tile_index_, 0);
+  CHECK_GT(getLargestBlockingTile().getArea(), 0) << largest_tile_index_;
 
 #ifdef SPRAY_GLOG_CHECK
-    CHECK_EQ(i, tiles_.size());
-    for (auto& t : tiles_) {
-      CHECK_GT(t.w * t.h, 0);
-      CHECK_EQ(t.x, vstripe.x);
-      CHECK_GE(t.y, vstripe.y);
-      CHECK_LT(t.y, vstripe.y + vstripe.h);
-      CHECK_EQ(t.w, vstripe.w);
-      CHECK_GT(t.y + t.h, vstripe.y);
-      CHECK_LE(t.y + t.h, vstripe.y + vstripe.h);
-    }
-#endif
+  CHECK_EQ(i, tiles_.size());
+  for (auto& t : tiles_) {
+    CHECK_GT(t.w * t.h, 0);
+    CHECK_EQ(t.x, vstripe.x);
+    CHECK_GE(t.y, vstripe.y);
+    CHECK_LT(t.y, vstripe.y + vstripe.h);
+    CHECK_EQ(t.w, vstripe.w);
+    CHECK_GT(t.y + t.h, vstripe.y);
+    CHECK_LE(t.y + t.h, vstripe.y + vstripe.h);
   }
+#endif
 
   tile_index_ = 0;
 }

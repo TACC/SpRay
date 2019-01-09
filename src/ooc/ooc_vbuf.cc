@@ -28,11 +28,12 @@ namespace spray {
 namespace ooc {
 
 void VBuf::resize(const spray::Tile& tile, int num_pixel_samples) {
+  CHECK_GT(tile.w * tile.h, 0) << tile;
   tile_ = tile;
   num_pixel_samples_ = num_pixel_samples;
 
   std::size_t size = tbufSize(tile, num_pixel_samples);
-  CHECK_GT(size, 0);
+  CHECK_GT(size, 0) << tile;
   tbuf_.resize(size);
 
   for (auto& t : tbuf_) t = SPRAY_FLOAT_INF;
