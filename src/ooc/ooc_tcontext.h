@@ -116,7 +116,12 @@ class TContext {
 
  public:
   void enqRad(SceneT* scene, Ray* ray) {
+// #ifdef SPRAY_BACKGROUND_COLOR_BLACK
     isector_.intersect(num_domains_, scene, ray, &rqs_, &rstats_);
+// #else
+//     isector_.intersect(num_domains_, scene, ray, &rqs_, &rstats_,
+//                        &bg_retire_q_);
+// #endif
   }
 
   spray::RTCRayIntersection& getRTCIsect() { return rtc_isect_; }
@@ -148,6 +153,8 @@ class TContext {
 
   spray::QVector<RayData>* sqs_in_;
   spray::QVector<RayData>* sqs_out_;
+
+  std::queue<Ray*> bg_retire_q_;  ///< Retire queue for background colors.
 
  public:
   bool allFilterQsEmpty() const {

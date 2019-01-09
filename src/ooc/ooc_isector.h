@@ -73,6 +73,40 @@ class Isector {
     }
   }
 
+  // with backgrond color support
+  void intersect(int ndomains, SceneT* scene, Ray* ray,
+                 spray::QVector<RayData>* qs, DomainStats* stats,
+                 std::queue<Ray*>* background_q) {
+    background_q->push(ray);
+    RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
+                                             &eray_);
+
+    scene->intersectDomains(eray_);
+
+    int rank = mpi::rank();
+
+    if (domains_.count) {
+#ifdef SPRAY_GLOG_CHECK
+      CHECK_LT(domains_.count, SPRAY_RAY_DOMAIN_LIST_SIZE);
+#endif
+      RTCRayUtil::sortDomains(domains_, hits_);
+
+      for (int d = 0; d < domains_.count; ++d) {
+        int id = hits_[d].id;
+#ifdef SPRAY_GLOG_CHECK
+        CHECK_LT(id, ndomains);
+#endif
+        ray_data_.ray = ray;
+        ray_data_.tdom = hits_[d].t;
+        ray_data_.dom_depth = d;
+
+        qs->push(id, ray_data_);
+
+        stats->increment(id, d /*depth*/);
+      }
+    }
+  }
+
   bool intersect(int exclude_id, int ndomains, SceneT* scene, Ray* ray,
                  spray::QVector<RayData>* qs, DomainStats* stats) {
     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
