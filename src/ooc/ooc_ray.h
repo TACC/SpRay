@@ -35,7 +35,6 @@ struct SPRAY_ALIGN(16) Ray {
   float w[3];
   int depth;
   float history[SPRAY_HISTORY_SIZE];
-  float tdom;  // distance to domain only used for sending rays
   int committed;
   int light;
   int occluded;

@@ -98,11 +98,11 @@ void TContext<CacheT, ShaderT, SceneT>::procRads2(SceneT* scene,
   while (!rq2_.empty()) {
     Ray* r = rq2_.front();
     rq2_.pop();
-// #ifdef SPRAY_BACKGROUND_COLOR_BLACK
+#ifdef SPRAY_BACKGROUND_COLOR_BLACK
     isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
-// #else
-//     isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_, &bg_retire_q_);
-// #endif
+#else
+    isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_, bg_commit_q_);
+#endif
   }
 }
 
@@ -147,9 +147,9 @@ void TContext<CacheT, ShaderT, SceneT>::retire() {
 template <typename CacheT, typename ShaderT, typename SceneT>
 void TContext<CacheT, ShaderT, SceneT>::retireBackground() {
   glm::vec3 bgcolor;
-  while (!bg_retire_q_.empty()) {
-    Ray* ray = bg_retire_q_.front();
-    bg_retire_q_.pop();
+  while (!bg_retire_q_->empty()) {
+    Ray* ray = bg_retire_q_->front();
+    bg_retire_q_->pop();
     if (vbuf_.correctAndMiss(*ray)) {
       bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
                 spray::computeBackGroundColor(ray->dir);

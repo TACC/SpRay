@@ -59,6 +59,9 @@ class TContext {
 
     commit_q_ = &commit_retire_q0_;
     retire_q_ = &commit_retire_q1_;
+
+    bg_commit_q_ = &commit_bg_retire_q0_;
+    bg_retire_q_ = &commit_bg_retire_q1_;
   }
 
  public:
@@ -120,8 +123,7 @@ class TContext {
 #ifdef SPRAY_BACKGROUND_COLOR_BLACK
     isector_.intersect(num_domains_, scene, ray, &rqs_, &rstats_);
 #else
-    isector_.intersect(num_domains_, scene, ray, &rqs_, &rstats_,
-                       &bg_retire_q_);
+    isector_.intersect(num_domains_, scene, ray, &rqs_, &rstats_, bg_retire_q_);
 #endif
   }
 
@@ -145,8 +147,14 @@ class TContext {
   std::queue<Ray*> commit_retire_q0_;
   std::queue<Ray*> commit_retire_q1_;
 
+  std::queue<Ray*> commit_bg_retire_q0_;
+  std::queue<Ray*> commit_bg_retire_q1_;
+
   std::queue<Ray*>* commit_q_;
   std::queue<Ray*>* retire_q_;
+
+  std::queue<Ray*>* bg_commit_q_;
+  std::queue<Ray*>* bg_retire_q_;
 
   spray::QVector<RayData> rqs_;
   spray::QVector<RayData> sqs_0_;
@@ -155,7 +163,6 @@ class TContext {
   spray::QVector<RayData>* sqs_in_;
   spray::QVector<RayData>* sqs_out_;
 
-  std::queue<Ray*> bg_retire_q_;  ///< Retire queue for background colors.
 
  public:
   bool allFilterQsEmpty() const {
@@ -168,12 +175,24 @@ class TContext {
   bool sqsInEmpty() const { return sqs_in_->empty(); }
   bool rqsEmpty() const { return rqs_.empty(); }
   bool retireQEmpty() const { return retire_q_->empty(); }
-  bool backgroundQEmpty() const { return bg_retire_q_.empty(); }
   bool commitQEmpty() const { return commit_q_->empty(); }
   bool pendingQEmpty() const { return pending_q_.empty(); }
 
+  bool bgRetireQEmpty() const { return bg_retire_q_->empty(); }
+  bool bgCommitQEmpty() const { return bg_commit_q_->empty(); }
+
+  void checkQs() const {
+    CHECK(sqsInEmpty());
+    CHECK(rqsEmpty());
+    CHECK(retireQEmpty());
+    CHECK(commitQEmpty());
+    CHECK(bgRetireQEmpty());
+    CHECK(bgCommitQEmpty());
+  }
+
   void swapQs() {
     std::swap(commit_q_, retire_q_);
+    std::swap(bg_commit_q_, bg_retire_q_);
     std::swap(sqs_in_, sqs_out_);
   }
 
@@ -224,7 +243,7 @@ class TContext {
         isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
 #else
         isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_,
-                           &bg_retire_q_);
+                           bg_retire_q_);
 #endif
       }
     }

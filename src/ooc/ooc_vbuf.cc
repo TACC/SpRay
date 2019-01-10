@@ -60,6 +60,9 @@ bool VBuf::correctAndMiss(const Ray& ray) const {
       return false;
     }
   }
+#ifdef SPRAY_GLOG_CHECK
+  CHECK_LT(ray_depth, SPRAY_HISTORY_SIZE);
+#endif
   return std::isinf(tbuf_[offset + ray_depth]);
 }
 

@@ -171,7 +171,7 @@ void PContext::isectPrims(SceneT* scene, ShaderT& shader,
     { tcontext->retire(); }
 
 #ifdef SPRAY_GLOG_CHECK
-    CHECK(tcontext->backgroundQEmpty());
+    tcontext->checkQs();
 #endif
     tcontext->resetMemIn();
     tcontext->swapMems();
