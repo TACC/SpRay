@@ -25,10 +25,10 @@
 #include "insitu/insitu_singlethread_tracer.h"
 #include "render/caches.h"
 #include "render/config.h"
+#include "render/hybrid_geometry_buffer.h"
 #include "render/scene.h"
 #include "render/spray.h"
 #include "render/spray_renderer.h"
-#include "render/trimesh_buffer.h"
 #include "utils/comm.h"
 
 int main(int argc, char** argv) {
@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
   typedef spray::InfiniteCache CacheT;
 
   // surface buffer
-  typedef spray::TriMeshBuffer SurfaceBufT;
+  typedef spray::HybridGeometryBuffer SurfaceBufT;
 
   // scene
   typedef spray::Scene<CacheT, SurfaceBufT> SceneT;

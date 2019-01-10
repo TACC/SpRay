@@ -98,11 +98,11 @@ void TContext<CacheT, ShaderT, SceneT>::procRads2(SceneT* scene,
   while (!rq2_.empty()) {
     Ray* r = rq2_.front();
     rq2_.pop();
-#ifdef SPRAY_BACKGROUND_COLOR_BLACK
+// #ifdef SPRAY_BACKGROUND_COLOR_BLACK
     isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
-#else
-    isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_, &bg_retire_q_);
-#endif
+// #else
+//     isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_, &bg_retire_q_);
+// #endif
   }
 }
 

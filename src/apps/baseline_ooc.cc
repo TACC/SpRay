@@ -27,9 +27,9 @@
 #include "render/caches.h"
 #include "render/config.h"
 #include "render/data_partition.h"
+#include "render/hybrid_geometry_buffer.h"
 #include "render/spray.h"
 #include "render/spray_renderer.h"
-#include "render/trimesh_buffer.h"
 #include "utils/comm.h"
 
 int main(int argc, char** argv) {
@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
   typedef spray::LruCache LruCacheT;
 
   // surface buffer
-  typedef spray::TriMeshBuffer SurfaceBufT;
+  typedef spray::HybridGeometryBuffer SurfaceBufT;
 
   // scenes
   typedef spray::Scene<InfCacheT, SurfaceBufT> SceneInfT;
