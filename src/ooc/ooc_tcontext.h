@@ -168,6 +168,7 @@ class TContext {
   bool sqsInEmpty() const { return sqs_in_->empty(); }
   bool rqsEmpty() const { return rqs_.empty(); }
   bool retireQEmpty() const { return retire_q_->empty(); }
+  bool backgroundQEmpty() const { return bg_retire_q_.empty(); }
   bool commitQEmpty() const { return commit_q_->empty(); }
   bool pendingQEmpty() const { return pending_q_.empty(); }
 
@@ -181,7 +182,7 @@ class TContext {
 #ifdef SPRAY_GLOG_CHECK
     CHECK(frq_.empty());
     CHECK(fsq_in_.empty());
-    CHECK(fsq_out_.empty());
+    CHECK(fsq_out_.empty()) << fsq_out_.size();
 #endif
     filterRqs(id);
     filterSqs(id, sqs_in_, &fsq_in_);
@@ -219,12 +220,12 @@ class TContext {
       if (vbuf_.correct(*r)) {
         r->depth = 0;
         r->history[0] = SPRAY_FLOAT_INF;
-// #ifdef SPRAY_BACKGROUND_COLOR_BLACK
+#ifdef SPRAY_BACKGROUND_COLOR_BLACK
         isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
-// #else
-//         isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_,
-//                            &bg_retire_q_);
-// #endif
+#else
+        isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_,
+                           &bg_retire_q_);
+#endif
       }
     }
   }

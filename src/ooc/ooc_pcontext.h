@@ -166,6 +166,13 @@ void PContext::isectPrims(SceneT* scene, ShaderT& shader,
       { tcontext->retire(); }
       tcontext->swapQs();
     }  // while (1)
+
+#pragma omp critical(cs_pcontext_tcontext_retire)
+    { tcontext->retire(); }
+
+#ifdef SPRAY_GLOG_CHECK
+    CHECK(tcontext->backgroundQEmpty());
+#endif
     tcontext->resetMemIn();
     tcontext->swapMems();
 
