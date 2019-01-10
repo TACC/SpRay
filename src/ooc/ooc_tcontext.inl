@@ -46,6 +46,11 @@ void TContext<CacheT, ShaderT, SceneT>::procRads(int id, SceneT* scene,
         procRads2(scene, sinfo);
       }
     }
+// #ifndef SPRAY_BACKGROUND_COLOR_BLACK
+//     else {
+//       bg_retire_q_.push(r);
+//     }
+// #endif
   }
 }
 
@@ -112,6 +117,7 @@ void TContext<CacheT, ShaderT, SceneT>::resize(int ndomains,
   num_domains_ = ndomains;
   num_pixel_samples_ = num_pixel_samples;
   num_bounces_ = num_bounces;
+  one_over_num_pixel_samples_ = 1.0 / (double)num_pixel_samples_;
 
   vbuf_.resize(tile, num_pixel_samples);
   image_ = image;
@@ -125,14 +131,30 @@ void TContext<CacheT, ShaderT, SceneT>::resize(int ndomains,
 
 template <typename CacheT, typename ShaderT, typename SceneT>
 void TContext<CacheT, ShaderT, SceneT>::retire() {
-  double scale = 1.0 / (double)num_pixel_samples_;
   while (!retire_q_->empty()) {
     Ray* r = retire_q_->front();
     retire_q_->pop();
     if (!r->occluded) {
       if (vbuf_.correct(*r)) {
-        image_->add(r->pixid, r->w, scale);
+        image_->add(r->pixid, r->w, one_over_num_pixel_samples_);
       }
+    }
+  }
+#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+  retireBackground();
+#endif
+}
+
+template <typename CacheT, typename ShaderT, typename SceneT>
+void TContext<CacheT, ShaderT, SceneT>::retireBackground() {
+  glm::vec3 bgcolor;
+  while (!bg_retire_q_.empty()) {
+    Ray* ray = bg_retire_q_.front();
+    bg_retire_q_.pop();
+    if (vbuf_.correctAndMiss(*ray)) {
+      bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
+                spray::computeBackGroundColor(ray->dir);
+      image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
     }
   }
 }

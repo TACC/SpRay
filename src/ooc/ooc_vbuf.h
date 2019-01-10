@@ -55,6 +55,7 @@ class VBuf {
     for (auto& t : tbuf_) t = SPRAY_FLOAT_INF;
   }
   bool correct(const Ray& ray) const;
+  bool correctAndMiss(const Ray& ray) const;
   bool update(float t, Ray* ray);
 };
 

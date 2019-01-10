@@ -52,6 +52,17 @@ bool VBuf::correct(const Ray& ray) const {
   return correct;
 }
 
+bool VBuf::correctAndMiss(const Ray& ray) const {
+  const auto ray_depth = ray.depth;
+  auto offset = (std::size_t)ray.samid * SPRAY_SPECU_HISTORY_SIZE;
+  for (int i = 0; i < ray_depth; ++i) {
+    if (ray.history[i] != tbuf_[offset + i]) {
+      return false;
+    }
+  }
+  return std::isinf(tbuf_[offset + ray_depth]);
+}
+
 bool VBuf::update(float t, Ray* ray) {
   const auto ray_depth = ray->depth;
   int update_pos = ray_depth;

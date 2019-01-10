@@ -372,7 +372,7 @@ void TContext<CacheT, ShaderT, SceneT>::retireBackground() {
     int oflag = ray->occluded;
     if (vbuf_->tbufOutMiss(ray->samid)) {
       bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
-                RayUtil::computeBackGroundColor(*ray);
+                spray::computeBackGroundColor(ray->dir);
       image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
     }
   }
