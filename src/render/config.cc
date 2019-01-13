@@ -67,7 +67,7 @@ Config::Config() {
 
   nthreads = 1;
 
-  shading = SPRAY_SHADING_LAMBERT;
+  use_spray_color = false;
 
   dev_mode = DEVMODE_NORMAL;
 }
@@ -93,14 +93,16 @@ void Config::printUsage(char** argv) {
   printf("  --bounces, <number of bounces (1)>\n");
   printf("  --camera-up <upx upy upz>\n");
   printf("  --camera <posx posy posz lookx looky lookz>\n");
+  printf("  --ao-mode\n");
+  printf("      Enable ambient occlusion.\n");
   printf("  --ao-samples <number of samples in AO (8)>\n");
   printf("  --pixel-samples <number of pixel samples (4)>\n");
   printf(
       "  --max-samples-per-rank <maximum number of screen-space samples per "
       "rank (1048576)>\n");
+  printf("  --use-spray-color\n");
+  printf("      Use color defined in the scene file.\n");
   printf("  --nthreads <number of threads (1)>\n");
-  printf("  --shading <lambert | blinn>\n");
-  printf("  --blinn ks_r ks_g ks_b shininess\n");
   printf("  --dev-mode\n");
 }
 
@@ -124,8 +126,7 @@ void Config::parse(int argc, char** argv) {
       {"ao-samples", required_argument, 0, 400},
       {"ao-mode", no_argument, 0, 402},
       {"pixel-samples", required_argument, 0, 403},
-      {"shading", required_argument, 0, 404},
-      {"blinn", required_argument, 0, 405},
+      {"use-spray-color", no_argument, 0, 405},
       {"max-samples-per-rank", required_argument, 0, 406},
       {"ply-path", required_argument, 0, 408},
       {"dev-mode", no_argument, 0, 1000},
@@ -235,20 +236,8 @@ void Config::parse(int argc, char** argv) {
         pixel_samples = atoi(optarg);
       } break;
 
-      case 404: {  // --shading
-        std::string cfg_shading = optarg;
-        if (cfg_shading == "blinn") {
-          shading = SPRAY_SHADING_BLINN;
-        } else {
-          shading = SPRAY_SHADING_LAMBERT;
-        }
-      } break;
-
-      case 405: {  // --blinn
-        float data[4];
-        util::parseTuple(argv, 4, data);
-        ks = glm::vec3(data[0], data[1], data[2]);
-        shininess = data[3];
+      case 405: {  // --use-spray-color
+        use_spray_color = true;
       } break;
 
       case 406: {  // --max-samples-per-rank

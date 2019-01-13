@@ -139,7 +139,6 @@ fi
 
 CACHE_SIZE=-1
 CAMERA="-5 10 15 0 0 0"
-BLINN_SPECULAR_SHININESS="0.4 0.4 0.4 10"
 
 echo "Choose shader type (1 or 2):"
 echo "1. ambient occlusion"
@@ -186,7 +185,6 @@ COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN_PATH/$SPRAY_BIN \
          --ao-samples $NUM_AO_SAMPLES \
          $AO_MODE \
          --bounces $NUM_BOUNCES \
-         --blinn $BLINN_SPECULAR_SHININESS \
          --num-partitions $NUM_PARTITIONS \
          $DEV_MODE \
          $SCENE"

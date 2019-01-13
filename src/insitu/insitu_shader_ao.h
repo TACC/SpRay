@@ -48,6 +48,7 @@ class ShaderAo {
 #ifdef SPRAY_GLOG_CHECK
     num_pixels_ = cfg.image_w * cfg.image_h;
 #endif
+    use_spray_color_ = cfg.use_spray_color;
   }
 
   bool isAo() { return true; }
@@ -74,6 +75,7 @@ class ShaderAo {
 #ifdef SPRAY_GLOG_CHECK
   int num_pixels_;
 #endif
+  bool use_spray_color_;
 };
 
 template <typename SceneT>
@@ -93,7 +95,7 @@ void ShaderAo<SceneT>::operator()(int domain_id, const Ray &rayin,
   if (material->type() != Material::MATTE) {
     material = matte_material_;
   }
-  if (is_shape) {
+  if (is_shape || use_spray_color_) {
     albedo = material->getAlbedo();
   } else {
     util::unpack(isect.color, albedo);

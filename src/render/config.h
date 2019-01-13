@@ -85,10 +85,7 @@ class Config {
   std::string local_disk_path;
   int nthreads;
 
-  enum Shading { SPRAY_SHADING_LAMBERT, SPRAY_SHADING_BLINN };
-  int shading;
-  float shininess;
-  glm::vec3 ks;
+  bool use_spray_color;
 
   enum DevMode { DEVMODE_NORMAL, DEVMODE_DEV };
   int dev_mode;
