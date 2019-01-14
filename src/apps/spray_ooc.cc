@@ -83,7 +83,10 @@ int main(int argc, char** argv) {
   typedef spray::SprayRenderer<TracerPtLruT, SceneLruT> RenderPtLruT;
 
   spray::Config cfg;
-  cfg.parse(argc, argv);
+  if (cfg.parse(argc, argv)) {
+    MPI_Finalize();
+    return 0;
+  }
 
   if (cfg.partition == spray::Config::IMAGE) {
     if (cfg.ao_mode) {

@@ -77,7 +77,10 @@ int main(int argc, char** argv) {
   typedef spray::SprayRenderer<TracerPtT, SceneT> RenderPtT;
 
   spray::Config cfg;
-  cfg.parse(argc, argv);
+  if (cfg.parse(argc, argv)) {
+    MPI_Finalize();
+    return 0;
+  }
 
   if (cfg.partition == spray::Config::INSITU) {
     if (cfg.ao_mode) {
