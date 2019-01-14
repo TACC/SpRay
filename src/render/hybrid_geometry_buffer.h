@@ -63,9 +63,9 @@ class HybridGeometryBuffer {
   RTCScene get(int cache_block) { return scenes_[cache_block]; }
 
   void updateIntersection(int cache_block, RTCRayIntersection* isect) const {
-#ifdef SPRAY_GLOG_CHECK
-    CHECK(isect->geomID == 0 || isect->geomID == 1) << isect->geomID;
-#endif
+    // #ifdef SPRAY_GLOG_CHECK
+    //     CHECK(isect->geomID == 0 || isect->geomID == 1) << isect->geomID;
+    // #endif
     if (isect->geomID == shape_geom_ids_[cache_block]) {
       updateShapeIntersection(cache_block, isect);
     } else {
