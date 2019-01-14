@@ -44,6 +44,7 @@ class ShaderPt {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;  // number of samples for area lights
     lights_ = scene.getLights();  // copy lights
+    use_spray_color_ = cfg.use_spray_color;
   }
 
   bool isAo() { return false; }
@@ -78,6 +79,7 @@ class ShaderPt {
   std::vector<Light *> lights_;
   int bounces_;
   int samples_;
+  bool use_spray_color_;
 };
 
 template <typename SceneT>
@@ -95,7 +97,7 @@ void ShaderPt<SceneT>::operator()(int domain_id, const Ray &rayin,
   bool is_shape = (isect.color == SPRAY_INVALID_COLOR);
 
   glm::vec3 albedo;
-  if (is_shape) {
+  if (is_shape || use_spray_color_) {
     albedo = material->getAlbedo();
   } else {
     util::unpack(isect.color, albedo);
