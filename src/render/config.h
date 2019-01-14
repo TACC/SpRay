@@ -37,7 +37,7 @@ class Config {
  public:
   Config();
 
-  void parse(int argc, char** argv);
+  bool parse(int argc, char** argv);
 
   // image
   int image_w;

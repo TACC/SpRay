@@ -106,7 +106,7 @@ void Config::printUsage(char** argv) {
   printf("  --dev-mode\n");
 }
 
-void Config::parse(int argc, char** argv) {
+bool Config::parse(int argc, char** argv) {
   struct option long_options[] = {
       {"output", required_argument, 0, 'o'},
       {"local-disk", required_argument, 0, 'l'},
@@ -130,6 +130,7 @@ void Config::parse(int argc, char** argv) {
       {"max-samples-per-rank", required_argument, 0, 406},
       {"ply-path", required_argument, 0, 408},
       {"dev-mode", no_argument, 0, 1000},
+      {"help", no_argument, 0, 1001},
       {0, 0, 0, 0}};
 
   int option_index = 0;
@@ -137,6 +138,8 @@ void Config::parse(int argc, char** argv) {
   camera_up[0] = 0.f;
   camera_up[1] = 1.f;
   camera_up[2] = 0.f;
+
+  bool stop_app = false;
 
   while ((c = getopt_long(argc, argv, "o:t:m:r:w:h:x", long_options,
                           &option_index)) != -1) {
@@ -252,6 +255,10 @@ void Config::parse(int argc, char** argv) {
         dev_mode = DEVMODE_DEV;
       } break;
 
+      case 1001: {  // --help
+        stop_app = true;
+        printUsage(argv);
+      } break;
 
       default:
         printUsage(argv);
@@ -260,13 +267,16 @@ void Config::parse(int argc, char** argv) {
     }
   }  // end of getopt
 
-  CHECK_NE(argc, optind) << "input file not found";
-
-  std::string filename(argv[optind]);
-  model_descriptor_filename = filename;
-
-  std::string ext = util::getFileExtension(filename);
-  CHECK_EQ(ext, std::string("spray"));
+  if (!stop_app) {
+    CHECK_NE(argc, optind) << "input file not found";
+    
+    std::string filename(argv[optind]);
+    model_descriptor_filename = filename;
+    
+    std::string ext = util::getFileExtension(filename);
+    CHECK_EQ(ext, std::string("spray"));
+  }
+  return stop_app;
 }
 
 }  // namespace spray
