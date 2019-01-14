@@ -110,7 +110,8 @@ class HybridGeometryBuffer {
   void cleanup();
   void mapEmbreeBuffer(int cache_block, float* vertices,
                        std::size_t num_vertices, uint32_t* faces,
-                       std::size_t num_faces, std::size_t model_id);
+                       std::size_t num_faces, std::size_t num_models,
+                       std::size_t model_id);
 
   const Material* getShapeMaterial(int cache_block, int prim_id) const {
     const Shape* shape = shapes_[cache_block]->at(prim_id);

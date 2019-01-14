@@ -398,6 +398,9 @@ void Scene<CacheT, SurfaceBufT>::mergeDomainBounds(
   bound_ = world_space_bound;
   CHECK_EQ(bound_.isValid(), true) << bound_;
 
+  if (mpi::isRootProcess())
+    std::cout << "[INFO] scene bounds: " << bound_ << std::endl;
+
 #if defined(PRINT_DOMAIN_BOUNDS) && defined(SPRAY_GLOG_CHECK)
   LOG_IF(INFO, mpi::isRootProcess()) << "total faces: " << total_faces;
   LOG_IF(INFO, mpi::isRootProcess()) << "world bound: " << bound_;
