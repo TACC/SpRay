@@ -34,6 +34,7 @@
 #include "render/material.h"
 #include "render/reflection.h"
 #include "render/spray.h"
+#include "utils/comm.h"
 
 // #define SPRAY_PRINT_LINES
 // #define SPRAY_PRINT_TOKENS
@@ -491,8 +492,10 @@ void SceneLoader::countAndAllocate(std::ifstream& infile) {
   else
     std::cout << "[WARNING] no lights detected\n";
 
-  std::cout << "[INFO] number of domains: " << ndomains << "\n";
-  std::cout << "[INFO] number of lights: " << nlights << "\n";
+  if (mpi::isRootProcess()) {
+    std::cout << "[INFO] number of domains: " << ndomains << "\n";
+    std::cout << "[INFO] number of lights: " << nlights << "\n";
+  }
 }
 
 void SceneLoader::load(const std::string& filename, const std::string& ply_path,
