@@ -351,6 +351,9 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
         tile_list_.front(&blocking_tile_, &stripe_);
         tile_list_.pop();
 
+        std::cout << "blocking tile: " << blocking_tile_
+                  << " stripe: " << stripe_ << "\n";
+
         vbuf_.resetTBufOut();
         vbuf_.resetOBuf();
 

@@ -17,6 +17,7 @@ SPHERES_DIFFUSE_LIGHT=$SPHERES_PATH/spheres-diffuse-light.spray
 SPHERES_POINT_LIGHT=$SPHERES_PATH/spheres-point-light.spray
 ONE_SPHERE_DIFFUSE_LIGHT=$SPHERES_PATH/sphere.spray
 SPHERES_ONE_WAVELET_DIFFUSE_LIGHT=$SPHERES_PATH/sphere-wavelet.spray
+SPHERES_ONE_WAVELET_DIFFUSE_LIGHT_SEPARATE_DOMAINS=$SPHERES_PATH/sphere-wavelet-domains.spray
 MPI_BIN="mpirun -n"
 
 # common settings
@@ -34,7 +35,8 @@ echo "Choose a scene (1-4):"
 echo "1. many spheres with a point light" 
 echo "2. many spheres with a diffuse light"
 echo "3. many spheres and one wavelet with a diffuse light"
-echo "4. one sphere with a diffuse light"
+echo "4. Scene 3 but objects in separate domains"
+echo "5. one sphere with a diffuse light"
 
 read SPHERE_SCENE
 
@@ -56,6 +58,15 @@ then
   CAMERA="23 22 48 5 5 0"
 
 elif [ $SPHERE_SCENE == "4" ]
+then
+  SCENE=$SPHERES_ONE_WAVELET_DIFFUSE_LIGHT_SEPARATE_DOMAINS
+
+  PLY_PATH=$EXAMPLE_PATH
+  # CAMERA="-9.647732 11.591160 42.547039 -8.228907 11.465641 37.754223"
+  # CAMERA="15 15 55 5 5 0"
+  CAMERA="23 22 48 5 5 0"
+
+elif [ $SPHERE_SCENE == "5" ]
 then
   SCENE=$ONE_SPHERE_DIFFUSE_LIGHT
 
