@@ -67,30 +67,46 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   max_nfaces_ = max_nfaces;
 
   std::size_t cache_size = static_cast<std::size_t>(max_cache_size_ndomains);
+  CHECK_GT(cache_size, 0);
 
   // vertices
-  vertices_ = arena_.Alloc<float>(cache_size * max_nvertices * 3, false);
-  CHECK_NOTNULL(vertices_);
+  std::size_t vertex_buffer_size_ = 3 * max_nvertices * cache_size;
+  if (vertex_buffer_size_) {
+    vertices_ = arena_.Alloc<float>(vertex_buffer_size_ * 3, false);
+    CHECK_NOTNULL(vertices_);
+  }
 
   // per-vertex normals
-  normals_ = arena_.Alloc<float>(cache_size * max_nvertices * 3, false);
-  CHECK_NOTNULL(normals_);
+  if (vertex_buffer_size_) {
+    normals_ = arena_.Alloc<float>(vertex_buffer_size_, false);
+    CHECK_NOTNULL(normals_);
+  }
 
   // faces
-  faces_ = arena_.Alloc<uint32_t>(
-      cache_size * max_nfaces * NUM_VERTICES_PER_FACE, false);
-  CHECK_NOTNULL(faces_);
+  std::size_t face_buffer_size_ = 3 * max_nfaces * cache_size;
+  if (face_buffer_size_) {
+    faces_ = arena_.Alloc<uint32_t>(face_buffer_size_, false);
+    CHECK_NOTNULL(faces_);
+  }
 
   // colors
-  colors_ = arena_.Alloc<uint32_t>(cache_size * max_nvertices, false);
-  CHECK_NOTNULL(colors_);
+  std::size_t color_buffer_size_ = max_nvertices * cache_size;
+  if (color_buffer_size_) {
+    colors_ = arena_.Alloc<uint32_t>(color_buffer_size_, false);
+    CHECK_NOTNULL(colors_);
+  }
 
   // domains
   domains_.resize(cache_size);
 
   // embree mesh created
-  embree_mesh_created_ = arena_.Alloc<int>(cache_size);
-  CHECK_NOTNULL(embree_mesh_created_);
+  if (vertex_buffer_size_ > 0 && face_buffer_size_ > 0) {
+    embree_mesh_created_ = arena_.Alloc<int>(cache_size);
+    CHECK_NOTNULL(embree_mesh_created_);
+    for (std::size_t i = 0; i < cache_size; ++i) {
+      embree_mesh_created_[i] = DESTROYED;
+    }
+  }
 
   // shape created
   shape_created_ = arena_.Alloc<int>(cache_size);
@@ -100,7 +116,6 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   CHECK_NOTNULL(shape_geom_ids_);
 
   for (std::size_t i = 0; i < cache_size; ++i) {
-    embree_mesh_created_[i] = DESTROYED;
     shape_created_[i] = DESTROYED;
   }
 

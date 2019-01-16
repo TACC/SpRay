@@ -162,6 +162,10 @@ class HybridGeometryBuffer {
   std::size_t max_nvertices_;
   std::size_t max_nfaces_;
 
+  std::size_t vertex_buffer_size_;
+  std::size_t face_buffer_size_;
+  std::size_t color_buffer_size_;
+
   float* vertices_;   ///< per-cache-block vertices. 2d array.
   float* normals_;    ///< per-cache-block normals. unnormalized. 2d array.
   uint32_t* faces_;   ///< per-cache-block faces. 2d array.

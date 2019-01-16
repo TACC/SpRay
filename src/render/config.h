@@ -80,7 +80,7 @@ class Config {
   // pt settings
   int pixel_samples;
 
-  int maximum_num_screen_space_samples_per_rank;
+  std::size_t maximum_num_screen_space_samples_per_rank;
 
   std::string local_disk_path;
   int nthreads;

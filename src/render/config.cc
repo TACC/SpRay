@@ -244,7 +244,7 @@ bool Config::parse(int argc, char** argv) {
       } break;
 
       case 406: {  // --max-samples-per-rank
-        maximum_num_screen_space_samples_per_rank = atoi(optarg);
+        maximum_num_screen_space_samples_per_rank = atol(optarg);
       } break;
 
       case 408: {  // --ply-path
