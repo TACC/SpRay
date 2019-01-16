@@ -105,6 +105,12 @@ class Domain {
 
   unsigned int getId() const { return id_; }
   std::size_t getNumVertices() const { return num_vertices_; }
+  std::size_t getNumVerticesPrefixSum(std::size_t model_id) const {
+    return num_vertices_prefix_sums_[model_id];
+  }
+  std::size_t getNumFacesPrefixSum(std::size_t model_id) const {
+    return num_faces_prefix_sums_[model_id];
+  }
   std::size_t getNumFaces() const { return num_faces_; }
 
   const std::vector<SurfaceModel>& getModels() const { return models_; }
@@ -130,7 +136,11 @@ class Domain {
   void push(Shape* shape) { shapes_.push_back(shape); }
   void setNumVertices(std::size_t n) { num_vertices_ = n; }
   void setNumFaces(std::size_t n) { num_faces_ = n; }
-  void resizeModels(std::size_t n) { models_.resize(n); }
+  void resizeModels(std::size_t n) {
+    models_.resize(n);
+    num_vertices_prefix_sums_.resize(n);
+    num_faces_prefix_sums_.resize(n);
+  }
 
  private:
   int id_;
@@ -138,6 +148,8 @@ class Domain {
   std::size_t num_faces_;
 
   std::vector<SurfaceModel> models_;
+  std::vector<std::size_t> num_vertices_prefix_sums_;
+  std::vector<std::size_t> num_faces_prefix_sums_;
   Aabb world_aabb_;
   std::vector<Shape*> shapes_;
 };
@@ -148,7 +160,12 @@ inline void Domain::populateModelInfo() {
   num_vertices_ = 0;
   num_faces_ = 0;
 
-  for (auto& m : models_) {
+  for (std::size_t i = 0; i < models_.size(); ++i) {
+    num_vertices_prefix_sums_[i] = num_vertices_;
+    num_faces_prefix_sums_[i] = num_faces_;
+
+    auto& m = models_[i];
+
     if (!m.isValid()) {
       m.populateModelInfo();
 

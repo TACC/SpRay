@@ -47,12 +47,9 @@ HybridGeometryBuffer::HybridGeometryBuffer()
       normals_(nullptr),
       faces_(nullptr),
       colors_(nullptr),
-      num_vertices_(nullptr),
-      num_faces_(nullptr),
       device_(nullptr),
       scenes_(nullptr),
       embree_mesh_created_(nullptr),
-      // embree_mesh_geom_ids_(nullptr),
       shape_created_(nullptr),
       shape_geom_ids_(nullptr) {}
 
@@ -71,10 +68,6 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
 
   std::size_t cache_size = static_cast<std::size_t>(max_cache_size_ndomains);
 
-  // number of vertices for each domain
-  num_vertices_ = arena_.Alloc<std::size_t>(cache_size, false);
-  CHECK_NOTNULL(num_vertices_);
-
   // vertices
   vertices_ = arena_.Alloc<float>(cache_size * max_nvertices * 3, false);
   CHECK_NOTNULL(vertices_);
@@ -82,10 +75,6 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   // per-vertex normals
   normals_ = arena_.Alloc<float>(cache_size * max_nvertices * 3, false);
   CHECK_NOTNULL(normals_);
-
-  // number of faces for each domain
-  num_faces_ = arena_.Alloc<std::size_t>(cache_size, false);
-  CHECK_NOTNULL(num_faces_);
 
   // faces
   faces_ = arena_.Alloc<uint32_t>(
@@ -96,19 +85,12 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   colors_ = arena_.Alloc<uint32_t>(cache_size * max_nvertices, false);
   CHECK_NOTNULL(colors_);
 
-  // materials
-  // materials_ = arena_.Alloc<HybridMaterial>(cache_size * max_nvertices,
-  // false); CHECK_NOTNULL(materials_);
-
   // domains
   domains_.resize(cache_size);
 
   // embree mesh created
   embree_mesh_created_ = arena_.Alloc<int>(cache_size);
   CHECK_NOTNULL(embree_mesh_created_);
-
-  // embree_mesh_geom_ids_ = arena_.Alloc<unsigned int>(cache_size);
-  // CHECK_NOTNULL(embree_mesh_geom_ids_);
 
   // shape created
   shape_created_ = arena_.Alloc<int>(cache_size);
@@ -221,15 +203,16 @@ void HybridGeometryBuffer::loadTriangles(int cache_block,
       }
     }
 
-    // map buffers
     mapEmbreeBuffer(cache_block, d.vertices, model.getNumVertices(), d.faces,
                     model.getNumFaces(), models.size(), i);
 
+    float* normals = &normals_[normalBaseIndex(cache_block, sum_num_vertices)];
+
+    computeNormals(cache_block, d.vertices, model.getNumVertices(), d.faces,
+                   model.getNumFaces(), normals);
+
     sum_num_vertices += model.getNumVertices();
     sum_num_faces += model.getNumFaces();
-
-    // std::cout << "model " << i << " num_vertices: " << model.getNumVertices()
-    //           << "\n";
 
     CHECK_EQ(d.num_vertices, model.getNumVertices());
     CHECK_EQ(d.num_faces, model.getNumFaces());
@@ -237,12 +220,6 @@ void HybridGeometryBuffer::loadTriangles(int cache_block,
 
   CHECK_EQ(sum_num_vertices, domain.getNumVertices());
   CHECK_EQ(sum_num_faces, domain.getNumFaces());
-
-  // update surface size
-  num_vertices_[cache_block] = sum_num_vertices;
-  num_faces_[cache_block] = sum_num_faces;
-
-  computeNormals(cache_block);
 }
 
 void HybridGeometryBuffer::loadShapes(const std::vector<Shape*>& shapes,
@@ -315,9 +292,8 @@ void HybridGeometryBuffer::mapEmbreeBuffer(
   // create triangle mesh
   if (embree_mesh_created_[cache_block] == DESTROYED) {
     unsigned int geom_id =
-        rtcNewTriangleMesh(scene, RTC_GEOMETRY_DYNAMIC, num_faces, num_vertices,
+        rtcNewTriangleMesh(scene, RTC_GEOMETRY_STATIC, num_faces, num_vertices,
                            1 /*numTimeSteps*/);
-
 #ifdef DEBUG_MESH
     std::cout << "created embree triangle mesh geom ID: " << geom_id
               << " cache block " << cache_block;
@@ -344,29 +320,32 @@ void HybridGeometryBuffer::mapEmbreeBuffer(
   rtcEnable(scene, model_id /*geomID*/);
 }
 
-void HybridGeometryBuffer::getColorTuple(int cache_block, uint32_t primID,
+void HybridGeometryBuffer::getColorTuple(const Domain& domain, int cache_block,
+                                         uint32_t geomID, uint32_t primID,
                                          uint32_t colors[3]) const {
-  uint32_t* faces = &faces_[faceBaseIndex(cache_block)];
+  uint32_t* faces = &faces_[faceBaseIndex(domain, cache_block, geomID)];
 
   uint32_t fid = primID * NUM_VERTICES_PER_FACE;
-  uint32_t* c = &colors_[colorBaseIndex(cache_block)];
+  uint32_t* c = &colors_[colorBaseIndex(domain, cache_block, geomID)];
 
   colors[0] = c[faces[fid]];
   colors[1] = c[faces[fid + 1]];
   colors[2] = c[faces[fid + 2]];
 }
 
-void HybridGeometryBuffer::getNormalTuple(int cache_block, uint32_t primID,
+void HybridGeometryBuffer::getNormalTuple(const Domain& domain, int cache_block,
+                                          uint32_t geomID, uint32_t primID,
                                           float normals_out[9]) const {
   std::size_t vid[3];
   const uint32_t fid = primID * NUM_VERTICES_PER_FACE;
-  const uint32_t* faces = &faces_[faceBaseIndex(cache_block)];
+  const uint32_t* faces = &faces_[faceBaseIndex(domain, cache_block, geomID)];
 
   vid[0] = faces[fid] * 3;
   vid[1] = faces[fid + 1] * 3;
   vid[2] = faces[fid + 2] * 3;
 
-  const float* normals = &normals_[normalBaseIndex(cache_block)];
+  const float* normals =
+      &normals_[normalBaseIndex(domain, cache_block, geomID)];
 
   // vertex 0
   normals_out[0] = normals[vid[0]];
@@ -384,12 +363,10 @@ void HybridGeometryBuffer::getNormalTuple(int cache_block, uint32_t primID,
   normals_out[8] = normals[vid[2] + 2];
 }
 
-void HybridGeometryBuffer::computeNormals(int cache_block) {
-  const float* vertices = &vertices_[vertexBaseIndex(cache_block)];
-  const uint32_t* faces = &faces_[faceBaseIndex(cache_block)];
-
-  float* normals = &normals_[normalBaseIndex(cache_block)];
-  std::size_t normals_size = num_vertices_[cache_block] * 3;
+void HybridGeometryBuffer::computeNormals(
+    int cache_block, const float* vertices, std::size_t num_vertices,
+    const uint32_t* faces, std::size_t num_faces, float* normals) {
+  std::size_t normals_size = num_vertices * 3;
 
   for (std::size_t i = 0; i < normals_size; i += 3) {
     normals[i] = 0.0f;
@@ -402,8 +379,6 @@ void HybridGeometryBuffer::computeNormals(int cache_block) {
 
   std::size_t fid;
   std::size_t vid[3];
-
-  std::size_t num_faces = num_faces_[cache_block];
 
   for (std::size_t i = 0; i < num_faces; ++i) {
     fid = i * NUM_VERTICES_PER_FACE;
@@ -447,11 +422,18 @@ void HybridGeometryBuffer::computeNormals(int cache_block) {
 
 void HybridGeometryBuffer::updateTriangleIntersection(
     int cache_block, RTCRayIntersection* isect) const {
+  //
+  const Domain& domain = *(domains_[cache_block]);
+
   // cache_block pointing to the current cache block in the mesh buffer
   // isect->primID, the current primitive intersected
   // colors: per-vertex colors
+
+  unsigned int prim_id = isect->primID;
+  unsigned int geom_id = isect->geomID;
+
   uint32_t colors[3];
-  getColorTuple(cache_block, isect->primID, colors);
+  getColorTuple(domain, cache_block, geom_id, prim_id, colors);
 
   // interploate color tuple and update isect->color
   float u = isect->u;
@@ -470,12 +452,12 @@ void HybridGeometryBuffer::updateTriangleIntersection(
   isect->color = util::pack(r, g, b);
 
   // material
-  isect->material = getTriMeshMaterial(cache_block, isect->geomID);
+  isect->material = getTriMeshMaterial(cache_block, geom_id);
 
   // shading normal
 
   float ns[9];
-  getNormalTuple(cache_block, isect->primID, ns);
+  getNormalTuple(domain, cache_block, geom_id, prim_id, ns);
 
   isect->Ns[0] = (ns[0] * w) + (ns[3] * u) + (ns[6] * v);
   isect->Ns[1] = (ns[1] * w) + (ns[4] * u) + (ns[7] * v);

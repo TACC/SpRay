@@ -89,5 +89,9 @@ inline glm::vec3 normalize(const float v[3]) {
   return glm::normalize(glm::vec3(v[0], v[1], v[2]));
 }
 
+inline float squaredLength(const glm::vec3& v) {
+  return v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+}
+
 }  // namespace spray
 

@@ -66,6 +66,11 @@ class Material {
                       const glm::vec3& normal, RandomSampler& sampler,
                       glm::vec3* wi, glm::vec3* color, float* pdf) const = 0;
 
+  virtual bool sample(const glm::vec3& albedo, const glm::vec3& pos,
+                      const glm::vec3& wo, const glm::vec3& normal,
+                      RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
+                      float* pdf) const = 0;
+
   virtual bool hasDiffuse() const { return false; }
 
   virtual glm::vec3 getAlbedo() const = 0;
@@ -91,6 +96,11 @@ class Matte : public Material {
   bool sample(const glm::vec3& albedo, const glm::vec3& wo,
               const glm::vec3& normal, RandomSampler& sampler, glm::vec3* wi,
               glm::vec3* color, float* pdf) const override;
+
+  bool sample(const glm::vec3& albedo, const glm::vec3& pos,
+              const glm::vec3& wo, const glm::vec3& normal,
+              RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
+              float* pdf) const override;
 
   glm::vec3 getAlbedo() const override { return albedo_; }
 
@@ -132,6 +142,15 @@ inline bool Matte::sample(const glm::vec3& albedo, const glm::vec3& wo,
   return false;
 }
 
+inline bool Matte::sample(const glm::vec3& albedo, const glm::vec3& pos,
+                          const glm::vec3& wo, const glm::vec3& normal,
+                          RandomSampler& sampler, glm::vec3* wi,
+                          glm::vec3* color, float* pdf) const {
+  sampleRandomInUnitSphere(pos, normal, wi, pdf);
+  *color = albedo;
+  return true;
+}
+
 class Metal : public Material {
  public:
   Metal() : albedo_(glm::vec3(0.5f, 0.5f, 0.5f)), fuzz_(0.0f) {}
@@ -160,6 +179,13 @@ class Metal : public Material {
               RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
               float* pdf) const override {
     return sample(albedo_, wo, normal, sampler, wi, color, pdf);
+  }
+
+  bool sample(const glm::vec3& albedo, const glm::vec3& pos,
+              const glm::vec3& wo, const glm::vec3& normal,
+              RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
+              float* pdf) const override {
+    return sample(albedo, wo, normal, sampler, wi, color, pdf);
   }
 
   bool sample(const glm::vec3& albedo, const glm::vec3& wo,
@@ -206,6 +232,13 @@ class Dielectric : public Material {
               RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
               float* pdf) const override {
     return sample(glm::vec3(), wo, normal, sampler, wi, color, pdf);
+  }
+
+  bool sample(const glm::vec3& albedo, const glm::vec3& pos,
+              const glm::vec3& wo, const glm::vec3& normal,
+              RandomSampler& sampler, glm::vec3* wi, glm::vec3* color,
+              float* pdf) const override {
+    return sample(albedo, wo, normal, sampler, wi, color, pdf);
   }
 
   bool sample(const glm::vec3& albedo, const glm::vec3& wo,

@@ -192,4 +192,21 @@ class CosineHemisphereSampler {
   static float getPdf(float cos_theta) { return cos_theta / float(SPRAY_PI); }
 };
 
+inline glm::vec3 getRandomInUnitSphere() {
+  glm::vec3 p;
+  do {
+    p = 2.0f * glm::vec3(drand48(), drand48(), drand48()) -
+        glm::vec3(1.0f, 1.0f, 1.0f);
+  } while (squaredLength(p) >= 1.0);
+  return p;
+}
+
+inline void sampleRandomInUnitSphere(const glm::vec3& pos,
+                                     const glm::vec3& normal, glm::vec3* wi,
+                                     float* pdf) {
+  glm::vec3 target = pos + normal + getRandomInUnitSphere();
+  *wi = glm::normalize(target - pos);
+  *pdf = 1.0f;
+}
+
 }  // namespace spray

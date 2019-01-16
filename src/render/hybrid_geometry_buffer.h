@@ -74,13 +74,15 @@ class HybridGeometryBuffer {
   }
 
  private:
-  void getColorTuple(int cache_block, uint32_t primID,
-                     uint32_t colors[3]) const;
+  void getColorTuple(const Domain& domain, int cache_block, uint32_t geomID,
+                     uint32_t primID, uint32_t colors[3]) const;
 
-  void getNormalTuple(int cache_block, uint32_t primID,
-                      float normals_out[9]) const;
+  void getNormalTuple(const Domain& domain, int cache_block, uint32_t geomID,
+                      uint32_t primID, float normals_out[9]) const;
 
-  void computeNormals(int cache_block);
+  void computeNormals(int cache_block, const float* vertices,
+                      std::size_t num_vertices, const uint32_t* faces,
+                      std::size_t num_faces, float* normals);
 
   std::size_t vertexBaseIndex(int cache_block) const {
     return (cache_block * max_nvertices_ * 3);
@@ -90,12 +92,34 @@ class HybridGeometryBuffer {
     return (cache_block * max_nvertices_ * 3);
   }
 
+  std::size_t normalBaseIndex(int cache_block, std::size_t offset) const {
+    return 3 * (cache_block * max_nvertices_ + offset);
+  }
+
+  std::size_t normalBaseIndex(const Domain& domain, int cache_block,
+                              uint32_t geom_id) const {
+    return 3 * (cache_block * max_nvertices_ +
+                domain.getNumVerticesPrefixSum(geom_id));
+  }
+
   std::size_t faceBaseIndex(int cache_block) const {
     return (cache_block * max_nfaces_ * NUM_VERTICES_PER_FACE);
   }
 
+  std::size_t faceBaseIndex(const Domain& domain, int cache_block,
+                            uint32_t geom_id) const {
+    return NUM_VERTICES_PER_FACE *
+           (cache_block * max_nfaces_ + domain.getNumFacesPrefixSum(geom_id));
+  }
+
   std::size_t colorBaseIndex(int cache_block) const {
     return (cache_block * max_nvertices_);
+  }
+
+  std::size_t colorBaseIndex(const Domain& domain, int cache_block,
+                             uint32_t geom_id) const {
+    return cache_block * max_nvertices_ +
+           domain.getNumVerticesPrefixSum(geom_id);
   }
 
   // std::size_t materialBaseIndex(int cache_block) const {
@@ -142,11 +166,7 @@ class HybridGeometryBuffer {
   float* normals_;    ///< per-cache-block normals. unnormalized. 2d array.
   uint32_t* faces_;   ///< per-cache-block faces. 2d array.
   uint32_t* colors_;  ///< per-cache-block packed rgb colors. 2d array.
-  // HybridMaterial* materials_;
   std::vector<const Domain*> domains_;
-
-  std::size_t* num_vertices_;
-  std::size_t* num_faces_;
 
   RTCDevice device_;
   RTCScene* scenes_;  ///< 1D array of per-cache-block Embree scenes.

@@ -90,11 +90,12 @@ class DiffuseHemisphereLight : public Light {
 
   glm::vec3 sample(const glm::vec3& p, glm::vec3* wi,
                    float* pdf) const override {
-    LOG(FATAL) << "forbidden";
+    CHECK(false);
     return radiance_;
   }
   glm::vec3 sampleArea(RandomSampler& sampler, const glm::vec3& normal,
                        glm::vec3* wi, float* pdf) const override {
+    CHECK(false);
     glm::vec2 u = RandomSampler_get2D(sampler);
     getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
     return radiance_;
@@ -105,6 +106,40 @@ class DiffuseHemisphereLight : public Light {
                     float* pdf) const override {
     glm::vec2 u = RandomSampler_get2D(sampler);
     getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
+    return radiance_;
+  }
+
+  int getNumSamples() const override { return num_samples_; }
+
+ private:
+  glm::vec3 radiance_;
+  int num_samples_;
+};
+
+class DiffuseSphereLight : public Light {
+ public:
+  DiffuseSphereLight(const glm::vec3& radiance, int num_samples)
+      : radiance_(radiance), num_samples_(num_samples) {}
+
+  virtual ~DiffuseSphereLight() {}
+
+  bool isAreaLight() const override { return true; }
+
+  glm::vec3 sample(const glm::vec3& p, glm::vec3* wi,
+                   float* pdf) const override {
+    CHECK(false);
+    return radiance_;
+  }
+  glm::vec3 sampleArea(RandomSampler& sampler, const glm::vec3& normal,
+                       glm::vec3* wi, float* pdf) const override {
+    CHECK(false);
+    return radiance_;
+  }
+
+  glm::vec3 sampleL(const glm::vec3& hit_point, RandomSampler& sampler,
+                    const glm::vec3& normal, glm::vec3* wi,
+                    float* pdf) const override {
+    sampleRandomInUnitSphere(hit_point, normal, wi, pdf);
     return radiance_;
   }
 

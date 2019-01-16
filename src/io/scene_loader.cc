@@ -317,6 +317,16 @@ void SceneLoader::parseLight(const std::vector<std::string>& tokens) {
 
     addLight(new DiffuseHemisphereLight(radiance, num_light_samples_));
 
+  } else if (tokens[1] == "diffuse-sphere") {
+    CHECK_EQ(tokens.size(), 5);
+    glm::vec3 position, radiance;
+
+    radiance[0] = atof(tokens[2].c_str());
+    radiance[1] = atof(tokens[3].c_str());
+    radiance[2] = atof(tokens[4].c_str());
+
+    addLight(new DiffuseSphereLight(radiance, num_light_samples_));
+
   } else {
     LOG(FATAL) << "unknown light source " << tokens[1];
   }
