@@ -173,8 +173,8 @@ void ShaderPt<SceneT>::operator()(int domain_id, const Ray &rayin,
   if (next_ray_depth < bounces_) {
     RandomSampler_init(sampler, rayin.samid * next_ray_depth);
     glm::vec3 weight;
-    bool valid =
-        material->sample(albedo, wo, normal_ff, sampler, &wi, &weight, &pdf);
+    bool valid = material->sample(albedo, pos, wo, normal_ff, sampler, &wi,
+                                  &weight, &pdf);
     if (valid) {
       Lr = Lin * weight * (1.0f / pdf);
       if (hasPositive(Lr)) {

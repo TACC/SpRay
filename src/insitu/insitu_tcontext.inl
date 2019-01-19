@@ -346,6 +346,8 @@ void TContext<CacheT, ShaderT, SceneT>::processCached(int ray_depth) {
     auto* isect = item.isect;
 
     shader_(item.domain_id, *ray, *isect, mem_out_, &sq2_, &rq2_, ray_depth);
+
+    scene_->load(item.domain_id, &sinfo_);
     filterSq2(item.domain_id);
     filterRq2(item.domain_id);
 

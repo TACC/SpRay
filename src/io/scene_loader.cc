@@ -80,14 +80,20 @@ SceneLoader::DomainTokenType SceneLoader::getTokenType(const std::string& tag) {
 }
 
 void SceneLoader::parseDomainBegin() {
+  CHECK_EQ(num_domain_begins_, 0);
   Domain& d = currentDomain();
   d.setId(domain_id_);
+  ++num_domain_begins_;
+  num_domain_ends_ = 0;
   // d.transform = glm::mat4(1.f);
 }
 
 void SceneLoader::parseDomainEnd() {
+  CHECK_EQ(num_domain_ends_, 0);
   nextDomain();
   resetModelId();
+  ++num_domain_ends_;
+  num_domain_begins_ = 0;
 }
 
 void SceneLoader::parseModelBegin() {

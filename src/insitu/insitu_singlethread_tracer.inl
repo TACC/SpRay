@@ -251,7 +251,6 @@ template <typename CacheT, typename ShaderT, typename SceneT>
 void SingleThreadTracer<CacheT, ShaderT, SceneT>::procRad(int id, Ray *ray) {
   bool is_hit = scene_->intersect(sinfo_.rtc_scene, sinfo_.cache_block,
                                   ray->org, ray->dir, &rtc_isect_);
-
   if (is_hit) {
     if (vbuf_.updateTBufOutT(rtc_isect_.tfar, ray)) {
       shader_(id, *ray, rtc_isect_, mem_out_, &sq2_, &rq2_, ray_depth_);
@@ -369,6 +368,8 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::procCachedRq() {
 
     if (vbuf_.updateTBufOutT(isect->tfar, ray)) {
       shader_(info.domain_id, *ray, *isect, mem_out_, &sq2_, &rq2_, ray_depth_);
+
+      scene_->load(info.domain_id, &sinfo_);
       filterSq2(info.domain_id);
       filterRq2(info.domain_id);
     }
@@ -408,9 +409,6 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
   while (!tile_list_.empty()) {
     tile_list_.front(&blocking_tile_, &stripe_);
     tile_list_.pop();
-
-    std::cout << "blocking tile: " << blocking_tile_ << " stripe: " << stripe_
-              << "\n";
 
     vbuf_.resetTBufOut();
     vbuf_.resetOBuf();
@@ -498,11 +496,14 @@ void SingleThreadTracer<CacheT, ShaderT, SceneT>::trace() {
 
       ++ray_depth_;
     }
+#ifdef SPRAY_GLOG_CHECK
+    checkQs();
+#endif
   }
   tile_list_.reset();
 
 #ifdef SPRAY_GLOG_CHECK
-  CHECK(bg_retire_q_.empty());
+  checkQs();
 #endif
 }
 

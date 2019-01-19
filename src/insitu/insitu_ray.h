@@ -50,6 +50,16 @@ struct SPRAY_ALIGN(16) Ray {
    *  1: occluded
    */
   int occluded;
+#if 0
+  friend std::ostream& operator<<(std::ostream& os, const Ray& r) {
+    os << "[p " << r.pixid << "][s " << r.samid << "] [l " << r.light << "] [t "
+       << r.t << "][occl " << r.occluded << "] [org " << r.org[0] << ","
+       << r.org[1] << "," << r.org[2] << "]"
+       << "[dir " << r.dir[0] << "," << r.dir[1] << "," << r.dir[2] << "]"
+       << "[w " << r.w[0] << "," << r.w[1] << "," << r.w[2] << "]";
+    return os;
+  }
+#endif
 };
 
 struct RayData {

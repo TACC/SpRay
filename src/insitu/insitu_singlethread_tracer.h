@@ -100,6 +100,20 @@ class SingleThreadTracer {
   void populateRadWorkStats();
   void populateWorkStats();
 
+#ifdef SPRAY_GLOG_CHECK
+  void checkQs() {
+    CHECK(rqs_.empty());
+    CHECK(sqs_.empty());
+    CHECK(frq2_.empty());
+    CHECK(fsq2_.empty());
+    CHECK(cached_rq_.empty());
+    CHECK(recv_rq_.empty());
+    CHECK(recv_sq_.empty());
+    CHECK(retire_q_.empty());
+    CHECK(bg_retire_q_.empty());
+  }
+#endif
+
  private:
   const spray::Camera *camera_;
   const spray::InsituPartition *partition_;

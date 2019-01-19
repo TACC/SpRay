@@ -71,6 +71,9 @@ class SceneLoader {
 
     if (lights) CHECK(lights->size() == 0);
     lights_ = lights;
+
+    num_domain_begins_ = 0;
+    num_domain_ends_ = 0;
   }
 
   void resetModelId() { model_id_ = 0; }
@@ -143,6 +146,8 @@ class SceneLoader {
   int light_id_;
   std::vector<Domain>* domains_;
   std::vector<Light*>* lights_;
+  int num_domain_begins_;
+  int num_domain_ends_;
 };
 
 }  // namespace spray
