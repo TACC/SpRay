@@ -418,7 +418,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
           {
             for (auto &t : tcontexts_) {
               t.procRetireQ();
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+#ifdef SPRAY_BACKGROUND_COLOR
               t.retireBackground();
 #endif
             }
@@ -476,7 +476,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
             vbuf_.resetOBuf();
           }
 
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+#ifdef SPRAY_BACKGROUND_COLOR
           for (auto &t : tcontexts_) {
             t.retireBackground();
           }
@@ -589,7 +589,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
         {
           for (auto &t : tcontexts_) {
             t.procRetireQ();
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+#ifdef SPRAY_BACKGROUND_COLOR
             t.retireBackground();
 #endif
           }
@@ -647,7 +647,7 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
           vbuf_.resetOBuf();
         }
 
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+#ifdef SPRAY_BACKGROUND_COLOR
         for (auto &t : tcontexts_) {
           t.retireBackground();
         }

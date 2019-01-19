@@ -171,6 +171,7 @@ class SingleThreadTracer {
   int num_lights_;
   int image_w_;
   int image_h_;
+  glm::vec3 bg_color_;
 };
 
 }  // namespace insitu

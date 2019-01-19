@@ -85,22 +85,6 @@
 #define SPRAY_ROOT_PROCESS 0
 #define SPRAY_HISTORY_SIZE SPRAY_SPECU_HISTORY_SIZE
 
-#ifdef SPRAY_BACKGROUND_COLOR_BLACK
-#define SPRAY_BACKGROUND_COLOR_R 0.0f
-#define SPRAY_BACKGROUND_COLOR_G 0.0f
-#define SPRAY_BACKGROUND_COLOR_B 0.0f
-#elif SPRAY_BACKGROUND_COLOR_SKY
-#define SPRAY_BACKGROUND_COLOR_R 0.5f
-#define SPRAY_BACKGROUND_COLOR_G 0.7f
-#define SPRAY_BACKGROUND_COLOR_B 1.0f
-#elif SPRAY_BACKGROUND_COLOR_WHITE
-#define SPRAY_BACKGROUND_COLOR_R 1.0f
-#define SPRAY_BACKGROUND_COLOR_G 1.0f
-#define SPRAY_BACKGROUND_COLOR_B 1.0f
-#else
-#error undefined background color
-#endif
-
 namespace spray {
 
 enum ViewMode {
@@ -190,15 +174,10 @@ struct RayBuf {
   RayT *rays;       ///< A buffer pointer.
 };
 
-inline glm::vec3 computeBackGroundColor(const float normalized_dir[3]) {
+inline glm::vec3 computeBackGroundColor(const float normalized_dir[3],
+                                        const glm::vec3 &color) {
   float a = 0.5f * normalized_dir[1] + 1.0;
-  return ((1.0f - a) * glm::vec3(1.0f)) +
-         (a * glm::vec3(SPRAY_BACKGROUND_COLOR_R, SPRAY_BACKGROUND_COLOR_G,
-                        SPRAY_BACKGROUND_COLOR_B));
-#if 0  // fixed color
-    return glm::vec3(SPRAY_BACKGROUND_COLOR_R, SPRAY_BACKGROUND_COLOR_G,
-                     SPRAY_BACKGROUND_COLOR_B);
-#endif
+  return ((1.0f - a) * glm::vec3(1.0f)) + (a * color);
 }
 
 extern MpiComm global_mpi_comm;

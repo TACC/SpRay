@@ -89,6 +89,8 @@ class Config {
 
   enum DevMode { DEVMODE_NORMAL, DEVMODE_DEV };
   int dev_mode;
+
+  glm::vec3 bg_color;
 };
 
 }  // namespace spray

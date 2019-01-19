@@ -34,6 +34,7 @@ void TContext<CacheT, ShaderT, SceneT>::init(
   scene_ = scene;
   vbuf_ = vbuf;
   image_ = image;
+  bg_color_ = cfg.bg_color;
 
   rqs_.resize(ndomains);
   sqs_.resize(ndomains);
@@ -294,17 +295,7 @@ void TContext<CacheT, ShaderT, SceneT>::procFrq2() {
     auto* ray = item.ray;
     auto* isect = item.isect;
     if (vbuf_->correct(ray->samid, ray->t)) {
-#ifdef SPRAY_BACKGROUND_COLOR_BLACK
-      auto* isect = item.isect;
-
-      if (!std::isinf(isect->tfar)) {  // hit
-        cached_rq_.push(item);
-        isector_.intersect(item.domain_id, isect->tfar, num_domains_, scene_,
-                           ray, &rqs_);
-      } else {
-        isector_.intersect(item.domain_id, num_domains_, scene_, ray, &rqs_);
-      }
-#else
+#ifdef SPRAY_BACKGROUND_COLOR
       auto* isect = item.isect;
 
       if (!std::isinf(isect->tfar)) {  // hit
@@ -314,6 +305,16 @@ void TContext<CacheT, ShaderT, SceneT>::procFrq2() {
       } else {
         isector_.intersect(item.domain_id, num_domains_, scene_, ray, &rqs_,
                            &bg_retire_q_);
+      }
+#else
+      auto* isect = item.isect;
+
+      if (!std::isinf(isect->tfar)) {  // hit
+        cached_rq_.push(item);
+        isector_.intersect(item.domain_id, isect->tfar, num_domains_, scene_,
+                           ray, &rqs_);
+      } else {
+        isector_.intersect(item.domain_id, num_domains_, scene_, ray, &rqs_);
       }
 #endif
     }
@@ -374,7 +375,7 @@ void TContext<CacheT, ShaderT, SceneT>::retireBackground() {
     int oflag = ray->occluded;
     if (vbuf_->tbufOutMiss(ray->samid)) {
       bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
-                spray::computeBackGroundColor(ray->dir);
+                spray::computeBackGroundColor(ray->dir, bg_color_);
       image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
     }
   }

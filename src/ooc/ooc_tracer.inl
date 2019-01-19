@@ -78,7 +78,7 @@ void Tracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
   tcontexts_.resize(cfg.nthreads);
   for (auto &tc : tcontexts_) {
     tc.resize(ndomains, cfg.pixel_samples, tile_list_.getLargestBlockingTile(),
-              image_, cfg.bounces);
+              image_, cfg.bounces, cfg.bg_color);
   }
 }
 

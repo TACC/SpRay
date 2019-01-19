@@ -66,13 +66,15 @@ class TContext {
 
  public:
   void resize(int ndomains, int num_pixel_samples, const Tile& tile,
-              spray::HdrImage* image, int num_bounces);
+              spray::HdrImage* image, int num_bounces,
+              const glm::vec3& bg_color);
 
  private:
   int num_domains_;
   int num_pixel_samples_;
   int num_bounces_;
   double one_over_num_pixel_samples_;
+  glm::vec3 bg_color_;
 
  public:
   void resetMems() {
@@ -120,10 +122,10 @@ class TContext {
 
  public:
   void enqRad(SceneT* scene, Ray* ray) {
-#ifdef SPRAY_BACKGROUND_COLOR_BLACK
-    isector_.intersect(num_domains_, scene, ray, &rqs_, &rstats_);
-#else
+#ifdef SPRAY_BACKGROUND_COLOR
     isector_.intersect(num_domains_, scene, ray, &rqs_, &rstats_, bg_retire_q_);
+#else
+    isector_.intersect(num_domains_, scene, ray, &rqs_, &rstats_);
 #endif
   }
 
@@ -239,11 +241,11 @@ class TContext {
       if (vbuf_.correct(*r)) {
         r->depth = 0;
         r->history[0] = SPRAY_FLOAT_INF;
-#ifdef SPRAY_BACKGROUND_COLOR_BLACK
-        isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
-#else
+#ifdef SPRAY_BACKGROUND_COLOR
         isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_,
                            bg_retire_q_);
+#else
+        isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
 #endif
       }
     }

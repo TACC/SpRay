@@ -21,6 +21,7 @@
 #include "render/config.h"
 
 #include <getopt.h>
+#include <cstring>
 
 #include "glog/logging.h"
 
@@ -70,6 +71,10 @@ Config::Config() {
   use_spray_color = false;
 
   dev_mode = DEVMODE_NORMAL;
+
+  bg_color.r = 1.0f;
+  bg_color.g = 1.0f;
+  bg_color.b = 1.0f;
 }
 
 void Config::printUsage(char** argv) {
@@ -102,6 +107,10 @@ void Config::printUsage(char** argv) {
       "rank (1048576)>\n");
   printf("  --use-spray-color\n");
   printf("      Use color defined in the scene file.\n");
+  printf("  --bg-color <white | sky>\n");
+  printf("      Background color.\n");
+  printf("  --custom-bg-color <R G B>\n");
+  printf("      Custom background color. RGB values between 0 and 1. This option overrides the bg-color option.\n");
   printf("  --nthreads <number of threads (1)>\n");
   printf("  --dev-mode\n");
 }
@@ -129,6 +138,8 @@ bool Config::parse(int argc, char** argv) {
       {"use-spray-color", no_argument, 0, 405},
       {"max-samples-per-rank", required_argument, 0, 406},
       {"ply-path", required_argument, 0, 408},
+      {"bg-color", required_argument, 0, 409},
+      {"custom-bg-color", required_argument, 0, 410},
       {"dev-mode", no_argument, 0, 1000},
       {"help", no_argument, 0, 1001},
       {0, 0, 0, 0}};
@@ -140,6 +151,9 @@ bool Config::parse(int argc, char** argv) {
   camera_up[2] = 0.f;
 
   bool stop_app = false;
+
+  glm::vec3 custom_bg_color;
+  bool has_custom_bg_color = false;
 
   while ((c = getopt_long(argc, argv, "o:t:m:r:w:h:x", long_options,
                           &option_index)) != -1) {
@@ -251,6 +265,29 @@ bool Config::parse(int argc, char** argv) {
         ply_path = optarg;
       } break;
 
+      case 409: {  // --bg-color
+        if (strcmp(optarg, "white") == 0) {
+          bg_color.r = 1.0f;
+          bg_color.g = 1.0f;
+          bg_color.b = 1.0f;
+        } else if (strcmp(optarg, "sky") == 0) {
+          bg_color.r = 0.5f;
+          bg_color.g = 0.7f;
+          bg_color.b = 1.0f;
+        } else {
+          CHECK(false) << "unknown background color: " << optarg;
+        }
+      } break;
+
+      case 410: {  // --custom-bg-color
+        float data[3];
+        util::parseTuple(argv, 3, data);
+        custom_bg_color.r = data[0];
+        custom_bg_color.g = data[1];
+        custom_bg_color.b = data[2];
+        has_custom_bg_color = true;
+      } break;
+
       case 1000: {  // --dev-mode
         dev_mode = DEVMODE_DEV;
       } break;
@@ -266,6 +303,8 @@ bool Config::parse(int argc, char** argv) {
         break;
     }
   }  // end of getopt
+
+  if (has_custom_bg_color) bg_color = custom_bg_color;
 
   if (!stop_app) {
     CHECK_NE(argc, optind) << "input file not found";

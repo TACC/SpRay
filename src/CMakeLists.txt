@@ -176,16 +176,21 @@ if(SPRAY_TIMING)
 endif(SPRAY_TIMING)
 
 # background color
-set(SPRAY_BACKGROUND_COLOR "Sky" CACHE STRING "Select a background color.")
-set_property(CACHE SPRAY_BACKGROUND_COLOR PROPERTY STRINGS "Sky" "Black" "White")
+option(SPRAY_BACKGROUND_COLOR "Enable background color." ON)
+if(SPRAY_BACKGROUND_COLOR)
+  add_definitions(-DSPRAY_BACKGROUND_COLOR)
+endif(SPRAY_BACKGROUND_COLOR)
 
-if (${SPRAY_BACKGROUND_COLOR} STREQUAL "Black")
-  add_definitions(-DSPRAY_BACKGROUND_COLOR_BLACK)
-elseif (${SPRAY_BACKGROUND_COLOR} STREQUAL "Sky")
-  add_definitions(-DSPRAY_BACKGROUND_COLOR_SKY)
-elseif (${SPRAY_BACKGROUND_COLOR} STREQUAL "White")
-  add_definitions(-DSPRAY_BACKGROUND_COLOR_WHITE)
-endif()
+# set(SPRAY_BACKGROUND_COLOR "Sky" CACHE STRING "Select a background color.")
+# set_property(CACHE SPRAY_BACKGROUND_COLOR PROPERTY STRINGS "Sky" "Black" "White")
+# 
+# if (${SPRAY_BACKGROUND_COLOR} STREQUAL "Black")
+#   add_definitions(-DSPRAY_BACKGROUND_COLOR_BLACK)
+# elseif (${SPRAY_BACKGROUND_COLOR} STREQUAL "Sky")
+#   add_definitions(-DSPRAY_BACKGROUND_COLOR_SKY)
+# elseif (${SPRAY_BACKGROUND_COLOR} STREQUAL "White")
+#   add_definitions(-DSPRAY_BACKGROUND_COLOR_WHITE)
+# endif()
 
 ########################################
 # intersection mode (based on embree)

@@ -98,20 +98,18 @@ void TContext<CacheT, ShaderT, SceneT>::procRads2(SceneT* scene,
   while (!rq2_.empty()) {
     Ray* r = rq2_.front();
     rq2_.pop();
-#ifdef SPRAY_BACKGROUND_COLOR_BLACK
-    isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
-#else
+#ifdef SPRAY_BACKGROUND_COLOR
     isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_, bg_commit_q_);
+#else
+    isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
 #endif
   }
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
-void TContext<CacheT, ShaderT, SceneT>::resize(int ndomains,
-                                               int num_pixel_samples,
-                                               const Tile& tile,
-                                               spray::HdrImage* image,
-                                               int num_bounces) {
+void TContext<CacheT, ShaderT, SceneT>::resize(
+    int ndomains, int num_pixel_samples, const Tile& tile,
+    spray::HdrImage* image, int num_bounces, const glm::vec3& bg_color) {
   // tid_ = tid;
   num_domains_ = ndomains;
   num_pixel_samples_ = num_pixel_samples;
@@ -126,6 +124,7 @@ void TContext<CacheT, ShaderT, SceneT>::resize(int ndomains,
   sqs_out_->resize(ndomains);
 
   rstats_.resize(ndomains, true /*stats_only*/);
+  bg_color_ = bg_color;
 }
 
 template <typename CacheT, typename ShaderT, typename SceneT>
@@ -139,7 +138,7 @@ void TContext<CacheT, ShaderT, SceneT>::retire() {
       }
     }
   }
-#ifndef SPRAY_BACKGROUND_COLOR_BLACK
+#ifdef SPRAY_BACKGROUND_COLOR
   retireBackground();
 #endif
 }
@@ -152,7 +151,7 @@ void TContext<CacheT, ShaderT, SceneT>::retireBackground() {
     bg_retire_q_->pop();
     if (vbuf_.correctAndMiss(*ray)) {
       bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
-                spray::computeBackGroundColor(ray->dir);
+                spray::computeBackGroundColor(ray->dir, bg_color_);
       image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
     }
   }

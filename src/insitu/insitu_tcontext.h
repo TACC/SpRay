@@ -110,10 +110,10 @@ class TContext {
 #ifdef SPRAY_GLOG_CHECK
     CHECK_LT(ray->pixid, image_->w * image_->h);
 #endif
-#ifdef SPRAY_BACKGROUND_COLOR_BLACK
-    isector_.intersect(num_domains_, scene_, ray, &rqs_);
-#else
+#ifdef SPRAY_BACKGROUND_COLOR
     isector_.intersect(num_domains_, scene_, ray, &rqs_, &bg_retire_q_);
+#else
+    isector_.intersect(num_domains_, scene_, ray, &rqs_);
 #endif
   }
 
@@ -242,6 +242,7 @@ class TContext {
   std::queue<IsectCacheItem> reduced_cached_rq_;
 
   double one_over_num_pixel_samples_;
+  glm::vec3 bg_color_;
 };
 
 }  // namespace insitu
