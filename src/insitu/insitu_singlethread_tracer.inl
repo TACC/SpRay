@@ -357,6 +357,8 @@ void SingleThreadTracer<CacheT, ShaderT>::procCachedRq() {
 
     if (vbuf_.updateTBufOutT(isect->tfar, ray)) {
       shader_(info.domain_id, *ray, *isect, mem_out_, &sq2_, &rq2_, ray_depth_);
+
+      scene_->load(info.domain_id, &sinfo_);
       filterSq2(info.domain_id);
       filterRq2(info.domain_id);
     }
