@@ -272,6 +272,9 @@ target_link_libraries(baseline_ooc spray ${DEP_LIBS})
 add_executable(baseline_insitu apps/baseline_insitu.cc)
 target_link_libraries(baseline_insitu spray ${DEP_LIBS})
 
+add_executable(baseline_insitu2 apps/baseline_insitu2.cc)
+target_link_libraries(baseline_insitu2 spray ${DEP_LIBS})
+
 add_executable(spray_insitu_singlethread apps/spray_insitu_singlethread.cc)
 target_link_libraries(spray_insitu_singlethread spray ${DEP_LIBS})
 
