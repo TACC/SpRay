@@ -37,10 +37,10 @@
 namespace spray {
 namespace ooc {
 
-template <typename CacheT>
+template <typename SceneT>
 class ShaderPt {
  public:
-  void init(const spray::Config &cfg, spray::Scene<CacheT> *scene) {
+  void init(const spray::Config &cfg, const SceneT *scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;  // number of samples for area lights
     ks_ = cfg.ks;
@@ -50,7 +50,7 @@ class ShaderPt {
   }
 
  private:
-  Scene<CacheT> *scene_;
+  const SceneT *scene_;
   std::vector<Light *> lights_;
   int bounces_;
   int samples_;
@@ -88,8 +88,8 @@ class ShaderPt {
   }
 };
 
-template <typename CacheT>
-void ShaderPt<CacheT>::operator()(int domain_id, const Ray &rayin,
+template <typename SceneT>
+void ShaderPt<SceneT>::operator()(int domain_id, const Ray &rayin,
                                   const spray::RTCRayIntersection &isect,
                                   spray::MemoryArena *mem,
                                   std::queue<Ray *> *sq, std::queue<Ray *> *rq,
@@ -113,7 +113,7 @@ void ShaderPt<CacheT>::operator()(int domain_id, const Ray &rayin,
 
   std::size_t color_idx = sq->size();
 
-  Bsdf *bsdf = scene_->getBsdf(domain_id);
+  const Bsdf *bsdf = scene_->getBsdf(domain_id);
   bool delta_dist = bsdf->isDelta();
 
   int next_virtual_depth = rayin.depth + 1;

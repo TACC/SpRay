@@ -61,13 +61,13 @@ int main(int argc, char** argv) {
   typedef spray::baseline::LoadAnyOnceInsituSched ScheduleT;
 
   // ao
-  typedef spray::baseline::ShaderAo<CacheT> ShaderAoT;
-  typedef spray::baseline::InsituTracer<CacheT, ScheduleT, ShaderAoT> TracerAoT;
+  typedef spray::baseline::ShaderAo<SceneT> ShaderAoT;
+  typedef spray::baseline::InsituTracer<SceneT, ScheduleT, ShaderAoT> TracerAoT;
   typedef spray::SprayRenderer<TracerAoT, SceneT> RenderAoT;
 
   // pt
-  typedef spray::baseline::ShaderPt<CacheT> ShaderPtT;
-  typedef spray::baseline::InsituTracer<CacheT, ScheduleT, ShaderPtT> TracerPtT;
+  typedef spray::baseline::ShaderPt<SceneT> ShaderPtT;
+  typedef spray::baseline::InsituTracer<SceneT, ScheduleT, ShaderPtT> TracerPtT;
   typedef spray::SprayRenderer<TracerPtT, SceneT> RenderPtT;
 
   spray::Config cfg;

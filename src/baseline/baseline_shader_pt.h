@@ -36,10 +36,10 @@
 namespace spray {
 namespace baseline {
 
-template <typename CacheT>
+template <typename SceneT>
 class ShaderPt {
  public:
-  void init(const spray::Config &cfg, spray::Scene<CacheT> *scene) {
+  void init(const spray::Config &cfg, const SceneT *scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;
     scene_ = scene;
@@ -53,7 +53,7 @@ class ShaderPt {
   void operator()(int id, int ndomains, const DRay &rayin, RTCRay *rtc_ray,
                   RTCRayIntersection *isect, spray::ArenaQs<DRayQItem> *qs,
                   spray::ArenaQs<DRayQItem> *sqs, spray::MemoryArena *arena,
-                  DomainIntersector<CacheT> *domain_isector,
+                  DomainIntersector<SceneT> *domain_isector,
                   CommitBufferB *retire_buf, DRayQ *temp_q) {
     // temporary variables
     glm::vec3 pos, wi, light_radiance, Lr;
@@ -81,7 +81,7 @@ class ShaderPt {
 
     // retire_buf->commit(rayin.pixid, surf_radiance);
 
-    Bsdf *bsdf = scene_->getBsdf(id);
+    const Bsdf *bsdf = scene_->getBsdf(id);
     bool delta_dist = bsdf->isDelta();
 
     int next_ray_depth = rayin.depth + 1;
@@ -211,7 +211,7 @@ class ShaderPt {
   }
 
  private:
-  spray::Scene<CacheT> *scene_;
+  const SceneT *scene_;
   std::vector<Light *> lights_;  // copied lights
   int bounces_;
   int samples_;

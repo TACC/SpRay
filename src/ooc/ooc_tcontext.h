@@ -47,7 +47,7 @@
 namespace spray {
 namespace ooc {
 
-template <typename CacheT, typename ShaderT>
+template <typename SceneT, typename ShaderT>
 class TContext {
  public:
   TContext() {
@@ -115,15 +115,15 @@ class TContext {
   spray::MemoryArena mem_1_;
 
  public:
-  void enqRad(Scene<CacheT>* scene, Ray* ray) {
-    isector_.intersect(num_domains_, scene, ray, &rqs_, &rstats_);
+  void enqRad(SceneT* scene, Ray* ray) {
+    isector_.intersect(scene, ray, &rqs_, &rstats_);
   }
 
   spray::RTCRayIntersection& getRTCIsect() { return rtc_isect_; }
   RTCRay& getRTCRay() { return rtc_ray_; }
 
  private:
-  Isector<CacheT> isector_;
+  Isector<SceneT> isector_;
   spray::RTCRayIntersection rtc_isect_;
   RTCRay rtc_ray_;
 
@@ -184,33 +184,33 @@ class TContext {
   void filterSqs(int id, QVector<RayData>* sqs, std::queue<Ray*>* fsq);
 
  public:
-  void procFilterQs(int id, Scene<CacheT>* scene, SceneInfo& sinfo,
-                    ShaderT& shader, int ray_depth) {
+  void procFilterQs(int id, SceneT* scene, SceneInfo& sinfo, ShaderT& shader,
+                    int ray_depth) {
     procRads(id, scene, sinfo, shader, ray_depth);
     procShads(scene, sinfo, &fsq_in_, retire_q_);
     procShads(scene, sinfo, &fsq_out_, commit_q_);
   }
 
  private:
-  void procRads(int id, Scene<CacheT>* scene, SceneInfo& sinfo, ShaderT& shader,
+  void procRads(int id, SceneT* scene, SceneInfo& sinfo, ShaderT& shader,
                 int ray_depth);
 
-  void procShads2(int id, Scene<CacheT>* scene, SceneInfo& sinfo);
+  void procShads2(int id, SceneT* scene, SceneInfo& sinfo);
 
-  void procRads2(Scene<CacheT>* scene, SceneInfo& sinfo);
+  void procRads2(SceneT* scene, SceneInfo& sinfo);
 
-  void procShads(Scene<CacheT>* scene, SceneInfo& sinfo, std::queue<Ray*>* qin,
+  void procShads(SceneT* scene, SceneInfo& sinfo, std::queue<Ray*>* qin,
                  std::queue<Ray*>* qout);
 
  public:
-  void procPendingQ(Scene<CacheT>* scene) {
+  void procPendingQ(SceneT* scene) {
     while (!pending_q_.empty()) {
       Ray* r = pending_q_.front();
       pending_q_.pop();
       if (vbuf_.correct(*r)) {
         r->depth = 0;
         r->history[0] = SPRAY_FLOAT_INF;
-        isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
+        isector_.intersect(scene, r, &rqs_, &rstats_);
       }
     }
   }
@@ -231,5 +231,4 @@ class TContext {
 #define SPRAY_OOC_TCONTEXT_INL
 #include "ooc/ooc_tcontext.inl"
 #undef SPRAY_OOC_TCONTEXT_INL
-
 

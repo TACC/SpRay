@@ -36,10 +36,10 @@
 namespace spray {
 namespace baseline {
 
-template <typename CacheT>
+template <typename SceneT>
 class ShaderAo {
  public:
-  void init(const spray::Config &cfg, spray::Scene<CacheT> *scene) {
+  void init(const spray::Config &cfg, const SceneT *scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;
     scene_ = scene;
@@ -51,7 +51,7 @@ class ShaderAo {
   void operator()(int id, int ndomains, const DRay &rayin, RTCRay *rtc_ray,
                   RTCRayIntersection *isect, spray::ArenaQs<DRayQItem> *qs,
                   spray::ArenaQs<DRayQItem> *sqs, spray::MemoryArena *arena,
-                  DomainIntersector<CacheT> *domain_isector,
+                  DomainIntersector<SceneT> *domain_isector,
                   CommitBufferB *retire_buf, DRayQ *temp_q) {
     // temporary variables
     glm::vec3 pos, wi, light_radiance, Lr;
@@ -75,7 +75,7 @@ class ShaderAo {
 
     const float ao_weight = 1.0f / static_cast<float>(samples_);
     spray::RandomSampler sampler;
-    Bsdf *bsdf = scene_->getBsdf(id);
+    const Bsdf *bsdf = scene_->getBsdf(id);
 
     for (int i = 0; i < samples_; ++i) {
       RandomSampler_init(sampler, rayin.pixid * (i + 1));
@@ -102,7 +102,7 @@ class ShaderAo {
   }
 
  private:
-  spray::Scene<CacheT> *scene_;
+  const SceneT *scene_;
   std::vector<Light *> lights_;  // copied lights
   int bounces_;
   int samples_;

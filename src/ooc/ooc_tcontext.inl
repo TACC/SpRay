@@ -25,8 +25,8 @@
 namespace spray {
 namespace ooc {
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::procRads(int id, Scene<CacheT>* scene,
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::procRads(int id, SceneT* scene,
                                          SceneInfo& sinfo, ShaderT& shader,
                                          int ray_depth) {
   //
@@ -48,9 +48,8 @@ void TContext<CacheT, ShaderT>::procRads(int id, Scene<CacheT>* scene,
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::procShads(Scene<CacheT>* scene,
-                                          SceneInfo& sinfo,
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::procShads(SceneT* scene, SceneInfo& sinfo,
                                           std::queue<Ray*>* qin,
                                           std::queue<Ray*>* qout) {
   while (!qin->empty()) {
@@ -70,8 +69,8 @@ void TContext<CacheT, ShaderT>::procShads(Scene<CacheT>* scene,
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::procShads2(int id, Scene<CacheT>* scene,
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::procShads2(int id, SceneT* scene,
                                            SceneInfo& sinfo) {
   while (!sq2_.empty()) {
     Ray* r = sq2_.front();
@@ -79,7 +78,7 @@ void TContext<CacheT, ShaderT>::procShads2(int id, Scene<CacheT>* scene,
     bool is_occluded =
         scene->occluded(sinfo.rtc_scene, r->org, r->dir, &rtc_ray_);
     if (!is_occluded) {
-      if (!isector_.intersect(id, num_domains_, scene, r, sqs_out_,
+      if (!isector_.intersect(id, scene, r, sqs_out_,
                               &rstats_)) {  // unoccluded
 #ifdef SPRAY_GLOG_CHECK
         CHECK_EQ(r->occluded, 0);
@@ -91,18 +90,17 @@ void TContext<CacheT, ShaderT>::procShads2(int id, Scene<CacheT>* scene,
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::procRads2(Scene<CacheT>* scene,
-                                          SceneInfo& sinfo) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::procRads2(SceneT* scene, SceneInfo& sinfo) {
   while (!rq2_.empty()) {
     Ray* r = rq2_.front();
     rq2_.pop();
-    isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
+    isector_.intersect(scene, r, &rqs_, &rstats_);
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::resize(int ndomains, int num_pixel_samples,
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::resize(int ndomains, int num_pixel_samples,
                                        const Tile& tile, spray::HdrImage* image,
                                        int num_bounces) {
   // tid_ = tid;
@@ -118,10 +116,12 @@ void TContext<CacheT, ShaderT>::resize(int ndomains, int num_pixel_samples,
   sqs_out_->resize(ndomains);
 
   rstats_.resize(ndomains, true /*stats_only*/);
+
+  isector_.init(ndomains);
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::retire() {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::retire() {
   double scale = 1.0 / (double)num_pixel_samples_;
   while (!retire_q_->empty()) {
     Ray* r = retire_q_->front();
@@ -134,8 +134,8 @@ void TContext<CacheT, ShaderT>::retire() {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::filterRqs(int id) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::filterRqs(int id) {
   auto* rq = rqs_.getQ(id);
 
   while (!rq->empty()) {
@@ -151,8 +151,8 @@ void TContext<CacheT, ShaderT>::filterRqs(int id) {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::filterSqs(int id, QVector<RayData>* sqs,
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::filterSqs(int id, QVector<RayData>* sqs,
                                           std::queue<Ray*>* fsq) {
   auto* sq = sqs->getQ(id);
 

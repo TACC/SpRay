@@ -188,7 +188,7 @@ void Scene<CacheT, SurfaceBufT>::load(int id, SceneInfo* sinfo) {
 
 template <typename CacheT, typename SurfaceBufT>
 bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
-                                           RTCRayIntersection* isect) {
+                                           RTCRayIntersection* isect) const {
   rtcIntersect(rtc_scene, (RTCRay&)(*isect));
 
   if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
@@ -199,7 +199,8 @@ bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
 }
 
 template <typename CacheT, typename SurfaceBufT>
-bool Scene<CacheT, SurfaceBufT>::occluded(RTCScene rtc_scene, RTCRay* ray) {
+bool Scene<CacheT, SurfaceBufT>::occluded(RTCScene rtc_scene,
+                                          RTCRay* ray) const {
   rtcOccluded(rtc_scene, *ray);
   if (ray->geomID != RTC_INVALID_GEOMETRY_ID) {  // occluded
     return true;

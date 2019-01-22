@@ -25,10 +25,10 @@
 namespace spray {
 namespace insitu {
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::init(const Config& cfg, int ndomains,
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::init(const Config& cfg, int ndomains,
                                      const spray::InsituPartition* partition,
-                                     Scene<CacheT>* scene, VBuf* vbuf,
+                                     SceneT* scene, VBuf* vbuf,
                                      spray::HdrImage* image) {
   num_domains_ = ndomains;
   partition_ = partition;
@@ -40,10 +40,11 @@ void TContext<CacheT, ShaderT>::init(const Config& cfg, int ndomains,
   sqs_.resize(ndomains);
 
   shader_.init(cfg, scene);
+  isector_.init(ndomains);
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::populateRadWorkStats() {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::populateRadWorkStats() {
 #ifdef SPRAY_GLOG_CHECK
   CHECK(work_stats_.empty());
 #endif
@@ -54,8 +55,8 @@ void TContext<CacheT, ShaderT>::populateRadWorkStats() {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::populateWorkStats() {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::populateWorkStats() {
 #ifdef SPRAY_GLOG_CHECK
   CHECK(work_stats_.empty());
 #endif
@@ -71,8 +72,8 @@ void TContext<CacheT, ShaderT>::populateWorkStats() {
   work_stats_.registerCachedRayBlock(has_cached_block);
 }
 
-// template <typename CacheT, typename ShaderT>
-// void TContext<CacheT, ShaderT>::populateRadWorkStats() {
+// template <typename SceneT, typename ShaderT>
+// void TContext<SceneT, ShaderT>::populateRadWorkStats() {
 //   work_stats_.reset();
 //   for (int id = 0; id < num_domains_; ++id) {
 //     int dest = partition_->rank(id);
@@ -82,15 +83,15 @@ void TContext<CacheT, ShaderT>::populateWorkStats() {
 //   }
 // }
 
-// template <typename CacheT, typename ShaderT>
-// void TContext<CacheT, ShaderT>::populateWorkStats(int rank) {
+// template <typename SceneT, typename ShaderT>
+// void TContext<SceneT, ShaderT>::populateWorkStats(int rank) {
 //   work_stats_.reset();
-// 
+//
 //   int n = 0;
 //   n += (!cached_rq_.empty());
-// 
+//
 //   work_stats_.addNumDomains(rank, n);
-// 
+//
 //   for (int id = 0; id < num_domains_; ++id) {
 //     int dest = partition_->rank(id);
 //     n = 0;
@@ -102,8 +103,8 @@ void TContext<CacheT, ShaderT>::populateWorkStats() {
 //   }
 // }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::processRays(int id, SceneInfo& sinfo) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::processRays(int id, SceneInfo& sinfo) {
   sinfo_ = sinfo;
 
   auto* rq = rqs_.getQ(id);
@@ -141,8 +142,8 @@ void TContext<CacheT, ShaderT>::processRays(int id, SceneInfo& sinfo) {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::updateVisBuf() {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::updateVisBuf() {
   while (!isects_.empty()) {
     IsectInfo& info = isects_.front();
     if (vbuf_->updateTBufOutT(info.isect->tfar, info.ray)) {
@@ -158,8 +159,8 @@ void TContext<CacheT, ShaderT>::updateVisBuf() {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::updateTBuf() {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::updateTBuf() {
   while (!isects_.empty()) {
     IsectInfo& info = isects_.front();
     if (vbuf_->updateTBufOutT(info.isect->tfar, info.ray)) {
@@ -169,8 +170,8 @@ void TContext<CacheT, ShaderT>::updateTBuf() {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::updateOBuf() {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::updateOBuf() {
   while (!occls_.empty()) {
     OcclInfo& o = occls_.front();
     vbuf_->setOBuf(o.samid, o.light);
@@ -178,8 +179,8 @@ void TContext<CacheT, ShaderT>::updateOBuf() {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::genRays(int id, int ray_depth) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::genRays(int id, int ray_depth) {
   while (!reduced_isects_.empty()) {
     IsectInfo& info = reduced_isects_.front();
 
@@ -195,8 +196,8 @@ void TContext<CacheT, ShaderT>::genRays(int id, int ray_depth) {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::filterSq2(int id) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::filterSq2(int id) {
   ocache_item_.domain_id = id;
   RTCScene rtc_scene = sinfo_.rtc_scene;
 
@@ -215,8 +216,8 @@ void TContext<CacheT, ShaderT>::filterSq2(int id) {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::filterRq2(int id) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::filterRq2(int id) {
   icache_item_.domain_id = id;
 
   RTCScene rtc_scene = sinfo_.rtc_scene;
@@ -236,8 +237,8 @@ void TContext<CacheT, ShaderT>::filterRq2(int id) {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::isectRecvRad(int id, Ray* ray) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::isectRecvRad(int id, Ray* ray) {
   //
   auto* isect = mem_out_->Alloc<spray::RTCRayIntersection>(1, false);
   //
@@ -251,8 +252,8 @@ void TContext<CacheT, ShaderT>::isectRecvRad(int id, Ray* ray) {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::occlRecvShad(int id, Ray* ray) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::occlRecvShad(int id, Ray* ray) {
   int samid = ray->samid;
   int light = ray->light;
 
@@ -268,8 +269,8 @@ void TContext<CacheT, ShaderT>::occlRecvShad(int id, Ray* ray) {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::procFsq2() {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::procFsq2() {
   while (!fsq2_.empty()) {
     auto& item = fsq2_.front();
     auto* ray = item.ray;
@@ -279,15 +280,15 @@ void TContext<CacheT, ShaderT>::procFsq2() {
         vbuf_->setOBuf(samid, ray->light);
       } else {  // to retire q, isect domains exluding its domain
         retire_q_.push(ray);
-        isector_.intersect(item.domain_id, num_domains_, scene_, ray, &sqs_);
+        isector_.intersect(item.domain_id, scene_, ray, &sqs_);
       }
     }
     fsq2_.pop();
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::procFrq2() {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::procFrq2() {
   while (!frq2_.empty()) {
     auto& item = frq2_.front();
     auto* ray = item.ray;
@@ -297,18 +298,17 @@ void TContext<CacheT, ShaderT>::procFrq2() {
 
       if (!std::isinf(isect->tfar)) {  // hit
         cached_rq_.push(item);
-        isector_.intersect(item.domain_id, isect->tfar, num_domains_, scene_,
-                           ray, &rqs_);
+        isector_.intersect(item.domain_id, isect->tfar, scene_, ray, &rqs_);
       } else {
-        isector_.intersect(item.domain_id, num_domains_, scene_, ray, &rqs_);
+        isector_.intersect(item.domain_id, scene_, ray, &rqs_);
       }
     }
     frq2_.pop();
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::updateTBufWithCached() {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::updateTBufWithCached() {
   while (!cached_rq_.empty()) {
     auto& item = cached_rq_.front();
     auto* ray = item.ray;
@@ -323,8 +323,8 @@ void TContext<CacheT, ShaderT>::updateTBufWithCached() {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::processCached(int ray_depth) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::processCached(int ray_depth) {
   while (!reduced_cached_rq_.empty()) {
     auto& item = reduced_cached_rq_.front();
     auto* ray = item.ray;
@@ -342,8 +342,8 @@ void TContext<CacheT, ShaderT>::processCached(int ray_depth) {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::procRetireQ(int num_pixel_samples) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::procRetireQ(int num_pixel_samples) {
   double scale = 1.0 / (double)num_pixel_samples;
   while (!retire_q_.empty()) {
     auto* ray = retire_q_.front();
@@ -355,8 +355,8 @@ void TContext<CacheT, ShaderT>::procRetireQ(int num_pixel_samples) {
   }
 }
 
-template <typename CacheT, typename ShaderT>
-void TContext<CacheT, ShaderT>::sendRays(bool shadow, int id, Ray* rays) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::sendRays(bool shadow, int id, Ray* rays) {
   std::queue<Ray*>* q;
 
   if (shadow) {
