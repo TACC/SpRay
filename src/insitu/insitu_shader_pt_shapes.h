@@ -148,8 +148,7 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
 
             light_sample_id = light_sample_offset + s;
 
-            RayUtil::makeShadow(rayin, light_sample_id, pos, wi, Lr, isect.tfar,
-                                shadow);
+            shadow->makeShadow(rayin, light_sample_id, pos, wi, Lr, isect.tfar);
 
             sq->push(shadow);
           }
@@ -176,7 +175,7 @@ void ShaderPtShapes<CacheT, SceneT>::operator()(
       if (hasPositive(Lr)) {
         Ray *r2 = mem->Alloc<Ray>(1, false);
         CHECK_NOTNULL(r2);
-        RayUtil::makeRay(rayin, pos, wi, Lr, isect.tfar, r2);
+        r2->makeRadiance(rayin, pos, wi, Lr, isect.tfar);
         rq->push(r2);
 #ifdef SPRAY_GLOG_CHECK
         CHECK_LT(r2->pixid, num_pixels_);
