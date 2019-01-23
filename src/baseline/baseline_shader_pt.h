@@ -35,7 +35,7 @@
 namespace spray {
 namespace baseline {
 
-template <typename CacheT, typename SceneT>
+template <typename SceneT>
 class ShaderPt {
  public:
   void init(const spray::Config &cfg, const SceneT &scene) {
@@ -52,7 +52,7 @@ class ShaderPt {
   void operator()(int id, int ndomains, const DRay &rayin, RTCRay *rtc_ray,
                   RTCRayIntersection *isect, spray::ArenaQs<DRayQItem> *qs,
                   spray::ArenaQs<DRayQItem> *sqs, spray::MemoryArena *mem,
-                  DomainIntersector<CacheT, SceneT> *domain_isector,
+                  DomainIntersector<SceneT> *domain_isector,
                   CommitBufferB *retire_buf, DRayQ *temp_q);
 
  private:
@@ -64,13 +64,14 @@ class ShaderPt {
 #endif
 };
 
-template <typename CacheT, typename SceneT>
-void ShaderPt<CacheT, SceneT>::operator()(
-    int id, int ndomains, const DRay &rayin, RTCRay *rtc_ray,
-    RTCRayIntersection *isect, spray::ArenaQs<DRayQItem> *qs,
-    spray::ArenaQs<DRayQItem> *sqs, spray::MemoryArena *mem,
-    DomainIntersector<CacheT, SceneT> *domain_isector,
-    CommitBufferB *retire_buf, DRayQ *temp_q) {
+template <typename SceneT>
+void ShaderPt<SceneT>::operator()(int id, int ndomains, const DRay &rayin,
+                                  RTCRay *rtc_ray, RTCRayIntersection *isect,
+                                  spray::ArenaQs<DRayQItem> *qs,
+                                  spray::ArenaQs<DRayQItem> *sqs,
+                                  spray::MemoryArena *mem,
+                                  DomainIntersector<SceneT> *domain_isector,
+                                  CommitBufferB *retire_buf, DRayQ *temp_q) {
   glm::vec3 pos = RTCRayUtil::hitPosition(isect->org, isect->dir, isect->tfar);
 
   glm::vec3 surf_radiance;

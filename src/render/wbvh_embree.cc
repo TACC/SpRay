@@ -136,15 +136,15 @@ void WbvhEmbree::cbIntersect1(void* ptr, RTCRay& ray_i, std::size_t item) {
       intersectAabb(aabb, ray.org, ray.dir, ray.tnear, ray.tfar, &tmin, &tmax);
 
   if (hit) {
-    DomainList* domains = ray.domains;
-    unsigned offset = domains->count;
-
-    CHECK_LT(offset, SPRAY_RAY_DOMAIN_LIST_SIZE);
-
-    domains->count = offset + 1;
-    domains->ids[offset] = prims[item].id;
-    domains->ts[offset] = tmin;
+    ray.domains->push(prims[item].id, tmin);
   }
+  //   DomainList* domains = ray.domains;
+  //   unsigned offset = domains->count;
+  //   CHECK_LT(offset, SPRAY_RAY_DOMAIN_LIST_SIZE);
+  //   domains->count = offset + 1;
+  //   domains->ids[offset] = prims[item].id;
+  //   domains->ts[offset] = tmin;
+  // }
 }
 
 void WbvhEmbree::cbIntersect8(const void* valid, void* ptr, RTCRay8& ray,

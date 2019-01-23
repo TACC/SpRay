@@ -27,7 +27,6 @@
 #include "insitu/insitu_singlethread_tracer.h"
 #include "render/caches.h"
 #include "render/config.h"
-#include "render/domain_intersector.h"
 #include "render/shape_buffer.h"
 #include "render/spray.h"
 #include "render/spray_renderer.h"
@@ -64,15 +63,13 @@ int main(int argc, char** argv) {
 
   // ao
   typedef spray::insitu::ShaderAo<SceneT> ShaderAoT;
-  typedef spray::insitu::SingleThreadTracer<CacheT, ShaderAoT, SceneT>
-      TracerAoT;
+  typedef spray::insitu::SingleThreadTracer<SceneT, ShaderAoT> TracerAoT;
   typedef spray::SprayRenderer<TracerAoT, SceneT> RenderAoT;
 
   // pt
   // typedef spray::insitu::ShaderPtShapes<CacheT, SceneT> ShaderPtT;
   typedef spray::insitu::ShaderPt<SceneT> ShaderPtT;
-  typedef spray::insitu::SingleThreadTracer<CacheT, ShaderPtT, SceneT>
-      TracerPtT;
+  typedef spray::insitu::SingleThreadTracer<SceneT, ShaderPtT> TracerPtT;
   typedef spray::SprayRenderer<TracerPtT, SceneT> RenderPtT;
 
   spray::Config cfg;

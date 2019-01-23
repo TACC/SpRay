@@ -64,22 +64,22 @@ int main(int argc, char** argv) {
 
   // ao, infinite cache
   typedef spray::ooc::ShaderAo<SceneInfT> ShaderAoInfT;
-  typedef spray::ooc::Tracer<InfCacheT, ShaderAoInfT, SceneInfT> TracerAoInfT;
+  typedef spray::ooc::Tracer<SceneInfT, ShaderAoInfT> TracerAoInfT;
   typedef spray::SprayRenderer<TracerAoInfT, SceneInfT> RenderAoInfT;
 
   // ao, LRU cache
   typedef spray::ooc::ShaderAo<SceneLruT> ShaderAoLruT;
-  typedef spray::ooc::Tracer<LruCacheT, ShaderAoLruT, SceneLruT> TracerAoLruT;
+  typedef spray::ooc::Tracer<SceneLruT, ShaderAoLruT> TracerAoLruT;
   typedef spray::SprayRenderer<TracerAoLruT, SceneLruT> RenderAoLruT;
 
   // pt, infinite cache
   typedef spray::ooc::ShaderPt<SceneInfT> ShaderPtInfT;
-  typedef spray::ooc::Tracer<InfCacheT, ShaderPtInfT, SceneInfT> TracerPtInfT;
+  typedef spray::ooc::Tracer<SceneInfT, ShaderPtInfT> TracerPtInfT;
   typedef spray::SprayRenderer<TracerPtInfT, SceneInfT> RenderPtInfT;
 
   // pt, LRU cache
   typedef spray::ooc::ShaderPt<SceneLruT> ShaderPtLruT;
-  typedef spray::ooc::Tracer<LruCacheT, ShaderPtLruT, SceneLruT> TracerPtLruT;
+  typedef spray::ooc::Tracer<SceneLruT, ShaderPtLruT> TracerPtLruT;
   typedef spray::SprayRenderer<TracerPtLruT, SceneLruT> RenderPtLruT;
 
   spray::Config cfg;

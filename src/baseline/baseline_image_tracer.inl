@@ -25,9 +25,8 @@
 namespace spray {
 namespace baseline {
 
-template <typename CacheT, typename ScheduleT, typename ShaderT,
-          typename SceneT>
-void ImageTracer<CacheT, ScheduleT, ShaderT, SceneT>::trace() {
+template <typename SceneT, typename ScheduleT, typename ShaderT>
+void ImageTracer<SceneT, ScheduleT, ShaderT>::trace() {
   Base::image_->clear();
 
   Tile tile = Base::img_sched_.schedule();
@@ -75,11 +74,12 @@ void ImageTracer<CacheT, ScheduleT, ShaderT, SceneT>::trace() {
     QStats stats;
     stats.init(ndomains);
 
-    DomainIntersector<CacheT, SceneT> domain_isector(ndomains, Base::scene_);
+    DomainIntersector<SceneT> &domain_isector = Base::domain_isectors_[tid];
 
     if (num_eyerays) {
       Base::genEyeRays(ndomains, nsamples, tile, eyeray_buf);
-      Base::isectEyeDomains(ndomains, num_eyerays, eyeray_buf, &qs);
+      Base::isectEyeDomains(ndomains, num_eyerays, eyeray_buf, &qs,
+                            &domain_isector);
     }
 #pragma omp barrier
 
@@ -131,9 +131,8 @@ void ImageTracer<CacheT, ScheduleT, ShaderT, SceneT>::trace() {
   }  // end of omp parallel
 }
 
-template <typename CacheT, typename ScheduleT, typename ShaderT,
-          typename SceneT>
-void ImageTracer<CacheT, ScheduleT, ShaderT, SceneT>::schedule(
+template <typename SceneT, typename ScheduleT, typename ShaderT>
+void ImageTracer<SceneT, ScheduleT, ShaderT>::schedule(
     int ndomains, const ArenaQs<DRayQItem> &qs, const ArenaQs<DRayQItem> &sqs,
     QStats *stats) {
   for (int i = 0; i < ndomains; ++i) {

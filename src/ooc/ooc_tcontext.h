@@ -47,7 +47,7 @@
 namespace spray {
 namespace ooc {
 
-template <typename CacheT, typename ShaderT, typename SceneT>
+template <typename SceneT, typename ShaderT>
 class TContext {
  public:
   TContext() {
@@ -133,7 +133,7 @@ class TContext {
   RTCRay& getRTCRay() { return rtc_ray_; }
 
  private:
-  Isector<CacheT, SceneT> isector_;
+  Isector<SceneT> isector_;
   spray::RTCRayIntersection rtc_isect_;
   RTCRay rtc_ray_;
 

@@ -221,10 +221,11 @@ class Bsdf {
   virtual ~Bsdf() {}
   virtual void sampleDelta(bool entering, float cos_theta_i,
                            const glm::vec3& wo, const glm::vec3& normal_ff,
-                           uint32_t* sample_type, float* fr, glm::vec3* wt) = 0;
+                           uint32_t* sample_type, float* fr,
+                           glm::vec3* wt) const = 0;
 
   virtual void sampleRandom(const glm::vec3& normal, RandomSampler* sampler,
-                            glm::vec3* wi, float* pdf) = 0;
+                            glm::vec3* wi, float* pdf) const = 0;
   /**
    * Get the emission value of the surface material. For non-emitting surfaces
    * this would be a zero energy spectrum.
@@ -242,14 +243,14 @@ class DiffuseBsdf : public Bsdf {
   DiffuseBsdf(const glm::vec3& albedo) : albedo_(albedo) {}
 
   void sampleRandom(const glm::vec3& normal, RandomSampler* sampler,
-                    glm::vec3* wi, float* pdf) override {
+                    glm::vec3* wi, float* pdf) const override {
     glm::vec2 u = RandomSampler_get2D(*sampler);
     getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
   }
 
   void sampleDelta(bool entering, float cos_theta_i, const glm::vec3& wo,
                    const glm::vec3& normal_ff, uint32_t* sample_type, float* fr,
-                   glm::vec3* wt) override {
+                   glm::vec3* wt) const override {
     LOG(FATAL) << "forbidden";
   }
 
@@ -267,12 +268,12 @@ class MirrorBsdf : public Bsdf {
   glm::vec3 getEmission() const override { return glm::vec3(0.0f); }
   bool isDelta() const override { return true; }
   void sampleRandom(const glm::vec3& normal, RandomSampler* sampler,
-                    glm::vec3* wi, float* pdf) override {
+                    glm::vec3* wi, float* pdf) const override {
     LOG(FATAL) << "forbidden";
   }
   void sampleDelta(bool entering, float cos_theta_i, const glm::vec3& wo,
                    const glm::vec3& normal_ff, uint32_t* sample_type, float* fr,
-                   glm::vec3* wt) override {
+                   glm::vec3* wt) const override {
     *fr = 1.0f;
     *sample_type = BSDF_REFLECTION;
   }
@@ -292,13 +293,13 @@ class GlassBsdf : public Bsdf {
   bool isDelta() const override { return true; }
 
   void sampleRandom(const glm::vec3& normal, RandomSampler* sampler,
-                    glm::vec3* wi, float* pdf) override {
+                    glm::vec3* wi, float* pdf) const override {
     LOG(FATAL) << "forbidden";
   }
 
   void sampleDelta(bool entering, float cos_theta_i, const glm::vec3& wo,
                    const glm::vec3& normal_ff, uint32_t* sample_type, float* fr,
-                   glm::vec3* wt) override {
+                   glm::vec3* wt) const override {
     float etaI = entering ? etaI_ : etaT_;
     float etaT = entering ? etaT_ : etaI_;
 
@@ -335,13 +336,13 @@ class TransmissionBsdf : public Bsdf {
   bool isDelta() const override { return true; }
 
   void sampleRandom(const glm::vec3& normal, RandomSampler* sampler,
-                    glm::vec3* wi, float* pdf) override {
+                    glm::vec3* wi, float* pdf) const override {
     LOG(FATAL) << "forbidden";
   }
 
   void sampleDelta(bool entering, float cos_theta_i, const glm::vec3& wo,
                    const glm::vec3& normal_ff, uint32_t* sample_type, float* fr,
-                   glm::vec3* wt) override {
+                   glm::vec3* wt) const override {
     float etaI = entering ? etaI_ : etaT_;
     float etaT = entering ? etaT_ : etaI_;
     // float eta = etaI / etaT;

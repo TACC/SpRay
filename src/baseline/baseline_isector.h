@@ -34,25 +34,20 @@
 namespace spray {
 namespace baseline {
 
-template <typename CacheT, typename SceneT>
+template <typename SceneT>
 class DomainIntersector {
  public:
-  DomainIntersector(int ndomains, SceneT* scene)
-      : ndomains_(ndomains), scene_(scene) {}
+  void init(std::size_t num_domains, const SceneT* scene) {
+    scene_ = scene;
+    domains_.resize(num_domains);
+  }
+
+  std::size_t getNumHits() const { return domains_.getNumHits(); }
+  int getId(std::size_t i) const { return domains_.getId(i); }
+  float getTnear(std::size_t i) const { return domains_.getTnear(i); }
 
   void intersect(int current_id, DRay* ray, ArenaQs<DRayQItem>* qs) {
-    // setup a ray
-    RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
-                                             &eray_);
-    // ray-domain intersection tests
-    scene_->intersectDomains(eray_);
-
-#ifdef SPRAY_GLOG_CHECK
-    CHECK_LE(domains_.count, SPRAY_RAY_DOMAIN_LIST_SIZE);
-#endif
-    if (domains_.count) {
-      RTCRayUtil::sortDomains(domains_, hits_);
-    }
+    intersectDomains(ray);
 
     // assume that ray generation and processing are done separately
     // therefore, next domain_pos becomes 0 when the ray is newly generated
@@ -64,24 +59,26 @@ class DomainIntersector {
     if (dom_pos < INT_MAX) {  // ray traversing domains
       ray->domain_pos = dom_pos + 1;
     } else {  // new ray
-      if (domains_.count && hits_[0].id == current_id) {
+      // if (domains_.count && hits_[0].id == current_id) {
+      if (domains_.getNumHits() && domains_.getId(0) == current_id) {
         ray->domain_pos = 1;
       } else {
         ray->domain_pos = 0;
       }
     }
 
-    if (ray->domain_pos < domains_.count) {
+    if (ray->domain_pos < domains_.getNumHits()) {
       // two domains away from current domain
       int next_pos = ray->domain_pos + 1;
-      ray->next_tdom =
-          (next_pos < domains_.count) ? hits_[next_pos].t : SPRAY_FLOAT_INF;
+      ray->next_tdom = (next_pos < domains_.getNumHits())
+                           ? domains_.getTnear(next_pos)
+                           : SPRAY_FLOAT_INF;
       if (qs) {
         ray_data_.ray = ray;
-        qs->copy(hits_[ray->domain_pos].id, &ray_data_);
+        qs->copy(domains_.getId(ray->domain_pos), &ray_data_);
       }
 #ifdef SPRAY_GLOG_CHECK
-      CHECK_NE(hits_[ray->domain_pos].id, current_id);
+      CHECK_NE(domains_.getId(ray->domain_pos), current_id);
 #endif
     } else {
       ray->domain_pos = INT_MAX;
@@ -89,15 +86,22 @@ class DomainIntersector {
     }
   }
 
+  void intersectDomains(const DRay* ray) {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_GT(domains_.size(), 0);
+#endif
+    domains_.reset();
+    eray_.reset(ray->org, ray->dir, &domains_);
+    scene_->intersectDomains(eray_);
+    domains_.sort();
+  }
+
  private:
   DomainList domains_;
-  DomainHit1 hits_[SPRAY_RAY_DOMAIN_LIST_SIZE];
-
   RTCRayExt eray_;
   DRayQItem ray_data_;
 
-  int ndomains_;
-  SceneT* scene_;
+  const SceneT* scene_;
 };
 
 }  // namespace baseline

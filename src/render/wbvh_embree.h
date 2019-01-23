@@ -54,13 +54,13 @@ class WbvhEmbree {
 
   // APIs for intersection tests
 
-  void intersect(RTCRayExt &ray) { rtcIntersect(scene_, (RTCRay &)ray); }
+  void intersect(RTCRayExt &ray) const { rtcIntersect(scene_, (RTCRay &)ray); }
 
-  void intersect8(const unsigned valid[8], RTCRayExt8 &ray) {
+  void intersect8(const unsigned valid[8], RTCRayExt8 &ray) const {
     rtcIntersect8((const void *)valid, scene_, (RTCRay8 &)ray);
   }
 
-  void intersect16(const void *valid, RTCRay16 &ray) {
+  void intersect16(const void *valid, RTCRay16 &ray) const {
     rtcIntersect16(valid, scene_, ray);
   }
 

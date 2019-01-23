@@ -56,7 +56,7 @@
 namespace spray {
 namespace insitu {
 
-template <typename CacheT, typename ShaderT, typename SceneT>
+template <typename SceneT, typename ShaderT>
 class MultiThreadTracer {
  public:
   void trace();
@@ -68,7 +68,7 @@ class MultiThreadTracer {
             HdrImage *image);
 
  private:
-  typedef TContext<CacheT, ShaderT, SceneT> TContextType;
+  typedef TContext<SceneT, ShaderT> TContextType;
 
   std::vector<TContextType> tcontexts_;
 

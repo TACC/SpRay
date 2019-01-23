@@ -25,10 +25,9 @@
 namespace spray {
 namespace ooc {
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void Tracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
-                                           const Camera &camera, SceneT *scene,
-                                           HdrImage *image) {
+template <typename SceneT, typename ShaderT>
+void Tracer<SceneT, ShaderT>::init(const Config &cfg, const Camera &camera,
+                                   SceneT *scene, HdrImage *image) {
   int ndomains = static_cast<int>(scene->getNumDomains());
   CHECK_LT(scene->getNumDomains(), std::numeric_limits<int>::max());
 
@@ -82,9 +81,8 @@ void Tracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void Tracer<CacheT, ShaderT, SceneT>::isectDomsRads(RayBuf<Ray> buf,
-                                                    TContextType *tc) {
+template <typename SceneT, typename ShaderT>
+void Tracer<SceneT, ShaderT>::isectDomsRads(RayBuf<Ray> buf, TContextType *tc) {
   tc->resetRstats();
 #pragma omp for schedule(static, 1)
   for (std::size_t i = 0; i < buf.num; ++i) {
@@ -93,8 +91,8 @@ void Tracer<CacheT, ShaderT, SceneT>::isectDomsRads(RayBuf<Ray> buf,
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void Tracer<CacheT, ShaderT, SceneT>::trace() {
+template <typename SceneT, typename ShaderT>
+void Tracer<SceneT, ShaderT>::trace() {
 #pragma omp parallel
   {
     while (!tile_list_.empty()) {
@@ -140,14 +138,14 @@ void Tracer<CacheT, ShaderT, SceneT>::trace() {
 #pragma omp barrier
       }
 
-      pcontext_.isectPrims<CacheT, ShaderT, SceneT>(scene_, shader_, tcontext);
+      pcontext_.isectPrims<SceneT, ShaderT>(scene_, shader_, tcontext);
     }
   }
   tile_list_.reset();
-}
+}  // namespace ooc
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void Tracer<CacheT, ShaderT, SceneT>::traceInOmp() {
+template <typename SceneT, typename ShaderT>
+void Tracer<SceneT, ShaderT>::traceInOmp() {
   while (!tile_list_.empty()) {
 #pragma omp barrier
 #pragma omp single
@@ -191,7 +189,7 @@ void Tracer<CacheT, ShaderT, SceneT>::traceInOmp() {
 #pragma omp barrier
     }
 
-    pcontext_.isectPrims<CacheT, ShaderT, SceneT>(scene_, shader_, tcontext);
+    pcontext_.isectPrims<SceneT, ShaderT>(scene_, shader_, tcontext);
   }
 #pragma omp single
   tile_list_.reset();

@@ -48,7 +48,7 @@
 namespace spray {
 namespace ooc {
 
-template <typename CacheT, typename ShaderT, typename SceneT>
+template <typename SceneT, typename ShaderT>
 class Tracer {
  public:
   void trace();
@@ -60,7 +60,7 @@ class Tracer {
             HdrImage *image);
 
  private:
-  typedef TContext<CacheT, ShaderT, SceneT> TContextType;
+  typedef TContext<SceneT, ShaderT> TContextType;
 
   ShaderT shader_;
   PContext pcontext_;

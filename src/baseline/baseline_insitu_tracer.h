@@ -60,8 +60,7 @@
 namespace spray {
 namespace baseline {
 
-template <typename CacheT, typename ScheduleT, typename ShaderT,
-          typename SceneT>
+template <typename SceneT, typename ScheduleT, typename ShaderT>
 class InsituTracer {
  public:
   virtual ~InsituTracer() {
@@ -89,7 +88,8 @@ class InsituTracer {
   void genEyeRays(int ndomains, int nsamples, Tile tile, DRay *ray_buf);
 
   void isectEyeDomains(int num_domains, std::size_t num_rays, DRay *ray_buf,
-                       ArenaQs<DRayQItem> *qs);
+                       ArenaQs<DRayQItem> *qs,
+                       DomainIntersector<SceneT> *domain_isector);
 
  protected:
   int assignedProcess(unsigned score_index) {
@@ -123,19 +123,19 @@ class InsituTracer {
   void processRays(int tid, int id, int ndomains, int nbounces,
                    ArenaQs<DRayQItem> *qs, ArenaQs<DRayQItem> *sqs,
                    MemoryArena *arena,
-                   DomainIntersector<CacheT, SceneT> *domain_isector,
-                   RTCRay *rtc_ray, RTCRayIntersection *isect,
-                   CommitBufferB *retire_buf, DRayQ *temp_q);
+                   DomainIntersector<SceneT> *domain_isector, RTCRay *rtc_ray,
+                   RTCRayIntersection *isect, CommitBufferB *retire_buf,
+                   DRayQ *temp_q);
 
   void processRay2(int id, int ndomains, DRay *data, RTCRay *rtc_ray,
                    RTCRayIntersection *isect, ArenaQs<DRayQItem> *qs,
                    ArenaQs<DRayQItem> *sqs, MemoryArena *arena,
-                   DomainIntersector<CacheT, SceneT> *domain_isector,
+                   DomainIntersector<SceneT> *domain_isector,
                    CommitBufferB *retire_buf, DRayQ *temp_q);
 
   void processShadow(int id, int ndomains, DRay *data, RTCRay *rtc_ray,
                      ArenaQs<DRayQItem> *sqs, MemoryArena *arena,
-                     DomainIntersector<CacheT, SceneT> *domain_isector,
+                     DomainIntersector<SceneT> *domain_isector,
                      CommitBufferB *retire_buf);
 
   void resetSentQs(int ndomains, const std::vector<RayCount> &sched,
@@ -187,6 +187,7 @@ class InsituTracer {
  private:
   void profileRaysSpawned(const ArenaQs<DRayQItem> &qs);
 #endif
+  std::vector<DomainIntersector<SceneT>> domain_isectors_;
 };
 
 }  // namespace baseline

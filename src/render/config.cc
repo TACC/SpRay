@@ -313,7 +313,7 @@ bool Config::parse(int argc, char** argv) {
     model_descriptor_filename = filename;
     
     std::string ext = util::getFileExtension(filename);
-    CHECK_EQ(ext, std::string("spray"));
+    CHECK_EQ(ext, std::string("spray")) << ext;
   }
   return stop_app;
 }

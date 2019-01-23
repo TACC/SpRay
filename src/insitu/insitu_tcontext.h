@@ -58,7 +58,7 @@ class ThreadWorkStats {
   bool has_cached_block_;
 };
 
-template <typename CacheT, typename ShaderT, typename SceneT>
+template <typename SceneT, typename ShaderT>
 class TContext {
  public:
   TContext() {
@@ -111,9 +111,9 @@ class TContext {
     CHECK_LT(ray->pixid, image_->w * image_->h);
 #endif
 #ifdef SPRAY_BACKGROUND_COLOR
-    isector_.intersect(num_domains_, scene_, ray, &rqs_, &bg_retire_q_);
+    isector_.intersect(scene_, ray, &rqs_, &bg_retire_q_);
 #else
-    isector_.intersect(num_domains_, scene_, ray, &rqs_);
+    isector_.intersect(scene_, ray, &rqs_);
 #endif
   }
 
@@ -222,7 +222,7 @@ class TContext {
 
   ShaderT shader_;
 
-  Isector<CacheT, SceneT> isector_;
+  Isector<SceneT> isector_;
   spray::RTCRayIntersection rtc_isect_;
   RTCRay rtc_ray_;
 

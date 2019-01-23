@@ -25,11 +25,10 @@
 namespace spray {
 namespace insitu {
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
-                                                      const Camera &camera,
-                                                      SceneT *scene,
-                                                      HdrImage *image) {
+template <typename SceneT, typename ShaderT>
+void MultiThreadTracer<SceneT, ShaderT>::init(const Config &cfg,
+                                              const Camera &camera,
+                                              SceneT *scene, HdrImage *image) {
   int ndomains = static_cast<int>(scene->getNumDomains());
   CHECK_LT(scene->getNumDomains(), std::numeric_limits<int>::max());
 
@@ -103,8 +102,8 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::init(const Config &cfg,
   scan_.resize(cfg.nthreads);
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::populateRadWorkStats(
+template <typename SceneT, typename ShaderT>
+void MultiThreadTracer<SceneT, ShaderT>::populateRadWorkStats(
     TContextType *tcontext) {
   tcontext->populateRadWorkStats();
 #pragma omp barrier
@@ -115,8 +114,8 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::populateRadWorkStats(
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::populateWorkStats(
+template <typename SceneT, typename ShaderT>
+void MultiThreadTracer<SceneT, ShaderT>::populateWorkStats(
     TContextType *tcontext) {
   tcontext->populateWorkStats();
 #pragma omp barrier
@@ -127,9 +126,9 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::populateWorkStats(
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::sendRays(
-    int tid, TContextType *tcontext) {
+template <typename SceneT, typename ShaderT>
+void MultiThreadTracer<SceneT, ShaderT>::sendRays(int tid,
+                                                  TContextType *tcontext) {
   for (int id = 0; id < num_domains_; ++id) {
     int dest = partition_->rank(id);
     if (rank_ != dest) {
@@ -160,11 +159,11 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::sendRays(
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::send(bool shadow, int tid,
-                                                      int domain_id, int dest,
-                                                      std::size_t num_rays,
-                                                      TContextType *tcontext) {
+template <typename SceneT, typename ShaderT>
+void MultiThreadTracer<SceneT, ShaderT>::send(bool shadow, int tid,
+                                              int domain_id, int dest,
+                                              std::size_t num_rays,
+                                              TContextType *tcontext) {
 #pragma omp master
   {
     MsgHeader hout;
@@ -187,9 +186,9 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::send(bool shadow, int tid,
   { comm_.pushSendQ(send_work_); }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::procLocalQs(
-    int tid, int ray_depth, TContextType *tcontext) {
+template <typename SceneT, typename ShaderT>
+void MultiThreadTracer<SceneT, ShaderT>::procLocalQs(int tid, int ray_depth,
+                                                     TContextType *tcontext) {
   const auto &ids = partition_->getDomains(rank_);
 
   for (auto id : ids) {
@@ -223,9 +222,9 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::procLocalQs(
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::procRecvQs(
-    int ray_depth, TContextType *tcontext) {
+template <typename SceneT, typename ShaderT>
+void MultiThreadTracer<SceneT, ShaderT>::procRecvQs(int ray_depth,
+                                                    TContextType *tcontext) {
   MsgHeader *header;
   Ray *payload;
 
@@ -277,9 +276,9 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::procRecvQs(
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::procCachedRq(
-    int ray_depth, TContextType *tcontext) {
+template <typename SceneT, typename ShaderT>
+void MultiThreadTracer<SceneT, ShaderT>::procCachedRq(int ray_depth,
+                                                      TContextType *tcontext) {
 #pragma omp single
   {
     for (auto &t : tcontexts_) {
@@ -289,9 +288,10 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::procCachedRq(
   tcontext->processCached(ray_depth);
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::procRecvRads(
-    int ray_depth, int id, Ray *rays, int64_t count, TContextType *tcontext) {
+template <typename SceneT, typename ShaderT>
+void MultiThreadTracer<SceneT, ShaderT>::procRecvRads(int ray_depth, int id,
+                                                      Ray *rays, int64_t count,
+                                                      TContextType *tcontext) {
 #pragma omp single
   { scene_->load(id, &sinfo_); }
 
@@ -313,9 +313,10 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::procRecvRads(
   tcontext->genRays(id, ray_depth);
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::procRecvShads(
-    int id, Ray *rays, int64_t count, TContextType *tcontext) {
+template <typename SceneT, typename ShaderT>
+void MultiThreadTracer<SceneT, ShaderT>::procRecvShads(int id, Ray *rays,
+                                                       int64_t count,
+                                                       TContextType *tcontext) {
 #pragma omp single
   { scene_->load(id, &sinfo_); }
 
@@ -335,8 +336,8 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::procRecvShads(
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
+template <typename SceneT, typename ShaderT>
+void MultiThreadTracer<SceneT, ShaderT>::trace() {
 #pragma omp parallel
   {
     int nranks = num_ranks_;
@@ -508,8 +509,8 @@ void MultiThreadTracer<CacheT, ShaderT, SceneT>::trace() {
   tile_list_.reset();
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void MultiThreadTracer<CacheT, ShaderT, SceneT>::traceInOmp() {
+template <typename SceneT, typename ShaderT>
+void MultiThreadTracer<SceneT, ShaderT>::traceInOmp() {
   while (!tile_list_.empty()) {
 #pragma omp barrier
 #pragma omp master

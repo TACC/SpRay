@@ -25,11 +25,10 @@
 namespace spray {
 namespace ooc {
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void TContext<CacheT, ShaderT, SceneT>::procRads(int id, SceneT* scene,
-                                                 SceneInfo& sinfo,
-                                                 ShaderT& shader,
-                                                 int ray_depth) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::procRads(int id, SceneT* scene,
+                                         SceneInfo& sinfo, ShaderT& shader,
+                                         int ray_depth) {
   //
   while (!frq_.empty()) {
     Ray* r = frq_.front();
@@ -49,11 +48,10 @@ void TContext<CacheT, ShaderT, SceneT>::procRads(int id, SceneT* scene,
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void TContext<CacheT, ShaderT, SceneT>::procShads(SceneT* scene,
-                                                  SceneInfo& sinfo,
-                                                  std::queue<Ray*>* qin,
-                                                  std::queue<Ray*>* qout) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::procShads(SceneT* scene, SceneInfo& sinfo,
+                                          std::queue<Ray*>* qin,
+                                          std::queue<Ray*>* qout) {
   while (!qin->empty()) {
     Ray* r = qin->front();
     qin->pop();
@@ -71,16 +69,16 @@ void TContext<CacheT, ShaderT, SceneT>::procShads(SceneT* scene,
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void TContext<CacheT, ShaderT, SceneT>::procShads2(int id, SceneT* scene,
-                                                   SceneInfo& sinfo) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::procShads2(int id, SceneT* scene,
+                                           SceneInfo& sinfo) {
   while (!sq2_.empty()) {
     Ray* r = sq2_.front();
     sq2_.pop();
     bool is_occluded =
         scene->occluded(sinfo.rtc_scene, r->org, r->dir, &rtc_ray_);
     if (!is_occluded) {
-      if (!isector_.intersect(id, num_domains_, scene, r, sqs_out_,
+      if (!isector_.intersect(id, scene, r, sqs_out_,
                               &rstats_)) {  // unoccluded
 #ifdef SPRAY_GLOG_CHECK
         CHECK_EQ(r->occluded, 0);
@@ -92,9 +90,8 @@ void TContext<CacheT, ShaderT, SceneT>::procShads2(int id, SceneT* scene,
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void TContext<CacheT, ShaderT, SceneT>::procRads2(SceneT* scene,
-                                                  SceneInfo& sinfo) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::procRads2(SceneT* scene, SceneInfo& sinfo) {
   while (!rq2_.empty()) {
     Ray* r = rq2_.front();
     rq2_.pop();
@@ -106,10 +103,11 @@ void TContext<CacheT, ShaderT, SceneT>::procRads2(SceneT* scene,
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void TContext<CacheT, ShaderT, SceneT>::resize(
-    int ndomains, int num_pixel_samples, const Tile& tile,
-    spray::HdrImage* image, int num_bounces, const glm::vec3& bg_color) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::resize(int ndomains, int num_pixel_samples,
+                                       const Tile& tile, spray::HdrImage* image,
+                                       int num_bounces,
+                                       const glm::vec3& bg_color) {
   // tid_ = tid;
   num_domains_ = ndomains;
   num_pixel_samples_ = num_pixel_samples;
@@ -125,10 +123,11 @@ void TContext<CacheT, ShaderT, SceneT>::resize(
 
   rstats_.resize(ndomains, true /*stats_only*/);
   bg_color_ = bg_color;
+  isector_.init(ndomains);
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void TContext<CacheT, ShaderT, SceneT>::retire() {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::retire() {
   while (!retire_q_->empty()) {
     Ray* r = retire_q_->front();
     retire_q_->pop();
@@ -143,8 +142,8 @@ void TContext<CacheT, ShaderT, SceneT>::retire() {
 #endif
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void TContext<CacheT, ShaderT, SceneT>::retireBackground() {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::retireBackground() {
   glm::vec3 bgcolor;
   while (!bg_retire_q_->empty()) {
     Ray* ray = bg_retire_q_->front();
@@ -157,8 +156,8 @@ void TContext<CacheT, ShaderT, SceneT>::retireBackground() {
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void TContext<CacheT, ShaderT, SceneT>::filterRqs(int id) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::filterRqs(int id) {
   auto* rq = rqs_.getQ(id);
 
   while (!rq->empty()) {
@@ -174,9 +173,9 @@ void TContext<CacheT, ShaderT, SceneT>::filterRqs(int id) {
   }
 }
 
-template <typename CacheT, typename ShaderT, typename SceneT>
-void TContext<CacheT, ShaderT, SceneT>::filterSqs(int id, QVector<RayData>* sqs,
-                                                  std::queue<Ray*>* fsq) {
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::filterSqs(int id, QVector<RayData>* sqs,
+                                          std::queue<Ray*>* fsq) {
   auto* sq = sqs->getQ(id);
 
   while (!sq->empty()) {

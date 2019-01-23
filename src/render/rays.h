@@ -37,6 +37,11 @@ namespace spray {
 
 class Material;
 
+struct DomainHit1 {
+  int id;   ///< Domain ID.
+  float t;  ///< Near intersections point. tmin value.
+};
+
 template <unsigned PACKET_SIZE>
 struct DomainHitN {
   int num;                                            //!< Number of hits.
@@ -45,10 +50,48 @@ struct DomainHitN {
            SPRAY_RAY_DOMAIN_LIST_SIZE];  //!< Distance to hit domains.
 };
 
-struct SPRAY_ALIGN(16) DomainList {
-  int count;                             //!< Number of hits.
-  int ids[SPRAY_RAY_DOMAIN_LIST_SIZE];   //!< Hit domain IDs.
-  float ts[SPRAY_RAY_DOMAIN_LIST_SIZE];  //!< Distance to hit domains.
+// struct SPRAY_ALIGN(16) DomainList {
+//   int count;                             //!< Number of hits.
+//   int ids[SPRAY_RAY_DOMAIN_LIST_SIZE];   //!< Hit domain IDs.
+//   float ts[SPRAY_RAY_DOMAIN_LIST_SIZE];  //!< Distance to hit domains.
+// };
+
+class DomainList {
+ public:
+  void resize(std::size_t size) {
+    num_hits_ = 0;
+    hits_.resize(size);
+  }
+
+  std::size_t size() const { return hits_.size(); }
+
+  std::size_t getNumHits() const { return num_hits_; }
+
+  int getId(std::size_t i) const { return hits_[i].id; }
+  float getTnear(std::size_t i) const { return hits_[i].t; }
+
+  void sort() {
+    if (num_hits_ > 0) {
+      std::sort(&hits_[0], &hits_[num_hits_],
+                [&](const DomainHit1& a, const DomainHit1& b) {
+                  // return (a.t < b.t);
+                  return ((a.t < b.t) || ((a.t == b.t) && (a.id < b.id)));
+                });
+    }
+  }
+
+  void push(int id, float tnear) {
+    CHECK_LT(num_hits_, hits_.size());
+    hits_[num_hits_].id = id;
+    hits_[num_hits_].t = tnear;
+    ++num_hits_;
+  }
+
+  void reset() { num_hits_ = 0; }
+
+ private:
+  std::size_t num_hits_;          //!< Number of intersections.
+  std::vector<DomainHit1> hits_;  //!< Domain intersections.
 };
 
 #define RAY8_DOMAIN_LIST_SIZE (SPRAY_RAY_DOMAIN_LIST_SIZE << 3)
@@ -71,11 +114,6 @@ struct SPRAY_ALIGN(16) DomainListNM {
   int count[N * M];                              //!< Number of hits.
   int ids[N * M * SPRAY_RAY_DOMAIN_LIST_SIZE];   //!< Hit domain IDs.
   float ts[N * M * SPRAY_RAY_DOMAIN_LIST_SIZE];  //!< Distance to hit domains.
-};
-
-struct DomainHit1 {
-  int id;
-  float t;
 };
 
 struct SPRAY_ALIGN(16) RTCRayExt {
@@ -108,6 +146,29 @@ struct SPRAY_ALIGN(16) RTCRayExt {
   /* extension*/
  public:
   DomainList* domains;
+
+ public:
+  void reset(const float position[3], const float direction[3],
+             DomainList* domain_list) {
+    org[0] = position[0];
+    org[1] = position[1];
+    org[2] = position[2];
+
+    dir[0] = direction[0];
+    dir[1] = direction[1];
+    dir[2] = direction[2];
+
+    // tnear = 0.0f;
+    tnear = SPRAY_RAY_EPSILON;
+    tfar = SPRAY_FLOAT_INF;
+    // instID = RTC_INVALID_GEOMETRY_ID;
+    geomID = RTC_INVALID_GEOMETRY_ID;
+    primID = RTC_INVALID_GEOMETRY_ID;
+    // mask = 0xFFFFFFFF;
+    // time = 0.0f;
+
+    domains = domain_list;
+  }
 };
 
 struct SPRAY_ALIGN(32) RTCRayExt8 {
@@ -220,50 +281,50 @@ struct SPRAY_ALIGN(16) RTCRayIntersection {
 struct RTCRayUtil {
   /////////////////////////////// RTCRayUtil //////////////////////////////////
 
-  inline static void makeRayForDomainIntersection(const float org[3],
-                                                  const float dir[3],
-                                                  DomainList* domains,
-                                                  RTCRayExt* rout) {
-    rout->org[0] = org[0];
-    rout->org[1] = org[1];
-    rout->org[2] = org[2];
+  // inline static void makeRayForDomainIntersection(const float org[3],
+  //                                                 const float dir[3],
+  //                                                 DomainList* domains,
+  //                                                 RTCRayExt* rout) {
+  //   rout->org[0] = org[0];
+  //   rout->org[1] = org[1];
+  //   rout->org[2] = org[2];
 
-    rout->dir[0] = dir[0];
-    rout->dir[1] = dir[1];
-    rout->dir[2] = dir[2];
+  //   rout->dir[0] = dir[0];
+  //   rout->dir[1] = dir[1];
+  //   rout->dir[2] = dir[2];
 
-    // rout->tnear = 0.0f;
-    rout->tnear = SPRAY_RAY_EPSILON;
-    rout->tfar = SPRAY_FLOAT_INF;
-    // rout->instID = RTC_INVALID_GEOMETRY_ID;
-    rout->geomID = RTC_INVALID_GEOMETRY_ID;
-    rout->primID = RTC_INVALID_GEOMETRY_ID;
-    // rout->mask = 0xFFFFFFFF;
-    // rout->time = 0.0f;
+  //   // rout->tnear = 0.0f;
+  //   rout->tnear = SPRAY_RAY_EPSILON;
+  //   rout->tfar = SPRAY_FLOAT_INF;
+  //   // rout->instID = RTC_INVALID_GEOMETRY_ID;
+  //   rout->geomID = RTC_INVALID_GEOMETRY_ID;
+  //   rout->primID = RTC_INVALID_GEOMETRY_ID;
+  //   // rout->mask = 0xFFFFFFFF;
+  //   // rout->time = 0.0f;
 
-    rout->domains = domains;
+  //   rout->domains = domains;
 
-    domains->count = 0;
-  }
+  //   domains->count = 0;
+  // }
 
   /////////////////////////////// RTCRayUtil //////////////////////////////////
 
-  // sort domains front-to-back
-  inline static void sortDomains(const DomainList& domains,
-                                 DomainHit1 hits[SPRAY_RAY_DOMAIN_LIST_SIZE]) {
-    int count = domains.count;
+  // // sort domains front-to-back
+  // inline static void sortDomains(const DomainList& domains,
+  //                                DomainHit1 hits[SPRAY_RAY_DOMAIN_LIST_SIZE]) {
+  //   int count = domains.count;
 
-    for (int i = 0; i < count; ++i) {
-      hits[i].id = domains.ids[i];
-      hits[i].t = domains.ts[i];
-    }
+  //   for (int i = 0; i < count; ++i) {
+  //     hits[i].id = domains.ids[i];
+  //     hits[i].t = domains.ts[i];
+  //   }
 
-    std::sort(hits, hits + count,
-              [&](const DomainHit1& a, const DomainHit1& b) {
-                // return (a.t < b.t);
-                return ((a.t < b.t) || ((a.t == b.t) && (a.id < b.id)));
-              });
-  }
+  //   std::sort(hits, hits + count,
+  //             [&](const DomainHit1& a, const DomainHit1& b) {
+  //               // return (a.t < b.t);
+  //               return ((a.t < b.t) || ((a.t == b.t) && (a.id < b.id)));
+  //             });
+  // }
 
   /////////////////////////////// RTCRayUtil //////////////////////////////////
 

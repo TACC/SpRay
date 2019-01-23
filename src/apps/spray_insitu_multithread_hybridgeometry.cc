@@ -27,7 +27,6 @@
 #include "insitu/insitu_shader_pt_shapes.h"
 #include "render/caches.h"
 #include "render/config.h"
-#include "render/domain_intersector.h"
 #include "render/hybrid_geometry_buffer.h"
 #include "render/spray.h"
 #include "render/spray_renderer.h"

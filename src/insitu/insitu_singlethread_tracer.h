@@ -52,7 +52,7 @@
 namespace spray {
 namespace insitu {
 
-template <typename CacheT, typename ShaderT, typename SceneT>
+template <typename SceneT, typename ShaderT>
 class SingleThreadTracer {
  public:
   void trace();
@@ -120,7 +120,7 @@ class SingleThreadTracer {
   std::vector<spray::Light *> lights_;
   SceneT *scene_;
   spray::HdrImage *image_;
-  Isector<CacheT, SceneT> isector_;
+  Isector<SceneT> isector_;
 
   spray::QVector<Ray *> rqs_;
   spray::QVector<Ray *> sqs_;
