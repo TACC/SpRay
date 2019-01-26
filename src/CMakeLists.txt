@@ -230,7 +230,6 @@ set(SPRAY_SRC_LIST
     io/scene_loader.cc
     
     # insitu
-    insitu/insitu_comm.cc
     insitu/insitu_vbuf.cc
     insitu/insitu_work_stats.cc
     

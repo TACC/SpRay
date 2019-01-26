@@ -60,6 +60,8 @@ void SingleThreadTracer<SceneT, ShaderT>::init(const Config &cfg,
   CHECK_GT(image_w_, 0);
   CHECK_GT(image_h_, 0);
 
+  if (nranks > 0) comm_recv_.set(&recv_rq_, &recv_sq_);
+
   shader_.init(cfg, scene);
 
   int total_num_light_samples;
@@ -429,7 +431,7 @@ void SingleThreadTracer<SceneT, ShaderT>::trace() {
 #endif
         sendRays();
         comm_.waitForSend();
-        comm_.run(&work_stats_, mem_in_, &recv_rq_, &recv_sq_);
+        comm_.run(work_stats_, mem_in_, &comm_recv_);
       }
 
       procCachedRq();

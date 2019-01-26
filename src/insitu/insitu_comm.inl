@@ -18,22 +18,16 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "insitu/insitu_comm.h"
-
-#include "glog/logging.h"
-#include "pbrt/memory.h"
-
-#include "display/image.h"
-#include "insitu/insitu_ray.h"
-#include "insitu/insitu_vbuf.h"
-#include "insitu/insitu_work.h"
-#include "insitu/insitu_work_stats.h"
-#include "utils/profiler_util.h"
+#if !defined(SPRAY_INSITU_COMM_INL)
+#error An implementation of Comm
+#endif
 
 namespace spray {
 namespace insitu {
 
-void Comm::mpiIsendWords(Work* work, void* msg, int count, int dest, int tag) {
+template <typename ReceiverT>
+void Comm<ReceiverT>::mpiIsendWords(Work* work, void* msg, int count, int dest,
+                                    int tag) {
   MpiRequest isend_rqst;
   isend_rqst.work = work;
 
@@ -43,38 +37,30 @@ void Comm::mpiIsendWords(Work* work, void* msg, int count, int dest, int tag) {
   MPI_Isend(msg, count, MPI_WORD_T, dest, tag, MPI_COMM_WORLD, &r.req);
 }
 
-void Comm::serveRecv(const MPI_Status& status, MemoryArena* mem_in,
-                     std::queue<msg_word_t*>* recv_rq,
-                     std::queue<msg_word_t*>* recv_sq) {
+template <typename ReceiverT>
+void Comm<ReceiverT>::serveRecv(const MPI_Status& status, MemoryArena* mem,
+                                ReceiverT* receiver) {
   int tag = status.MPI_TAG;
   int msg_count;
   MPI_Get_count(&status, MPI_WORD_T, &msg_count);
 
-  msg_word_t* msg = mem_in->Alloc<msg_word_t>(msg_count);
+  msg_word_t* msg = mem->Alloc<msg_word_t>(msg_count);
   CHECK_NOTNULL(msg);
 
   MPI_Recv(msg, msg_count, MPI_WORD_T, status.MPI_SOURCE, status.MPI_TAG,
            MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-  if (tag == WORK_SEND_RADS) {
-    recv_rq->push(msg);
-
-  } else if (tag == WORK_SEND_SHADS) {
-    recv_sq->push(msg);
-
-  } else {
-    LOG(FATAL) << "unknown mpi tag : " << tag;
-  }
+  (*receiver)(tag, msg);
 }
 
-void Comm::run(WorkStats* work_stats, MemoryArena* mem_in,
-               std::queue<msg_word_t*>* recv_rq,
-               std::queue<msg_word_t*>* recv_sq) {
+template <typename ReceiverT>
+void Comm<ReceiverT>::run(const WorkStats& work_stats, MemoryArena* mem,
+                          ReceiverT* receiver) {
   MPI_Status status;
   int flag;
 
   int num_blocks_recved = 0;
-  bool recv_done = work_stats->recvDone(num_blocks_recved);
+  bool recv_done = work_stats.recvDone(num_blocks_recved);
 
 #ifdef SPRAY_TIMING
   spray::tStart(spray::TIMER_SYNC_RAYS);
@@ -86,9 +72,9 @@ void Comm::run(WorkStats* work_stats, MemoryArena* mem_in,
     CHECK(!(recv_done && flag));
 #endif
     if (!recv_done && flag) {
-      serveRecv(status, mem_in, recv_rq, recv_sq);
+      serveRecv(status, mem, receiver);
       ++num_blocks_recved;
-      recv_done = work_stats->recvDone(num_blocks_recved);
+      recv_done = work_stats.recvDone(num_blocks_recved);
     }
 
     if (!send_q_.empty()) {
@@ -109,7 +95,8 @@ void Comm::run(WorkStats* work_stats, MemoryArena* mem_in,
 #endif
 }
 
-void Comm::waitForSend() {
+template <typename ReceiverT>
+void Comm<ReceiverT>::waitForSend() {
   for (auto it = mpi_requests_.begin(); it != mpi_requests_.end(); ++it) {
     MPI_Wait(&it->req, MPI_STATUS_IGNORE);
     delete it->work;
@@ -117,7 +104,8 @@ void Comm::waitForSend() {
   mpi_requests_.clear();
 }
 
-void Comm::testMpiRqsts() {
+template <typename ReceiverT>
+void Comm<ReceiverT>::testMpiRqsts() {
   int flag;
   for (auto it = mpi_requests_.begin(); it != mpi_requests_.end();) {
     MPI_Test(&it->req, &flag, MPI_STATUS_IGNORE);
