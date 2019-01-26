@@ -20,12 +20,6 @@
 
 #pragma once
 
-#include "pbrt/memory.h"
-
-#include "insitu/insitu_comm.h"
-#include "insitu/insitu_ray.h"
-#include "render/spray.h"
-
 namespace spray {
 namespace insitu {
 
