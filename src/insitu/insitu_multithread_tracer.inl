@@ -61,6 +61,8 @@ void MultiThreadTracer<SceneT, ShaderT>::init(const Config &cfg,
   CHECK_GT(image_w_, 0);
   CHECK_GT(image_h_, 0);
 
+  if (nranks > 0) comm_recv_.set(&recv_rq_, &recv_sq_);
+
   // shader
   shader_.init(cfg, *scene);
 
@@ -444,7 +446,7 @@ void MultiThreadTracer<SceneT, ShaderT>::trace() {
           {
             comm_.waitForSend();
             auto *memin = tcontext->getMemIn();
-            comm_.run(&work_stats_, memin, &recv_rq_, &recv_sq_);
+            comm_.run(work_stats_, memin, &comm_recv_);
           }
 #pragma omp barrier
         }
@@ -615,7 +617,7 @@ void MultiThreadTracer<SceneT, ShaderT>::traceInOmp() {
         {
           comm_.waitForSend();
           auto *memin = tcontext->getMemIn();
-          comm_.run(&work_stats_, memin, &recv_rq_, &recv_sq_);
+          comm_.run(work_stats_, memin, &comm_recv_);
         }
 #pragma omp barrier
       }

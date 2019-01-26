@@ -27,8 +27,12 @@
 #include <vector>
 
 #include "glog/logging.h"
+#include "pbrt/memory.h"
 
+#include "insitu/insitu_work.h"
+#include "insitu/insitu_work_stats.h"
 #include "utils/comm.h"
+#include "utils/profiler_util.h"
 
 namespace spray {
 class MemoryArena;
@@ -42,11 +46,41 @@ class WorkStats;
 struct Work;
 struct SendPixelsWork;
 
+class DefaultReceiver {
+  typedef std::queue<msg_word_t*> MessageQ;
+
+ public:
+  DefaultReceiver() {}
+  DefaultReceiver(MessageQ* radiance_q, MessageQ* shadow_q)
+      : rq_(radiance_q), sq_(shadow_q) {}
+  void set(MessageQ* radiance_q, MessageQ* shadow_q) {
+    rq_ = radiance_q;
+    sq_ = shadow_q;
+  }
+
+  void operator()(int tag, msg_word_t* msg) {
+    if (tag == WORK_SEND_RADS) {
+      rq_->push(msg);
+
+    } else if (tag == WORK_SEND_SHADS) {
+      sq_->push(msg);
+
+    } else {
+      LOG(FATAL) << "unknown mpi tag : " << tag;
+    }
+  }
+
+ private:
+  spray::MemoryArena* mem_;
+  MessageQ* rq_;
+  MessageQ* sq_;
+};
+
+template <typename ReceiverT>
 class Comm {
  public:
   void init();
-  void run(WorkStats* work_stats, spray::MemoryArena* mem_in,
-           std::queue<msg_word_t*>* recv_rq, std::queue<msg_word_t*>* recv_sq);
+  void run(const WorkStats& work_stats, MemoryArena* mem, ReceiverT* receiver);
 
   bool emptySendQ() const { return send_q_.empty(); }
   void pushSendQ(Work* work) { send_q_.push(work); }
@@ -54,9 +88,8 @@ class Comm {
  private:
   void mpiIsendWords(Work* work, void* msg, int count, int dest, int tag);
 
-  void serveRecv(const MPI_Status& status, MemoryArena* mem_in,
-                 std::queue<msg_word_t*>* recv_rq,
-                 std::queue<msg_word_t*>* recv_sq);
+  void serveRecv(const MPI_Status& status, MemoryArena* mem,
+                 ReceiverT* receiver);
 
  public:
   void waitForSend();
@@ -76,4 +109,8 @@ class Comm {
 
 }  // namespace insitu
 }  // namespace spray
+
+#define SPRAY_INSITU_COMM_INL
+#include "insitu/insitu_comm.inl"
+#undef SPRAY_INSITU_COMM_INL
 

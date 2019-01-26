@@ -73,7 +73,7 @@ class MultiThreadTracer {
   std::vector<TContextType> tcontexts_;
 
   ShaderT shader_;
-  Comm comm_;
+  Comm<DefaultReceiver> comm_;
   VBuf vbuf_;
 
   SceneInfo sinfo_;
@@ -106,6 +106,7 @@ class MultiThreadTracer {
 
   std::queue<msg_word_t *> recv_rq_;
   std::queue<msg_word_t *> recv_sq_;
+  DefaultReceiver comm_recv_;
 
   msg_word_t *recv_message_;
 

@@ -68,7 +68,7 @@ class SingleThreadTracer {
  private:
   ShaderT shader_;
   spray::TileList tile_list_;
-  Comm comm_;
+  Comm<DefaultReceiver> comm_;
   VBuf vbuf_;
 
   SceneInfo sinfo_;
@@ -127,6 +127,7 @@ class SingleThreadTracer {
 
   std::queue<msg_word_t *> recv_rq_;
   std::queue<msg_word_t *> recv_sq_;
+  DefaultReceiver comm_recv_;
 
   std::queue<Ray *> rq2_;
   std::queue<Ray *> sq2_;

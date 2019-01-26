@@ -250,7 +250,6 @@ set(SPRAY_SRC_LIST
     io/obj_loader.cc
     
     # insitu
-    insitu/insitu_comm.cc
     insitu/insitu_vbuf.cc
     insitu/insitu_work_stats.cc
     
