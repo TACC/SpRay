@@ -71,7 +71,6 @@ class DefaultReceiver {
   }
 
  private:
-  spray::MemoryArena* mem_;
   MessageQ* rq_;
   MessageQ* sq_;
 };
