@@ -59,10 +59,10 @@ class DefaultReceiver {
   }
 
   void operator()(int tag, msg_word_t* msg) {
-    if (tag == WORK_SEND_RADS) {
+    if (tag == Work::SEND_RADIANCE_RAYS) {
       rq_->push(msg);
 
-    } else if (tag == WORK_SEND_SHADS) {
+    } else if (tag == Work::SEND_SHADOW_RAYS) {
       sq_->push(msg);
 
     } else {
@@ -77,16 +77,18 @@ class DefaultReceiver {
 
 template <typename ReceiverT>
 class Comm {
+  typedef WorkSendMsg<Ray, MsgHeader> SendQItem;
+  typedef std::queue<SendQItem*> SendQ;
+
  public:
   void init();
   void run(const WorkStats& work_stats, MemoryArena* mem, ReceiverT* receiver);
 
   bool emptySendQ() const { return send_q_.empty(); }
-  void pushSendQ(Work* work) { send_q_.push(work); }
+  void pushSendQ(SendQItem* item) { send_q_.push(item); }
 
  private:
-  void mpiIsendWords(Work* work, void* msg, int count, int dest, int tag);
-
+  void mpiIsendWords(SendQItem* item);
   void serveRecv(const MPI_Status& status, MemoryArena* mem,
                  ReceiverT* receiver);
 
@@ -94,16 +96,8 @@ class Comm {
   void waitForSend();
 
  private:
-  void testMpiRqsts();
-
- private:
-  struct MpiRequest {
-    MPI_Request req;
-    Work* work;
-  };
-
-  std::list<MpiRequest> mpi_requests_;
-  std::queue<Work*> send_q_;
+  std::list<MPI_Request> mpi_requests_;
+  SendQ send_q_;
 };
 
 }  // namespace insitu

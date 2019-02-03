@@ -171,13 +171,17 @@ void MultiThreadTracer<SceneT, ShaderT>::send(bool shadow, int tid,
     MsgHeader hout;
     hout.domain_id = domain_id;
     hout.payload_count = scan_.sum();
-    int tag = shadow ? WORK_SEND_SHADS : WORK_SEND_RADS;
-    send_work_ = new WorkSendMsg<Ray, MsgHeader>(tag, hout, dest);
+
+    int tag = shadow ? Work::SEND_SHADOW_RAYS : Work::SEND_RADIANCE_RAYS;
+
+    auto *mem = tcontext->getMemIn();
+    send_q_item_ = ARENA_ALLOC(*mem, SendQItem);
+    send_q_item_->allocate(tag, hout, dest, mem);
   }
 
 #pragma omp barrier
 
-  Ray *dest_rays = send_work_->getPayload();
+  Ray *dest_rays = send_q_item_->getPayload();
   std::size_t target = scan_.get(tid) - num_rays;
 
   tcontext->sendRays(shadow, domain_id, &dest_rays[target]);
@@ -185,7 +189,7 @@ void MultiThreadTracer<SceneT, ShaderT>::send(bool shadow, int tid,
 #pragma omp barrier
 
 #pragma omp master
-  { comm_.pushSendQ(send_work_); }
+  { comm_.pushSendQ(send_q_item_); }
 }
 
 template <typename SceneT, typename ShaderT>

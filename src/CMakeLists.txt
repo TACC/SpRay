@@ -224,7 +224,6 @@ set(PLY_HEADER_READER_LIBS glog gtest_main gtest ${OPENGL_LIBRARIES})
 set(SPRAY_SRC_LIST
     # utils
     utils/profiler.cc
-    utils/comm.cc
 
     # display
     display/composite.cc
