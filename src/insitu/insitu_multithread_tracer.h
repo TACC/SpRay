@@ -31,6 +31,7 @@
 
 #include "embree/random_sampler.h"
 #include "glog/logging.h"
+#include "pbrt/memory.h"
 
 #include "display/image.h"
 #include "insitu/insitu_comm.h"
@@ -59,6 +60,8 @@ namespace insitu {
 
 template <typename SceneT, typename ShaderT>
 class MultiThreadTracer {
+  typedef WorkSendMsg<Ray, MsgHeader> SendQItem;
+
  public:
   void trace();
   void traceInOmp();
@@ -115,7 +118,7 @@ class MultiThreadTracer {
 
   spray::ThreadStatus thread_status_;
   spray::InclusiveScan<std::size_t> scan_;
-  WorkSendMsg<Ray, MsgHeader> *send_work_;
+  WorkSendMsg<Ray, MsgHeader> *send_q_item_;
 
  private:
   spray::Tile mytile_;

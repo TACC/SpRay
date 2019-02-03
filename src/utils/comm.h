@@ -21,7 +21,11 @@
 #pragma once
 
 #include <mpi.h>
+#include <climits>
 #include <queue>
+
+#include "glog/logging.h"
+#include "pbrt/memory.h"
 
 #include "render/spray.h"
 
@@ -40,9 +44,29 @@ class TileGen;
 class InsituPartition;
 class WorkStats;
 
-msg_word_t *AllocMsg(std::size_t bytes);
-msg_word_t *AllocMsg(std::size_t bytes, int *msg_word_count);
-int MsgWordCount(std::size_t bytes);
+inline msg_word_t *AllocMsg(std::size_t bytes) {
+  std::size_t count = (bytes + MSG_WORD_SIZE - 1) / MSG_WORD_SIZE;
+  CHECK_LT(count, INT_MAX);
+  msg_word_t *msg = AllocAligned<msg_word_t>(count);
+  CHECK_NOTNULL(msg);
+  // *msg_word_count = (int)count;
+  return msg;
+}
+
+inline msg_word_t *AllocMsg(std::size_t bytes, int *msg_word_count) {
+  std::size_t count = (bytes + MSG_WORD_SIZE - 1) / MSG_WORD_SIZE;
+  CHECK_LT(count, INT_MAX);
+  msg_word_t *msg = AllocAligned<msg_word_t>(count);
+  CHECK_NOTNULL(msg);
+  *msg_word_count = (int)count;
+  return msg;
+}
+
+inline int MsgWordCount(std::size_t bytes) {
+  std::size_t count = (bytes + MSG_WORD_SIZE - 1) / MSG_WORD_SIZE;
+  CHECK_LT(count, INT_MAX);
+  return count;
+}
 
 class Comm {
  public:

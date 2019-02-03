@@ -55,6 +55,8 @@ namespace insitu {
 
 template <typename SceneT, typename ShaderT>
 class SingleThreadTracer {
+  typedef WorkSendMsg<Ray, MsgHeader> SendQItem;
+
  public:
   void trace();
   void traceInOmp() {

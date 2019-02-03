@@ -158,12 +158,12 @@ void SingleThreadTracer<SceneT, ShaderT>::send(bool shadow, int domain_id,
   hout.domain_id = domain_id;
   hout.payload_count = q->size();
 
-  int tag = shadow ? WORK_SEND_SHADS : WORK_SEND_RADS;
+  int tag = shadow ? Work::SEND_SHADOW_RAYS : Work::SEND_RADIANCE_RAYS;
 
-  WorkSendMsg<Ray, MsgHeader> *send_work =
-      new WorkSendMsg<Ray, MsgHeader>(tag, hout, dest);
+  SendQItem *item = ARENA_ALLOC(*mem_in_, SendQItem);
+  item->allocate(tag, hout, dest, mem_in_);
 
-  Ray *dest_rays = send_work->getPayload();
+  Ray *dest_rays = item->getPayload();
 
   std::size_t target = 0;
 
@@ -175,7 +175,7 @@ void SingleThreadTracer<SceneT, ShaderT>::send(bool shadow, int domain_id,
     ++target;
   }
 
-  comm_.pushSendQ(send_work);
+  comm_.pushSendQ(item);
 }
 
 template <typename SceneT, typename ShaderT>

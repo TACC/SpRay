@@ -26,15 +26,10 @@ namespace spray {
 namespace insitu {
 
 template <typename ReceiverT>
-void Comm<ReceiverT>::mpiIsendWords(Work* work, void* msg, int count, int dest,
-                                    int tag) {
-  MpiRequest isend_rqst;
-  isend_rqst.work = work;
-
-  mpi_requests_.push_back(isend_rqst);
-  MpiRequest& r = mpi_requests_.back();
-
-  MPI_Isend(msg, count, MPI_WORD_T, dest, tag, MPI_COMM_WORLD, &r.req);
+void Comm<ReceiverT>::mpiIsendWords(SendQItem* item) {
+  mpi_requests_.push_back(MPI_Request());
+  MPI_Request& r = mpi_requests_.back();
+  item->isend(&r);
 }
 
 template <typename ReceiverT>
@@ -78,14 +73,15 @@ void Comm<ReceiverT>::run(const WorkStats& work_stats, MemoryArena* mem,
     }
 
     if (!send_q_.empty()) {
-      Work* w = send_q_.front();
+      SendQItem* item = send_q_.front();
       send_q_.pop();
 
-      int t = w->type;
+      int t = item->getType();
 #ifdef SPRAY_GLOG_CHECK
-      CHECK((t == WORK_SEND_SHADS) || (t == WORK_SEND_RADS)) << t;
+      CHECK((t == Work::SEND_SHADOW_RAYS) || (t == Work::SEND_RADIANCE_RAYS))
+          << t;
 #endif
-      mpiIsendWords(w, w->msg, w->count, w->dest, w->type);
+      mpiIsendWords(item);
     } else if (recv_done) {
       break;
     }
@@ -97,25 +93,11 @@ void Comm<ReceiverT>::run(const WorkStats& work_stats, MemoryArena* mem,
 
 template <typename ReceiverT>
 void Comm<ReceiverT>::waitForSend() {
-  for (auto it = mpi_requests_.begin(); it != mpi_requests_.end(); ++it) {
-    MPI_Wait(&it->req, MPI_STATUS_IGNORE);
-    delete it->work;
+  for (std::list<MPI_Request>::iterator it = mpi_requests_.begin();
+       it != mpi_requests_.end(); ++it) {
+    MPI_Wait(&(*it), MPI_STATUS_IGNORE);
   }
   mpi_requests_.clear();
-}
-
-template <typename ReceiverT>
-void Comm<ReceiverT>::testMpiRqsts() {
-  int flag;
-  for (auto it = mpi_requests_.begin(); it != mpi_requests_.end();) {
-    MPI_Test(&it->req, &flag, MPI_STATUS_IGNORE);
-    if (flag) {
-      delete it->work;
-      it = mpi_requests_.erase(it);
-    } else {
-      ++it;
-    }
-  }
 }
 
 }  // namespace insitu

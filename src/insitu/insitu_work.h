@@ -20,14 +20,13 @@
 
 #pragma once
 
+#include <mpi.h>
+
+#include "pbrt/memory.h"
+#include "utils/comm.h"
+
 namespace spray {
 namespace insitu {
-
-enum WorkType {
-  WORK_SEND_SHADS,
-  WORK_SEND_RADS,
-  MSG_TERMINATE,
-};
 
 class VBuf;
 
@@ -38,21 +37,31 @@ struct MsgHeader {
 
 class Work {
  public:
-  Work(int t) : type(t), msg(nullptr), count(-1), dest(-1) {}
+  enum Type {
+    SEND_SHADOW_RAYS,
+    SEND_RADIANCE_RAYS,
+    MSG_TERMINATE,
+  };
 
-  // for sending (msg is allocated by the derived)
-  Work(int t, int dest) : type(t), msg(nullptr), count(-1), dest(dest) {}
+  Work() {}
+  Work(int type) : type_(type) {}
 
-  // for receiving (msg is allocated by the communicator)
-  Work(int t, void* msg, int count)
-      : type(t), msg(msg), count(count), dest(-1) {}
+  // Work(int type) : type_(type), msg(nullptr), count(-1), dest(-1) {}
+
+  // // for sending (msg is allocated by the derived)
+  // Work(int t, int dest) : type(t), msg(nullptr), count(-1), dest(dest) {}
+
+  // // for receiving (msg is allocated by the communicator)
+  // Work(int t, void* msg, int count)
+  //     : type(t), msg(msg), count(count), dest(-1) {}
 
   virtual ~Work() {}
 
-  int type;
-  void* msg;
-  int count;
-  int dest;
+  int getType() const { return type_; }
+
+ protected:
+  void setType(int type) { type_ = type; }
+  int type_;
 };
 
 template <typename PayloadT, typename HeaderT>
@@ -67,104 +76,52 @@ struct WorkRecvMsg {
 template <typename PayloadT, typename HeaderT>
 class WorkSendMsg : public Work {
  public:
-  WorkSendMsg(int work_type, const HeaderT& header, int dest)
-      : Work(work_type, dest) {
-    //
+  WorkSendMsg() {}
+  virtual ~WorkSendMsg() {}
+
+  void allocate(int work_type, const HeaderT& header, int dest,
+                MemoryArena* mem) {
+    setType(work_type);
     header_ = header;
-    allocMsg(header);
+    dest_ = dest;
+    allocMsg(header, mem);
   }
 
-  // for receiving
-  WorkSendMsg(int work_type, void* msg, int msg_count)
-      : Work(work_type, msg, msg_count) {
-    decode();
-  }
-
-  virtual ~WorkSendMsg() {
-    // DEBUG
-    // std::cout << RANK_THREAD << "destruct SendRays\n";
-    FreeAligned(msg);
-  }
-
- private:
-  // output:
-  //   header_
-  //   payload_
-  void decode() {
-    HeaderT* buf = (HeaderT*)msg;
-    header_ = *buf;
-    payload_ = header_.payload_count ? (PayloadT*)(buf + 1) : nullptr;
-  }
-
- public:
-  // output:
-  //   header.payload_counter
-  //   Work::count
-  void updateMetaData(int payload_count, int new_block_count) {
-    // update decoded header
-    header_.payload_count = payload_count;
-    // update msg string
-    HeaderT* buf = (HeaderT*)msg;
-    // CHECK_LT(payload_count, INT_MAX);
-    buf->payload_count = payload_count;
-    buf->new_block_count = new_block_count;
-    Work::count = msgWordCount(payload_count);
-  }
-
-  void updatePayloadCount(int payload_count) {
-    // update decoded header
-    header_.payload_count = payload_count;
-    // update msg string
-    HeaderT* buf = (HeaderT*)msg;
-    buf->payload_count = payload_count;
-    Work::count = msgWordCount(payload_count);
-  }
-
-  void updateNumNewBlocks(int new_block_count) {
-    // update decoded header
-    header_.new_block_count = new_block_count;
-    // update msg string
-    HeaderT* buf = (HeaderT*)msg;
-    buf->new_block_count = new_block_count;
-  }
-
- public:
-  // message
-  //   HeaderT
-  //   PayloadT[]
   const HeaderT& getHeader() const { return header_; }
   PayloadT* getPayload() { return payload_; }
 
- private:
-  // decoded data
-  HeaderT header_;
-  PayloadT* payload_;
+  void isend(MPI_Request* rqst) {
+    MPI_Isend(msg_, count_, MPI_WORD_T, dest_, type_, MPI_COMM_WORLD, rqst);
+  }
 
  private:
-  // output:
-  //   Work::msg
-  //   Work::count
-  //   this->payload_
-  void allocMsg(const HeaderT& header) {
+  // update: msg_, count_, payload_
+  void allocMsg(const HeaderT& header, MemoryArena* mem) {
     std::size_t bytes =
         sizeof(HeaderT) + (header.payload_count * sizeof(PayloadT));
 
-    Work::msg = AllocMsg(bytes, &(Work::count));
+    allocMem(bytes, mem);
 
-    HeaderT* tmp = (HeaderT*)msg;
+    HeaderT* tmp = (HeaderT*)msg_;
     *tmp = header;
     payload_ = (PayloadT*)(tmp + 1);
   }
 
- private:
-  int msgWordCount(std::size_t payload_count) {
-    return MsgWordCount(getBytes(payload_count));
+  void allocMem(std::size_t bytes, MemoryArena* mem) {
+    std::size_t word_size = sizeof(msg_word_t);
+    std::size_t word_count = (bytes + word_size - 1) / word_size;
+    CHECK_LT(word_count, INT_MAX);
+    msg_ = mem->Alloc<msg_word_t>(word_count, false);
+    CHECK_NOTNULL(msg_);
+    count_ = static_cast<int>(word_count);
   }
 
  private:
-  std::size_t getBytes(std::size_t payload_count) {
-    return (sizeof(HeaderT) + (sizeof(PayloadT) * payload_count));
-  }
+  HeaderT header_;
+  PayloadT* payload_;
+  void* msg_;
+  int count_;
+  int dest_;
 };
 
 }  // namespace insitu
