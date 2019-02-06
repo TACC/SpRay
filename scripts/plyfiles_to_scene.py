@@ -27,15 +27,25 @@ import argparse
 import re
 import matplotlib as mpl
 import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+
+# references
+#   https://matplotlib.org/tutorials/index.html#tutorials-colors
+#   https://matplotlib.org/tutorials/colors/colormapnorms.html#sphx-glr-tutorials-colors-colormapnorms-py
 
 def RgbaToRgbString(rgba):
   rgb = rgba[:-1] 
   rgb_str = ' '.join(str(e) for e in rgb)
   return rgb_str
 
-def valueToColor(value, value_min, value_max):
+# def valueToColor(value, value_min, value_max, colormap_name, is_logarithm):
+def valueToColor(value, value_min, value_max, colormap_name):
   norm = mpl.colors.Normalize(vmin=value_min, vmax=value_max, clip=True)
-  mapper = cm.ScalarMappable(norm=norm, cmap=cm.coolwarm)
+  # if is_logarithm:
+  #   norm = mpl.colors.LogNorm(vmin=value_min, vmax=value_max)
+  # mapper = cm.ScalarMappable(norm=norm, cmap=cm.coolwarm)
+  # mapper = cm.ScalarMappable(norm=norm, cmap=plt.get_cmap(colormap_name))
+  mapper = cm.ScalarMappable(norm=norm, cmap=colormap_name)
   rgba = mapper.to_rgba(value)
   return rgba
 
@@ -68,7 +78,8 @@ def loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile):
     domain_num_vertices = 0
 
     for ply, iso in plyfiles[domain_id]:
-      rgba = valueToColor(iso, args.contour_range[0], args.contour_range[1])
+      # rgba = valueToColor(iso, args.contour_range[0], args.contour_range[1], args.colormap[0], args.logarithmic_colormap)
+      rgba = valueToColor(iso, args.contour_range[0], args.contour_range[1], args.colormap[0])
       rgb_str = RgbaToRgbString(rgba)
 
       cmd = loader_executable + " " + ply + " out.tmp"
@@ -130,7 +141,8 @@ def generateScene(args, plyfiles, outfile):
       f.write("# " + str(domain_id) + "\n")
       f.write("DomainBegin\n")
     for ply, iso in plyfiles[domain_id]:
-      rgba = valueToColor(iso, args.contour_range[0], args.contour_range[1])
+      # rgba = valueToColor(iso, args.contour_range[0], args.contour_range[1], args.colormap[0], args.logarithmic_colormap)
+      rgba = valueToColor(iso, args.contour_range[0], args.contour_range[1], args.colormap[0])
       rgb_str = RgbaToRgbString(rgba)
       with open(outfile, "a") as f:
         f.write("ModelBegin\n")
@@ -146,12 +158,14 @@ def generateScene(args, plyfiles, outfile):
       f.write("DomainEnd\n")
   
 def main():
-  parser = argparse.ArgumentParser(description='Domains maker')
+  parser = argparse.ArgumentParser(description='SpRay scene generator')
   parser.add_argument('--indir', nargs='+', required=True, help='a list of directories containing ply files')
   parser.add_argument('--loader', nargs=1, required=False, help='executable for ply loader')
   parser.add_argument('--out', nargs=1, default=['scene.domain'], help='output file')
   parser.add_argument('--abspath', action='store_true', help='use absoulte path for ply files')
+  # parser.add_argument('--logarithmic-colormap', action='store_true', help='Use logarithmic normalization for color mapping')
   parser.add_argument('--contour-range', nargs=2, required=False, default=[0.0, 2.0], help='minimum and maximum contour values')
+  parser.add_argument('--colormap', nargs=1, required=False, default=['coolwarm'], help='colormap name. See the list of colormap names in the link: https://matplotlib.org/examples/color/colormaps_reference.html')
   
   
   # parser.add_argument('--scale', nargs=3, type=float, help='scaling factor (x,y,z)')
