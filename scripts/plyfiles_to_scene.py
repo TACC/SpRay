@@ -25,10 +25,23 @@ import sys
 import argparse
 # import subprocess
 import re
+import matplotlib as mpl
+import matplotlib.cm as cm
+
+def RgbaToRgbString(rgba):
+  rgb = rgba[:-1] 
+  rgb_str = ' '.join(str(e) for e in rgb)
+  return rgb_str
+
+def valueToColor(value, value_min, value_max):
+  norm = mpl.colors.Normalize(vmin=value_min, vmax=value_max, clip=True)
+  mapper = cm.ScalarMappable(norm=norm, cmap=cm.coolwarm)
+  rgba = mapper.to_rgba(value)
+  return rgba
 
 def addLights(outfile):
   with open(outfile, "w") as fout:
-    fout.write("light diffuse-sphere 1 1 1\n")
+    fout.write("light diffuse-sphere .1 .1 .1\n")
 
 def getDomainId(filename):
   # dns_r0180_c000_d0002_iso0.8.ply
@@ -55,6 +68,9 @@ def loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile):
     domain_num_vertices = 0
 
     for ply, iso in plyfiles[domain_id]:
+      rgba = valueToColor(iso, args.contour_range[0], args.contour_range[1])
+      rgb_str = RgbaToRgbString(rgba)
+
       cmd = loader_executable + " " + ply + " out.tmp"
       print("[python] " + cmd)
       os.system(cmd)
@@ -92,7 +108,7 @@ def loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile):
         else:
           fout.write("file " + os.path.basename(ply) + "\n")
       
-        fout.write("material matte\n")
+        fout.write("material matte " + rgb_str + "\n")
         fout.write("# number of vertices: " + str(num_vertices)  + "\n")
         fout.write("# number of faces: " + str(num_faces)  + "\n")
         fout.write("ModelEnd\n")
@@ -114,6 +130,8 @@ def generateScene(args, plyfiles, outfile):
       f.write("# " + str(domain_id) + "\n")
       f.write("DomainBegin\n")
     for ply, iso in plyfiles[domain_id]:
+      rgba = valueToColor(iso, args.contour_range[0], args.contour_range[1])
+      rgb_str = RgbaToRgbString(rgba)
       with open(outfile, "a") as f:
         f.write("ModelBegin\n")
       
@@ -121,8 +139,8 @@ def generateScene(args, plyfiles, outfile):
           f.write("file " + ply + "\n")
         else:
           f.write("file " + os.path.basename(ply) + "\n")
-      
-        f.write("material matte\n")
+    
+        f.write("material matte " + rgb_str + "\n")
         f.write("ModelEnd\n")
     with open(outfile, "a") as f:
       f.write("DomainEnd\n")
@@ -133,6 +151,7 @@ def main():
   parser.add_argument('--loader', nargs=1, required=False, help='executable for ply loader')
   parser.add_argument('--out', nargs=1, default=['scene.domain'], help='output file')
   parser.add_argument('--abspath', action='store_true', help='use absoulte path for ply files')
+  parser.add_argument('--contour-range', nargs=2, required=False, default=[0.0, 2.0], help='minimum and maximum contour values')
   
   
   # parser.add_argument('--scale', nargs=3, type=float, help='scaling factor (x,y,z)')
