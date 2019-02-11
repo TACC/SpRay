@@ -220,9 +220,6 @@ class Scene {
   std::size_t getNumLights() const { return lights_.size(); }
 
  private:
-  void mergeDomainBounds(std::size_t* max_num_vertices,
-                         std::size_t* max_num_faces);
-
   // void copyAllDomainsToLocalDisk(const std::string& dest_path,
   //                                bool insitu_mode);
   void deleteAllDomainsFromLocalDisk();

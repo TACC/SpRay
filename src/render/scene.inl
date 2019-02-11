@@ -76,7 +76,6 @@ void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
   // populate domain info and merge scene bounds
   std::size_t max_num_vertices, max_num_faces;
   loadAndPopulateDomainInfo(&max_num_vertices, &max_num_faces);
-  // mergeDomainBounds(&max_num_vertices, &max_num_faces);
 
   // TODO: support ooc (ooc not supported at this moment)
   // see notes in TriMeshBuffer::loadShapes
@@ -347,68 +346,6 @@ void Scene<CacheT, SurfaceBufT>::deleteAllDomainsFromLocalDisk() {
 }
 
 template <typename CacheT, typename SurfaceBufT>
-void Scene<CacheT, SurfaceBufT>::mergeDomainBounds(
-    std::size_t* max_num_vertices, std::size_t* max_num_faces) {
-  Aabb world_space_bound;
-
-  std::size_t num_domains = domains_.size();
-
-#if defined(PRINT_DOMAIN_BOUNDS) && defined(SPRAY_GLOG_CHECK)
-  std::size_t total_faces = 0;
-#endif
-
-  // evaluate bound and number of primitives
-  std::size_t num_vertices = 0, num_faces = 0;
-
-  for (std::size_t id = 0; id < num_domains; ++id) {
-    Domain& d = domains_[id];
-
-    d.updateModelInfo();
-
-    // let's enforce that that domain world-space bound and
-    // the number of faces are provided through preprocessing.
-    CHECK_EQ(d.getWorldAabb().isValid(), true) << d.getWorldAabb();
-    if (!d.hasShapes()) {
-      CHECK_GT(d.getNumVertices(), 0);
-      CHECK_GT(d.getNumFaces(), 0);
-    }
-
-    // maximum values
-
-    if (d.getNumVertices() > num_vertices) num_vertices = d.getNumVertices();
-    if (d.getNumFaces() > num_faces) num_faces = d.getNumFaces();
-
-#if defined(PRINT_DOMAIN_BOUNDS) && defined(SPRAY_GLOG_CHECK)
-    if (mpi::isRootProcess()) {
-      total_faces += d.getNumFaces();
-      LOG(INFO) << "[domain " << id << "] [bounds " << d.getWorldAabb()
-                << "] [faces " << d.getNumFaces() << "]";
-    }
-#endif
-
-    world_space_bound.merge(d.getWorldAabb());
-
-#if defined(PRINT_DOMAIN_BOUNDS) && defined(SPRAY_GLOG_CHECK)
-    LOG(INFO) << " [Scene::load()] [domain " << domains_[id].getId()
-              << "] bound: " << domains_[id].getWorldAabb();
-#endif
-  }
-
-  *max_num_vertices = num_vertices;
-  *max_num_faces = num_faces;
-  world_aabb_ = world_space_bound;
-  CHECK_EQ(world_aabb_.isValid(), true) << world_aabb_;
-
-  if (mpi::isRootProcess())
-    std::cout << "[INFO] scene bounds: " << world_aabb_ << std::endl;
-
-#if defined(PRINT_DOMAIN_BOUNDS) && defined(SPRAY_GLOG_CHECK)
-  LOG_IF(INFO, mpi::isRootProcess()) << "total faces: " << total_faces;
-  LOG_IF(INFO, mpi::isRootProcess()) << "world bound: " << world_aabb_;
-#endif
-}
-
-template <typename CacheT, typename SurfaceBufT>
 void Scene<CacheT, SurfaceBufT>::drawDomains() {
   glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT);
   glDisable(GL_LIGHTING);
@@ -523,20 +460,11 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
           info->num_vertices = header.num_vertices;
           info->num_faces = header.num_faces;
 
-          // std::cout << "[model_id " << model_id << "][v " << info->num_vertices
-          //           << "]\n";
-          // std::cout << "[model_id " << model_id << "][f " << info->num_faces
-          //           << "]\n";
-
           for (int i = 0; i < 3; ++i) {
             info->obj_bounds_min[i] = header.bounds.getMin()[i];
-            // std::cout << "[model_id " << model_id << "][obj_bounds_min "
-            //           << info->obj_bounds_min[i] << "]\n";
           }
           for (int i = 0; i < 3; ++i) {
             info->obj_bounds_max[i] = header.bounds.getMax()[i];
-            // std::cout << "[model_id " << model_id << "][obj_bounds_max "
-            //           << info->obj_bounds_max[i] << "]\n";
           }
         }
         ++model_id;
@@ -567,9 +495,6 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
       domain->setNumVertices(m, info.num_vertices);
       domain->setNumFaces(m, info.num_faces);
       domain->setObjectBounds(m, info.obj_bounds_min, info.obj_bounds_max);
-      // std::cout << "[model_id " << m << "][obj_bounds_min "
-      //           << info.obj_bounds_min[0] << "]\n";
-
       domain->setUpdatedModelInfoFlag(m);
       ++model_id;
     }
