@@ -20,12 +20,13 @@
 
 #pragma once
 
-#include <glog/logging.h>
+#include <mpi.h>
 #include <cstdlib>
 #include <string>
 #include <vector>
 
 #include "glm/glm.hpp"
+#include "glog/logging.h"
 
 #include "display/opengl.h"
 #include "io/scene_loader.h"
@@ -78,9 +79,9 @@ class Scene {
 
   void buildWbvh();
 
-  Aabb getBound() const {
-    CHECK(bound_.isValid()) << "invalid scene bound";
-    return bound_;
+  Aabb getWorldAabb() const {
+    CHECK(world_aabb_.isValid()) << "invalid scene bound";
+    return world_aabb_;
   }
 
   // drawing domains
@@ -225,9 +226,18 @@ class Scene {
   // void copyAllDomainsToLocalDisk(const std::string& dest_path,
   //                                bool insitu_mode);
   void deleteAllDomainsFromLocalDisk();
+  void loadAndPopulateDomainInfo(std::size_t* max_num_vertices,
+                                 std::size_t* max_num_faces);
+
+  struct ModelInfo {
+    std::size_t num_vertices;
+    std::size_t num_faces;
+    float obj_bounds_min[3];
+    float obj_bounds_max[3];
+  };
 
  private:
-  Aabb bound_;  // bound of entire scene in world space
+  Aabb world_aabb_;  // bound of entire scene in world space
   std::vector<Domain> domains_;
   std::vector<Light*> lights_;
 

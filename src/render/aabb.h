@@ -44,6 +44,7 @@ class SPRAY_ALIGN(16) Aabb {
   bool operator!=(const Aabb& other);
 
   void invalidate();
+  void reset() { invalidate(); }
 
   void merge(const glm::vec3& point);
   void merge(const Aabb& aabb);
@@ -68,6 +69,10 @@ class SPRAY_ALIGN(16) Aabb {
   const glm::vec3& getBound(std::uint8_t i) const { return bounds[i]; }
   float getEdge(std::uint8_t which_bound, std::uint8_t axis) const {
     return bounds[which_bound][axis];
+  }
+  void setBounds(const float aabb_min[3], const float aabb_max[3]) {
+    for (int i = 0; i < 3; ++i) bounds[0][i] = aabb_min[i];
+    for (int i = 0; i < 3; ++i) bounds[1][i] = aabb_max[i];
   }
 
   glm::vec3 bounds[2];

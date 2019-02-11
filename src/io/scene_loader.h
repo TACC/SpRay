@@ -101,9 +101,9 @@ class SceneLoader {
 
   void parseTranslate(const std::vector<std::string>& tokens);
 
-  void parseFace(const std::vector<std::string>& tokens);
+  // void parseFace(const std::vector<std::string>& tokens);
 
-  void parseVertex(const std::vector<std::string>& tokens);
+  // void parseVertex(const std::vector<std::string>& tokens);
 
   void parseLight(const std::vector<std::string>& tokens);
 

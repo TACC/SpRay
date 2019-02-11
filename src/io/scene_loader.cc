@@ -282,21 +282,21 @@ void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
                                atof(tokens[3].c_str()))));
 }
 
-void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
-  SurfaceModel& m = currentModel();
+// void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
+//   SurfaceModel& m = currentModel();
+// 
+//   CHECK_EQ(tokens.size(), 2);
+// 
+//   m.setNumFaces(std::stoul(tokens[1]));
+// }
 
-  CHECK_EQ(tokens.size(), 2);
-
-  m.setNumFaces(std::stoul(tokens[1]));
-}
-
-void SceneLoader::parseVertex(const std::vector<std::string>& tokens) {
-  SurfaceModel& m = currentModel();
-
-  CHECK_EQ(tokens.size(), 2);
-
-  m.setNumVertices(std::stoul(tokens[1]));
-}
+// void SceneLoader::parseVertex(const std::vector<std::string>& tokens) {
+//   SurfaceModel& m = currentModel();
+// 
+//   CHECK_EQ(tokens.size(), 2);
+// 
+//   m.setNumVertices(std::stoul(tokens[1]));
+// }
 
 void SceneLoader::parseLight(const std::vector<std::string>& tokens) {
   if (tokens[1] == "point") {

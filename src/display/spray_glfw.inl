@@ -204,7 +204,7 @@ void Glfw<WbvhT, SceneT>::keyCallback(GLFWwindow* window, int key, int scancode,
         const glm::vec3& campos = camera_->getPosition();
         const glm::vec3& lookat = camera_->getLookAt();
         const glm::vec3& upvec = camera_->getUpVector();
-        const Aabb& bound = scene_->getBound();
+        const Aabb& bound = scene_->getWorldAabb();
         printf("[INFO] Camera --camera %f %f %f %f %f %f\n", campos.x, campos.y,
                campos.z, lookat.x, lookat.y, lookat.z);
         printf("[INFO] Camera --camera-up %f %f %f\n", upvec.x, upvec.y, upvec.z);

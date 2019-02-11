@@ -39,7 +39,8 @@ class SurfaceModel {
       : material_(nullptr),
         num_vertices_(0),
         num_faces_(0),
-        transform_(glm::mat4(1.0f)) {}
+        transform_(glm::mat4(1.0f)),
+        updated_model_info_(false) {}
   ~SurfaceModel() { delete material_; }
 
   void populateModelInfo();
@@ -56,11 +57,17 @@ class SurfaceModel {
 
  private:
   friend class SceneLoader;
+  friend class Domain;
   void setMaterial(Material* m) { material_ = m; }
   void setFilename(const std::string& filename) { filename_ = filename; }
   void setTransform(const glm::mat4& transform) { transform_ = transform; }
+
+  void setUpdatedModelInfoFlag() { updated_model_info_ = true; }
   void setNumVertices(std::size_t n) { num_vertices_ = n; }
   void setNumFaces(std::size_t n) { num_faces_ = n; }
+  void setObjectBounds(const float aabb_min[3], const float aabb_max[3]) {
+    object_aabb_.setBounds(aabb_min, aabb_max);
+  }
 
  private:
   std::string filename_;
@@ -69,25 +76,26 @@ class SurfaceModel {
   Material* material_;
   glm::mat4 transform_;
   Aabb object_aabb_;
+  bool updated_model_info_;
 };
 
 inline void SurfaceModel::populateModelInfo() {
-  if (!filename_.empty()) {
-    std::string ext = spray::util::getFileExtension(filename_);
+  if (updated_model_info_ || filename_.empty()) return;
 
-    if (ext == "ply") {
-      PlyLoader::LongHeader header;
-      PlyLoader::readLongHeader(filename_, &header);
+  std::string ext = spray::util::getFileExtension(filename_);
 
-      num_vertices_ = header.num_vertices;
-      num_faces_ = header.num_faces;
-      object_aabb_ = header.bounds;
+  if (ext == "ply") {
+    PlyLoader::LongHeader header;
+    PlyLoader::readLongHeader(filename_, &header);
 
-      CHECK(object_aabb_.isValid()) << object_aabb_;
+    num_vertices_ = header.num_vertices;
+    num_faces_ = header.num_faces;
+    object_aabb_ = header.bounds;
 
-    } else {
-      CHECK(false) << "unsupported extension" << ext;
-    }
+    CHECK(object_aabb_.isValid()) << object_aabb_;
+
+  } else {
+    CHECK(false) << "unsupported extension" << ext;
   }
 }
 
@@ -101,7 +109,7 @@ class Domain {
     }
   }
 
-  void populateModelInfo();
+  void updateModelInfo();
 
   unsigned int getId() const { return id_; }
   std::size_t getNumVertices() const { return num_vertices_; }
@@ -126,6 +134,24 @@ class Domain {
 
   bool hasShapes() const { return !shapes_.empty(); }
   std::size_t getNumShapes() const { return shapes_.size(); }
+
+  const std::string& getFilename(std::size_t i) const {
+    return models_[i].getFilename();
+  }
+
+  void setNumVertices(std::size_t model_id, std::size_t num_vertices) {
+    models_[model_id].setNumVertices(num_vertices);
+  }
+  void setNumFaces(std::size_t model_id, std::size_t num_faces) {
+    models_[model_id].setNumFaces(num_faces);
+  }
+  void setObjectBounds(std::size_t model_id, const float aabb_min[3],
+                       const float aabb_max[3]) {
+    models_[model_id].setObjectBounds(aabb_min, aabb_max);
+  }
+  void setUpdatedModelInfoFlag(std::size_t model_id) {
+    models_[model_id].setUpdatedModelInfoFlag();
+  }
 
   // void load(float* vertices, uint32_t* faces, uint32_t* colors);
  private:
@@ -154,7 +180,7 @@ class Domain {
   std::vector<Shape*> shapes_;
 };
 
-inline void Domain::populateModelInfo() {
+inline void Domain::updateModelInfo() {
   glm::vec3 bounds_min, bounds_max, world_bounds_min, world_bounds_max;
   Aabb temp_aabb;
   num_vertices_ = 0;
@@ -166,20 +192,19 @@ inline void Domain::populateModelInfo() {
 
     auto& m = models_[i];
 
-    if (!m.isValid()) {
-      m.populateModelInfo();
+    m.populateModelInfo();
 
-      bounds_min = m.getObjectAabb().bounds[0];
-      bounds_max = m.getObjectAabb().bounds[1];
+    bounds_min = m.getObjectAabb().bounds[0];
+    bounds_max = m.getObjectAabb().bounds[1];
 
-      temp_aabb.bounds[0] = m.getTransform() * glm::vec4(bounds_min, 1.0f);
-      temp_aabb.bounds[1] = m.getTransform() * glm::vec4(bounds_max, 1.0f);
+    temp_aabb.bounds[0] = m.getTransform() * glm::vec4(bounds_min, 1.0f);
+    temp_aabb.bounds[1] = m.getTransform() * glm::vec4(bounds_max, 1.0f);
 #ifdef PRINT_DOMAIN_BOUNDS
-      std::cout << "object: " << m.getObjectAabb() << "\n";
-      std::cout << "world: " << temp_aabb << "\n";
+    std::cout << "object: " << m.getObjectAabb() << "\n";
+    std::cout << "world: " << temp_aabb << "\n";
 #endif
-      world_aabb_.merge(temp_aabb);
-    }
+    world_aabb_.merge(temp_aabb);
+
     num_vertices_ += m.getNumVertices();
     num_faces_ += m.getNumFaces();
   }

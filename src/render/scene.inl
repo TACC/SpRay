@@ -73,9 +73,10 @@ void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
   loader.load(cfg.model_descriptor_filename, cfg.ply_path, num_light_samples,
               &domains_, &lights_);
 
-  // merge domain bounds and find the scene bounds
+  // populate domain info and merge scene bounds
   std::size_t max_num_vertices, max_num_faces;
-  mergeDomainBounds(&max_num_vertices, &max_num_faces);
+  loadAndPopulateDomainInfo(&max_num_vertices, &max_num_faces);
+  // mergeDomainBounds(&max_num_vertices, &max_num_faces);
 
   // TODO: support ooc (ooc not supported at this moment)
   // see notes in TriMeshBuffer::loadShapes
@@ -92,14 +93,14 @@ void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
     num_partitions_ = num_partitions;
 
     // partition data if in-situ mode
-    partition_.partition(getNumDomains(), getDomains(), getBound(),
+    partition_.partition(getNumDomains(), getDomains(), world_aabb_,
                          num_partitions);
 
   } else if (insitu_mode) {
     insitu_ = true;
 
     // partition data if in-situ mode
-    partition_.partition(getNumDomains(), getDomains(), getBound(),
+    partition_.partition(getNumDomains(), getDomains(), world_aabb_,
                          mpi::size());
 #ifdef SPRAY_GLOG_CHECK
     LOG(INFO) << "<<<<<INSITU MODE>>>>>>";
@@ -139,7 +140,7 @@ void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
     }
   }
 
-  wbvh_.init(getBound(), getDomains());
+  wbvh_.init(world_aabb_, getDomains());
 
   // for domain vis.
   glfw_domain_idx_ = 0;
@@ -351,7 +352,6 @@ void Scene<CacheT, SurfaceBufT>::mergeDomainBounds(
   Aabb world_space_bound;
 
   std::size_t num_domains = domains_.size();
-  domains_.resize(num_domains);
 
 #if defined(PRINT_DOMAIN_BOUNDS) && defined(SPRAY_GLOG_CHECK)
   std::size_t total_faces = 0;
@@ -363,7 +363,7 @@ void Scene<CacheT, SurfaceBufT>::mergeDomainBounds(
   for (std::size_t id = 0; id < num_domains; ++id) {
     Domain& d = domains_[id];
 
-    d.populateModelInfo();
+    d.updateModelInfo();
 
     // let's enforce that that domain world-space bound and
     // the number of faces are provided through preprocessing.
@@ -396,15 +396,15 @@ void Scene<CacheT, SurfaceBufT>::mergeDomainBounds(
 
   *max_num_vertices = num_vertices;
   *max_num_faces = num_faces;
-  bound_ = world_space_bound;
-  CHECK_EQ(bound_.isValid(), true) << bound_;
+  world_aabb_ = world_space_bound;
+  CHECK_EQ(world_aabb_.isValid(), true) << world_aabb_;
 
   if (mpi::isRootProcess())
-    std::cout << "[INFO] scene bounds: " << bound_ << std::endl;
+    std::cout << "[INFO] scene bounds: " << world_aabb_ << std::endl;
 
 #if defined(PRINT_DOMAIN_BOUNDS) && defined(SPRAY_GLOG_CHECK)
   LOG_IF(INFO, mpi::isRootProcess()) << "total faces: " << total_faces;
-  LOG_IF(INFO, mpi::isRootProcess()) << "world bound: " << bound_;
+  LOG_IF(INFO, mpi::isRootProcess()) << "world bound: " << world_aabb_;
 #endif
 }
 
@@ -474,6 +474,144 @@ void Scene<CacheT, SurfaceBufT>::drawPartitions() {
 
   glDepthMask(GL_TRUE);
   glPopAttrib();
+}
+
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
+    std::size_t* max_num_vertices, std::size_t* max_num_faces) {
+  std::size_t num_domains = domains_.size();
+  std::size_t total_num_models = 0;
+
+  for (std::size_t id = 0; id < num_domains; ++id) {
+    total_num_models += domains_[id].getNumModels();
+  }
+
+  if (total_num_models == 0) return;
+
+  std::size_t num_assigned_models = total_num_models / mpi::size();
+
+  if (num_assigned_models == 0) num_assigned_models = 1;
+
+  std::vector<ModelInfo> model_info;
+  model_info.resize(num_assigned_models * mpi::size());
+
+
+  std::size_t begin = mpi::rank() * num_assigned_models;
+
+  if (begin < total_num_models) {
+    std::size_t end = begin + num_assigned_models;
+    if (end > total_num_models) end = total_num_models;
+
+    PlyLoader::LongHeader header;
+    std::string extension;
+
+    std::size_t model_id = 0;
+
+    for (std::size_t id = 0; id < num_domains; ++id) {
+      const Domain& domain = domains_[id];
+      std::size_t num_models = domain.getNumModels();
+
+      for (std::size_t m = 0; m < num_models; ++m) {
+        if (model_id >= begin && model_id < end) {
+          const std::string& filename = domain.getFilename(m);
+          extension = spray::util::getFileExtension(filename);
+          CHECK_EQ(extension, "ply");
+
+          PlyLoader::readLongHeader(filename, &header);
+
+          ModelInfo* info = &model_info[model_id];
+          info->num_vertices = header.num_vertices;
+          info->num_faces = header.num_faces;
+
+          // std::cout << "[model_id " << model_id << "][v " << info->num_vertices
+          //           << "]\n";
+          // std::cout << "[model_id " << model_id << "][f " << info->num_faces
+          //           << "]\n";
+
+          for (int i = 0; i < 3; ++i) {
+            info->obj_bounds_min[i] = header.bounds.getMin()[i];
+            // std::cout << "[model_id " << model_id << "][obj_bounds_min "
+            //           << info->obj_bounds_min[i] << "]\n";
+          }
+          for (int i = 0; i < 3; ++i) {
+            info->obj_bounds_max[i] = header.bounds.getMax()[i];
+            // std::cout << "[model_id " << model_id << "][obj_bounds_max "
+            //           << info->obj_bounds_max[i] << "]\n";
+          }
+        }
+        ++model_id;
+      }
+    }
+  }
+
+  // gather model info
+  if (mpi::size() > 1) {
+    std::size_t count = sizeof(ModelInfo) * num_assigned_models;
+    MPI_Allgather(&model_info[begin], count, MPI_UNSIGNED_CHAR, &model_info[0],
+                  count, MPI_UNSIGNED_CHAR, MPI_COMM_WORLD);
+  }
+
+  // update domains
+  std::size_t model_id = 0;
+  std::size_t max_nvertices = 0, max_nfaces = 0;
+  std::size_t total_num_faces = 0;
+
+  world_aabb_.reset();
+
+  for (std::size_t id = 0; id < num_domains; ++id) {
+    Domain* domain = &domains_[id];
+    std::size_t num_models = domain->getNumModels();
+
+    for (std::size_t m = 0; m < num_models; ++m) {
+      const ModelInfo& info = model_info[model_id];
+      domain->setNumVertices(m, info.num_vertices);
+      domain->setNumFaces(m, info.num_faces);
+      domain->setObjectBounds(m, info.obj_bounds_min, info.obj_bounds_max);
+      // std::cout << "[model_id " << m << "][obj_bounds_min "
+      //           << info.obj_bounds_min[0] << "]\n";
+
+      domain->setUpdatedModelInfoFlag(m);
+      ++model_id;
+    }
+
+    domain->updateModelInfo();
+
+    CHECK_EQ(domain->getWorldAabb().isValid(), true)
+        << id << "," << num_domains;
+    if (!domain->hasShapes()) {
+      CHECK_GT(domain->getNumVertices(), 0);
+      CHECK_GT(domain->getNumFaces(), 0);
+    }
+
+    // maximum values
+
+    if (domain->getNumVertices() > max_nvertices) {
+      max_nvertices = domain->getNumVertices();
+    }
+
+    if (domain->getNumFaces() > max_nfaces) {
+      max_nfaces = domain->getNumFaces();
+    }
+
+    if (mpi::rank() == 0) {
+      total_num_faces += domain->getNumFaces();
+      std::cout << "[INFO] [domain " << id << "] [bounds "
+                << domain->getWorldAabb() << "] [face count "
+                << domain->getNumFaces() << "]" << std::endl;
+    }
+
+    world_aabb_.merge(domain->getWorldAabb());
+  }  // for (std::size_t id = 0; id < num_domains; ++id) {
+
+  *max_num_vertices = max_nvertices;
+  *max_num_faces = max_nfaces;
+
+  CHECK_EQ(world_aabb_.isValid(), true);
+
+  if (mpi::rank() == 0) {
+    std::cout << "[INFO] total face count: " << total_num_faces << std::endl;
+    std::cout << "[INFO] scene bounds: " << world_aabb_ << std::endl;
+  }
 }
 
 }  // namespace spray

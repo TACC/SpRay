@@ -90,7 +90,7 @@ void SprayRenderer<TracerT, SceneT>::initCamera(const Config &cfg) {
     upvec = cfg.camera_up;
 
   } else {
-    Aabb aabb = scene_.getBound();
+    Aabb aabb = scene_.getWorldAabb();
     glm::vec3 extent = aabb.getExtent();
     lookat = aabb.getCenter();
     campos =
