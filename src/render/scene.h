@@ -64,6 +64,8 @@ struct SceneInfo {
 template <typename CacheT, typename SurfaceBufT>
 class Scene {
  public:
+  typedef CacheT CacheType;
+
   Scene() {}
   ~Scene() {
     for (std::size_t i = 0; i < lights_.size(); ++i) {

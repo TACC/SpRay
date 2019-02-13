@@ -38,9 +38,11 @@
 namespace spray {
 namespace insitu {
 
-template <typename CacheT, typename SceneT>
+template <typename SceneT>
 class ShaderPtShapes {
  public:
+  typedef typename SceneT::CacheType CacheType;
+
   void init(const spray::Config &cfg, SceneT *scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;  // number of samples for area lights
@@ -66,8 +68,8 @@ class ShaderPtShapes {
 #endif
 };
 
-template <typename CacheT, typename SceneT>
-void ShaderPtShapes<CacheT, SceneT>::operator()(
+template <typename SceneT>
+void ShaderPtShapes<SceneT>::operator()(
     int domain_id, const Ray &rayin, const spray::RTCRayIntersection &isect,
     spray::MemoryArena *mem, std::queue<Ray *> *sq, std::queue<Ray *> *rq,
     int ray_depth) {
