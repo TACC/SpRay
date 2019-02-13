@@ -192,6 +192,12 @@ endif(SPRAY_BACKGROUND_COLOR)
 #   add_definitions(-DSPRAY_BACKGROUND_COLOR_WHITE)
 # endif()
 
+# cosine hemisphere sampling
+option(SPRAY_COSINE_HEMISPHERE_SAMPLER "Enable cosine hemisphere random sampler." ON)
+if(SPRAY_COSINE_HEMISPHERE_SAMPLER)
+  add_definitions(-DSPRAY_COSINE_HEMISPHERE_SAMPLER)
+endif(SPRAY_COSINE_HEMISPHERE_SAMPLER)
+
 ########################################
 # intersection mode (based on embree)
 ########################################
