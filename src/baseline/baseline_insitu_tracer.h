@@ -61,10 +61,10 @@
 namespace spray {
 namespace baseline {
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
+template <typename ScheduleT, typename ShaderT>
 class InsituTracer {
  public:
-  typedef SceneT SceneType;
+  typedef typename ShaderT::SceneType SceneType;
 
   virtual ~InsituTracer() {
     for (std::size_t i = 0; i < domain_locks_.size(); ++i) {
@@ -72,7 +72,7 @@ class InsituTracer {
     }
   }
 
-  void init(const Config &cfg, const Camera &camera, SceneT *scene,
+  void init(const Config &cfg, const Camera &camera, SceneType *scene,
             HdrImage *image);
 
   void trace();
@@ -84,7 +84,7 @@ class InsituTracer {
   void terminate() { img_sched_.terminate(); }
 
  protected:
-  void initCommon(const Config &cfg, const Camera &camera, SceneT *scene,
+  void initCommon(const Config &cfg, const Camera &camera, SceneType *scene,
                   HdrImage *image);
 
  protected:
@@ -92,7 +92,7 @@ class InsituTracer {
 
   void isectEyeDomains(int num_domains, std::size_t num_rays, DRay *ray_buf,
                        ArenaQs<DRayQItem> *qs,
-                       DomainIntersector<SceneT> *domain_isector);
+                       DomainIntersector<SceneType> *domain_isector);
 
  protected:
   int assignedProcess(unsigned score_index) {
@@ -126,19 +126,19 @@ class InsituTracer {
   void processRays(int tid, int id, int ndomains, int nbounces,
                    ArenaQs<DRayQItem> *qs, ArenaQs<DRayQItem> *sqs,
                    MemoryArena *arena,
-                   DomainIntersector<SceneT> *domain_isector, RTCRay *rtc_ray,
-                   RTCRayIntersection *isect, CommitBufferB *retire_buf,
-                   DRayQ *temp_q);
+                   DomainIntersector<SceneType> *domain_isector,
+                   RTCRay *rtc_ray, RTCRayIntersection *isect,
+                   CommitBufferB *retire_buf, DRayQ *temp_q);
 
   void processRay2(int id, int ndomains, DRay *data, RTCRay *rtc_ray,
                    RTCRayIntersection *isect, ArenaQs<DRayQItem> *qs,
                    ArenaQs<DRayQItem> *sqs, MemoryArena *arena,
-                   DomainIntersector<SceneT> *domain_isector,
+                   DomainIntersector<SceneType> *domain_isector,
                    CommitBufferB *retire_buf, DRayQ *temp_q);
 
   void processShadow(int id, int ndomains, DRay *data, RTCRay *rtc_ray,
                      ArenaQs<DRayQItem> *sqs, MemoryArena *arena,
-                     DomainIntersector<SceneT> *domain_isector,
+                     DomainIntersector<SceneType> *domain_isector,
                      CommitBufferB *retire_buf);
 
   void resetSentQs(int ndomains, const std::vector<RayCount> &sched,
@@ -169,7 +169,7 @@ class InsituTracer {
   // pointers
   std::vector<Light *> lights_;  // copied lights
   const Camera *camera_;
-  SceneT *scene_;
+  SceneType *scene_;
   HdrImage *image_;
 
   // parameters
@@ -190,7 +190,7 @@ class InsituTracer {
  private:
   void profileRaysSpawned(const ArenaQs<DRayQItem> &qs);
 #endif
-  std::vector<DomainIntersector<SceneT>> domain_isectors_;
+  std::vector<DomainIntersector<SceneType>> domain_isectors_;
 };
 
 }  // namespace baseline

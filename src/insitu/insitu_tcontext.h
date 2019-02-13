@@ -58,9 +58,11 @@ class ThreadWorkStats {
   bool has_cached_block_;
 };
 
-template <typename SceneT, typename ShaderT>
+template <typename ShaderT>
 class TContext {
  public:
+  typedef typename ShaderT::SceneType SceneType;
+
   TContext() {
     mem_in_ = &mem_0_;
     mem_out_ = &mem_1_;
@@ -69,8 +71,8 @@ class TContext {
 
  public:
   void init(const Config& cfg, int ndomains,
-            const spray::InsituPartition* partition, SceneT* scene, VBuf* vbuf,
-            spray::HdrImage* image);
+            const spray::InsituPartition* partition, SceneType* scene,
+            VBuf* vbuf, spray::HdrImage* image);
 
   void resetMems() {
     mem_in_->Reset();
@@ -99,7 +101,7 @@ class TContext {
   spray::MemoryArena mem_1_;
 
   const spray::InsituPartition* partition_;
-  SceneT* scene_;  // TODO: use const
+  SceneType* scene_;  // TODO: use const
   VBuf* vbuf_;
   spray::HdrImage* image_;
 
@@ -201,7 +203,7 @@ class TContext {
 
   ShaderT shader_;
 
-  Isector<SceneT> isector_;
+  Isector<SceneType> isector_;
   spray::RTCRayIntersection rtc_isect_;
   RTCRay rtc_ray_;
 

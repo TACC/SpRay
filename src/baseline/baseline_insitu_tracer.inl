@@ -25,21 +25,20 @@
 namespace spray {
 namespace baseline {
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::init(const Config &cfg,
-                                                    const Camera &camera,
-                                                    SceneT *scene,
-                                                    HdrImage *image) {
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::init(const Config &cfg,
+                                            const Camera &camera,
+                                            SceneType *scene, HdrImage *image) {
   initCommon(cfg, camera, scene, image);
   comm_.init(ndomains_, ray_sched_.getSchedule(), &send_rbuf_, &send_sbuf_,
              &recv_rbuf_, &recv_sbuf_);
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::initCommon(const Config &cfg,
-                                                          const Camera &camera,
-                                                          SceneT *scene,
-                                                          HdrImage *image) {
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::initCommon(const Config &cfg,
+                                                  const Camera &camera,
+                                                  SceneType *scene,
+                                                  HdrImage *image) {
   int ndomains = static_cast<int>(scene->getNumDomains());
   CHECK_LT(scene->getNumDomains(), std::numeric_limits<int>::max());
 
@@ -97,8 +96,8 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::initCommon(const Config &cfg,
   }
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::trace() {
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::trace() {
   Tile tile = img_sched_.schedule();
 
   DRay *eyeray_buf = nullptr;
@@ -143,8 +142,8 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::trace() {
     QStats stats;
     stats.init(ndomains);
 
-    // DomainIntersector<SceneT> domain_isector(ndomains, scene_);
-    DomainIntersector<SceneT> &domain_isector = domain_isectors_[tid];
+    // DomainIntersector<SceneType> domain_isector(ndomains, scene_);
+    DomainIntersector<SceneType> &domain_isector = domain_isectors_[tid];
 
     if (num_eyerays) {
       genEyeRays(ndomains, nsamples, tile, eyeray_buf);
@@ -216,10 +215,11 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::trace() {
   }
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::schedule(
-    int ndomains, const ArenaQs<DRayQItem> &qs, const ArenaQs<DRayQItem> &sqs,
-    QStats *stats) {
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::schedule(int ndomains,
+                                                const ArenaQs<DRayQItem> &qs,
+                                                const ArenaQs<DRayQItem> &sqs,
+                                                QStats *stats) {
   for (int i = 0; i < ndomains; ++i) {
     int64_t count = qs.size(i) + sqs.size(i);
     stats->set(i, count);
@@ -242,8 +242,8 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::schedule(
   }
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::resetSentQs(
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::resetSentQs(
     int ndomains, const std::vector<RayCount> &sched, ArenaQs<DRayQItem> *qs,
     ArenaQs<DRayQItem> *sqs) {
   //
@@ -265,8 +265,8 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::resetSentQs(
   }
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::spliceQs(
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::spliceQs(
     int tid, int id, int ndomains, const std::vector<RayCount> &sched,
     ArenaQs<DRayQItem> *qs, BlockBuffer *send_buf, BlockBuffer *recv_buf) {
   //
@@ -283,10 +283,11 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::spliceQs(
   }
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::spliceRecvQs(
-    int tid, int id, int ndomains, ArenaQs<DRayQItem> *qs,
-    BlockBuffer *recv_buf) {
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::spliceRecvQs(int tid, int id,
+                                                    int ndomains,
+                                                    ArenaQs<DRayQItem> *qs,
+                                                    BlockBuffer *recv_buf) {
   // NOTE: scan_ and recv_buf are shared variables
   // qs: thread-local variable
 
@@ -331,8 +332,8 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::spliceRecvQs(
   }
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::spliceQsMultiProcesses(
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::spliceQsMultiProcesses(
     int tid, int id, int ndomains, const std::vector<RayCount> &sched,
     ArenaQs<DRayQItem> *qs, BlockBuffer *send_buf, BlockBuffer *recv_buf) {
   //
@@ -402,11 +403,9 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::spliceQsMultiProcesses(
   }
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::genEyeRays(int ndomains,
-                                                          int nsamples,
-                                                          Tile tile,
-                                                          DRay *ray_buf) {
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::genEyeRays(int ndomains, int nsamples,
+                                                  Tile tile, DRay *ray_buf) {
   const int image_w = image_->w;
 
   if (nsamples > 1) {
@@ -455,10 +454,10 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::genEyeRays(int ndomains,
   }
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::isectEyeDomains(
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::isectEyeDomains(
     int num_domains, std::size_t num_rays, DRay *ray_buf,
-    ArenaQs<DRayQItem> *qs, DomainIntersector<SceneT> *domain_isector) {
+    ArenaQs<DRayQItem> *qs, DomainIntersector<SceneType> *domain_isector) {
   DRayQItem data;
   glm::vec3 cam_org = camera_->getPosition();
 
@@ -542,11 +541,11 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::isectEyeDomains(
   //   }
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::processRays(
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::processRays(
     int tid, int id, int ndomains, int nbounces, ArenaQs<DRayQItem> *qs,
     ArenaQs<DRayQItem> *sqs, MemoryArena *arena,
-    DomainIntersector<SceneT> *domain_isector, RTCRay *rtc_ray,
+    DomainIntersector<SceneType> *domain_isector, RTCRay *rtc_ray,
     RTCRayIntersection *isect, CommitBufferB *retire_buf, DRayQ *temp_q) {
 #ifdef SPRAY_GLOG_CHECK
   CHECK(!(recv_rbuf_.empty(0) && recv_sbuf_.empty(0)));
@@ -639,10 +638,10 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::processRays(
   }
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::processShadow(
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::processShadow(
     int id, int ndomains, DRay *ray, RTCRay *rtc_ray, ArenaQs<DRayQItem> *sqs,
-    MemoryArena *arena, DomainIntersector<SceneT> *domain_isector,
+    MemoryArena *arena, DomainIntersector<SceneType> *domain_isector,
     CommitBufferB *retire_buf) {
   //
   glm::vec3 pos(ray->org[0], ray->org[1], ray->org[2]);
@@ -666,9 +665,10 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::processShadow(
   }
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::aggregateStats(
-    int ndomains, const QStats &src_stats, QStats *dest_stats) {
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::aggregateStats(int ndomains,
+                                                      const QStats &src_stats,
+                                                      QStats *dest_stats) {
   // combine thread-local stats into process-local stats_
   // only counter values of all depths are aggregated
   for (int i = 0; i < ndomains; ++i) {
@@ -678,11 +678,11 @@ void InsituTracer<SceneT, ScheduleT, ShaderT>::aggregateStats(
   }
 }
 
-template <typename SceneT, typename ScheduleT, typename ShaderT>
-void InsituTracer<SceneT, ScheduleT, ShaderT>::processRay2(
+template <typename ScheduleT, typename ShaderT>
+void InsituTracer<ScheduleT, ShaderT>::processRay2(
     int id, int ndomains, DRay *ray, RTCRay *rtc_ray, RTCRayIntersection *isect,
     ArenaQs<DRayQItem> *qs, ArenaQs<DRayQItem> *sqs, MemoryArena *arena,
-    DomainIntersector<SceneT> *domain_isector, CommitBufferB *retire_buf,
+    DomainIntersector<SceneType> *domain_isector, CommitBufferB *retire_buf,
     DRayQ *temp_q) {
   // in case this ray is in this domain for shading only
   if (DRayUtil::getShade(*ray) == 0x00000001) {
