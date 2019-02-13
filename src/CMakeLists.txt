@@ -175,6 +175,12 @@ if(SPRAY_TIMING)
   add_definitions(-DSPRAY_TIMING)
 endif(SPRAY_TIMING)
 
+# profiling counters
+option(SPRAY_PROFILING_COUNTERS "Enable profiling counters." ON)
+if(SPRAY_PROFILING_COUNTERS)
+  add_definitions(-DSPRAY_PROFILING_COUNTERS)
+endif(SPRAY_PROFILING_COUNTERS)
+
 # background color
 option(SPRAY_BACKGROUND_COLOR "Enable background color." ON)
 if(SPRAY_BACKGROUND_COLOR)
