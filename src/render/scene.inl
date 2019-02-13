@@ -423,60 +423,59 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
     total_num_models += domains_[id].getNumModels();
   }
 
-  if (total_num_models == 0) return;
-
-  std::size_t num_assigned_models = total_num_models / mpi::size();
-
-  if (num_assigned_models == 0) num_assigned_models = 1;
-
   std::vector<ModelInfo> model_info;
-  model_info.resize(num_assigned_models * mpi::size());
+  if (total_num_models) {
+    std::size_t num_assigned_models = total_num_models / mpi::size();
 
+    if (num_assigned_models == 0) num_assigned_models = 1;
 
-  std::size_t begin = mpi::rank() * num_assigned_models;
+    model_info.resize(num_assigned_models * mpi::size());
 
-  if (begin < total_num_models) {
-    std::size_t end = begin + num_assigned_models;
-    if (end > total_num_models) end = total_num_models;
+    std::size_t begin = mpi::rank() * num_assigned_models;
 
-    PlyLoader::LongHeader header;
-    std::string extension;
+    if (begin < total_num_models) {
+      std::size_t end = begin + num_assigned_models;
+      if (end > total_num_models) end = total_num_models;
 
-    std::size_t model_id = 0;
+      PlyLoader::LongHeader header;
+      std::string extension;
 
-    for (std::size_t id = 0; id < num_domains; ++id) {
-      const Domain& domain = domains_[id];
-      std::size_t num_models = domain.getNumModels();
+      std::size_t model_id = 0;
 
-      for (std::size_t m = 0; m < num_models; ++m) {
-        if (model_id >= begin && model_id < end) {
-          const std::string& filename = domain.getFilename(m);
-          extension = spray::util::getFileExtension(filename);
-          CHECK_EQ(extension, "ply");
+      for (std::size_t id = 0; id < num_domains; ++id) {
+        const Domain& domain = domains_[id];
+        std::size_t num_models = domain.getNumModels();
 
-          PlyLoader::readLongHeader(filename, &header);
+        for (std::size_t m = 0; m < num_models; ++m) {
+          if (model_id >= begin && model_id < end) {
+            const std::string& filename = domain.getFilename(m);
+            extension = spray::util::getFileExtension(filename);
+            CHECK_EQ(extension, "ply");
 
-          ModelInfo* info = &model_info[model_id];
-          info->num_vertices = header.num_vertices;
-          info->num_faces = header.num_faces;
+            PlyLoader::readLongHeader(filename, &header);
 
-          for (int i = 0; i < 3; ++i) {
-            info->obj_bounds_min[i] = header.bounds.getMin()[i];
+            ModelInfo* info = &model_info[model_id];
+            info->num_vertices = header.num_vertices;
+            info->num_faces = header.num_faces;
+
+            for (int i = 0; i < 3; ++i) {
+              info->obj_bounds_min[i] = header.bounds.getMin()[i];
+            }
+            for (int i = 0; i < 3; ++i) {
+              info->obj_bounds_max[i] = header.bounds.getMax()[i];
+            }
           }
-          for (int i = 0; i < 3; ++i) {
-            info->obj_bounds_max[i] = header.bounds.getMax()[i];
-          }
+          ++model_id;
         }
-        ++model_id;
       }
     }
-  }
 
-  // gather model info
-  if (mpi::size() > 1) {
-    std::size_t count = sizeof(ModelInfo) * num_assigned_models;
-    MPI_Allgather(&model_info[begin], count, MPI_UNSIGNED_CHAR, &model_info[0],
-                  count, MPI_UNSIGNED_CHAR, MPI_COMM_WORLD);
+    // gather model info
+    if (mpi::size() > 1) {
+      std::size_t count = sizeof(ModelInfo) * num_assigned_models;
+      MPI_Allgather(&model_info[begin], count, MPI_UNSIGNED_CHAR,
+                    &model_info[0], count, MPI_UNSIGNED_CHAR, MPI_COMM_WORLD);
+    }
   }
 
   // update domains
@@ -498,7 +497,6 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
       domain->setUpdatedModelInfoFlag(m);
       ++model_id;
     }
-
     domain->updateModelInfo();
 
     CHECK_EQ(domain->getWorldAabb().isValid(), true)
