@@ -68,27 +68,23 @@ int main(int argc, char** argv) {
 
   // ao, infinite cache
   typedef spray::baseline::ShaderAo<SceneInfT> ShaderAoInfT;
-  typedef spray::baseline::ImageTracer<SceneInfT, ScheduleT, ShaderAoInfT>
-      TracerAoInfT;
-  typedef spray::SprayRenderer<TracerAoInfT, SceneInfT> RenderAoInfT;
+  typedef spray::baseline::ImageTracer<ScheduleT, ShaderAoInfT> TracerAoInfT;
+  typedef spray::SprayRenderer<TracerAoInfT> RenderAoInfT;
 
   // ao, LRU cache
   typedef spray::baseline::ShaderAo<SceneLruT> ShaderAoLruT;
-  typedef spray::baseline::ImageTracer<SceneLruT, ScheduleT, ShaderAoLruT>
-      TracerAoLruT;
-  typedef spray::SprayRenderer<TracerAoLruT, SceneLruT> RenderAoLruT;
+  typedef spray::baseline::ImageTracer<ScheduleT, ShaderAoLruT> TracerAoLruT;
+  typedef spray::SprayRenderer<TracerAoLruT> RenderAoLruT;
 
   // pt, infinite cache
   typedef spray::baseline::ShaderPt<SceneInfT> ShaderPtInfT;
-  typedef spray::baseline::ImageTracer<SceneInfT, ScheduleT, ShaderPtInfT>
-      TracerPtInfT;
-  typedef spray::SprayRenderer<TracerPtInfT, SceneInfT> RenderPtInfT;
+  typedef spray::baseline::ImageTracer<ScheduleT, ShaderPtInfT> TracerPtInfT;
+  typedef spray::SprayRenderer<TracerPtInfT> RenderPtInfT;
 
   // pt, LRU cache
   typedef spray::baseline::ShaderPt<SceneLruT> ShaderPtLruT;
-  typedef spray::baseline::ImageTracer<SceneLruT, ScheduleT, ShaderPtLruT>
-      TracerPtLruT;
-  typedef spray::SprayRenderer<TracerPtLruT, SceneLruT> RenderPtLruT;
+  typedef spray::baseline::ImageTracer<ScheduleT, ShaderPtLruT> TracerPtLruT;
+  typedef spray::SprayRenderer<TracerPtLruT> RenderPtLruT;
 
   spray::Config cfg;
   if (cfg.parse(argc, argv)) {

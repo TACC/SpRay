@@ -38,6 +38,8 @@ namespace insitu {
 template <typename SceneT>
 class ShaderAo {
  public:
+  typedef SceneT SceneType;
+
   ShaderAo() { matte_material_ = new Matte; }
   ~ShaderAo() { delete matte_material_; }
 

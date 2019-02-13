@@ -38,6 +38,8 @@ namespace baseline {
 template <typename SceneT>
 class ShaderPt {
  public:
+  typedef SceneT SceneType;
+
   void init(const spray::Config &cfg, const SceneT &scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;

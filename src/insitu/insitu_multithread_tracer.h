@@ -57,21 +57,23 @@
 namespace spray {
 namespace insitu {
 
-template <typename SceneT, typename ShaderT>
+template <typename ShaderT>
 class MultiThreadTracer {
   typedef WorkSendMsg<Ray, MsgHeader> SendQItem;
 
  public:
+  typedef typename ShaderT::SceneType SceneType;
+
   void trace();
   void traceInOmp();
   int type() const { return TRACER_TYPE_SPRAY_INSITU_N_THREADS; }
 
  public:
-  void init(const Config &cfg, const Camera &camera, SceneT *scene,
+  void init(const Config &cfg, const Camera &camera, SceneType *scene,
             HdrImage *image);
 
  private:
-  typedef TContext<SceneT, ShaderT> TContextType;
+  typedef TContext<ShaderT> TContextType;
 
   std::vector<TContextType> tcontexts_;
 
@@ -104,7 +106,7 @@ class MultiThreadTracer {
   const spray::Camera *camera_;
   const spray::InsituPartition *partition_;
   std::vector<spray::Light *> lights_;  // copied lights
-  SceneT *scene_;
+  SceneType *scene_;
   spray::HdrImage *image_;
 
   std::queue<msg_word_t *> recv_rq_;

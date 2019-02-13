@@ -48,19 +48,21 @@
 namespace spray {
 namespace ooc {
 
-template <typename SceneT, typename ShaderT>
+template <typename ShaderT>
 class Tracer {
  public:
+  typedef typename ShaderT::SceneType SceneType;
+
   void trace();
   void traceInOmp();
   int type() const { return TRACER_TYPE_SPRAY_OOC; }
 
  public:
-  void init(const Config &cfg, const Camera &camera, SceneT *scene,
+  void init(const Config &cfg, const Camera &camera, SceneType *scene,
             HdrImage *image);
 
  private:
-  typedef TContext<SceneT, ShaderT> TContextType;
+  typedef TContext<SceneType, ShaderT> TContextType;
 
   ShaderT shader_;
   PContext pcontext_;
@@ -73,7 +75,7 @@ class Tracer {
  private:
   const spray::Camera *camera_;
   std::vector<spray::Light *> lights_;  // copied lights
-  SceneT *scene_;
+  SceneType *scene_;
   spray::HdrImage *image_;
 
   // spray::Tile image_tile_;

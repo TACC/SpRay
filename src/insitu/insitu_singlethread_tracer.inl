@@ -25,10 +25,9 @@
 namespace spray {
 namespace insitu {
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::init(const Config &cfg,
-                                               const Camera &camera,
-                                               SceneT *scene, HdrImage *image) {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::init(const Config &cfg, const Camera &camera,
+                                       SceneType *scene, HdrImage *image) {
   int ndomains = static_cast<int>(scene->getNumDomains());
   CHECK_LT(scene->getNumDomains(), std::numeric_limits<int>::max());
 
@@ -102,8 +101,8 @@ void SingleThreadTracer<SceneT, ShaderT>::init(const Config &cfg,
   isector_.init(ndomains);
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::populateRadWorkStats() {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::populateRadWorkStats() {
   work_stats_.reset();
   for (int i = 0; i < num_domains_; ++i) {
     int dest = partition_->rank(i);
@@ -113,8 +112,8 @@ void SingleThreadTracer<SceneT, ShaderT>::populateRadWorkStats() {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::populateWorkStats() {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::populateWorkStats() {
   work_stats_.reset();
 
   int n = 0;
@@ -133,8 +132,8 @@ void SingleThreadTracer<SceneT, ShaderT>::populateWorkStats() {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::sendRays() {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::sendRays() {
   for (int i = 0; i < num_domains_; ++i) {
     int dest = partition_->rank(i);
     if (rank_ != dest) {
@@ -152,9 +151,9 @@ void SingleThreadTracer<SceneT, ShaderT>::sendRays() {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::send(bool shadow, int domain_id,
-                                               int dest, std::queue<Ray *> *q) {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::send(bool shadow, int domain_id, int dest,
+                                       std::queue<Ray *> *q) {
   MsgHeader hout;
   hout.domain_id = domain_id;
   hout.payload_count = q->size();
@@ -179,8 +178,8 @@ void SingleThreadTracer<SceneT, ShaderT>::send(bool shadow, int domain_id,
   comm_.pushSendQ(item);
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::procLocalQs() {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::procLocalQs() {
   const auto &ids = partition_->getDomains(rank_);
 
   for (auto id : ids) {
@@ -208,8 +207,8 @@ void SingleThreadTracer<SceneT, ShaderT>::procLocalQs() {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::procRecvQs() {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::procRecvQs() {
   MsgHeader *header;
   Ray *payload;
 
@@ -230,9 +229,8 @@ void SingleThreadTracer<SceneT, ShaderT>::procRecvQs() {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::procRads(int id, Ray *rays,
-                                                   int64_t count) {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::procRads(int id, Ray *rays, int64_t count) {
   scene_->load(id, &sinfo_);
   for (auto i = 0; i < count; ++i) {
     auto *ray = &rays[i];
@@ -240,9 +238,8 @@ void SingleThreadTracer<SceneT, ShaderT>::procRads(int id, Ray *rays,
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::procShads(int id, Ray *rays,
-                                                    int64_t count) {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::procShads(int id, Ray *rays, int64_t count) {
   scene_->load(id, &sinfo_);
   for (auto i = 0; i < count; ++i) {
     auto *ray = &rays[i];
@@ -250,8 +247,8 @@ void SingleThreadTracer<SceneT, ShaderT>::procShads(int id, Ray *rays,
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::procRad(int id, Ray *ray) {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::procRad(int id, Ray *ray) {
   bool is_hit = scene_->intersect(sinfo_.rtc_scene, sinfo_.cache_block,
                                   ray->org, ray->dir, &rtc_isect_);
   if (is_hit) {
@@ -263,8 +260,8 @@ void SingleThreadTracer<SceneT, ShaderT>::procRad(int id, Ray *ray) {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::procShad(int id, Ray *ray) {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::procShad(int id, Ray *ray) {
   if (!vbuf_.occluded(ray->samid, ray->light)) {
     bool is_occluded =
         scene_->occluded(sinfo_.rtc_scene, ray->org, ray->dir, &rtc_ray_);
@@ -275,8 +272,8 @@ void SingleThreadTracer<SceneT, ShaderT>::procShad(int id, Ray *ray) {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::filterRq2(int id) {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::filterRq2(int id) {
   IsectInfo info;
   info.domain_id = id;
 
@@ -294,8 +291,8 @@ void SingleThreadTracer<SceneT, ShaderT>::filterRq2(int id) {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::filterSq2(int id) {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::filterSq2(int id) {
   OcclInfo info;
   info.domain_id = id;
   while (!sq2_.empty()) {
@@ -313,8 +310,8 @@ void SingleThreadTracer<SceneT, ShaderT>::filterSq2(int id) {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::procFsq2() {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::procFsq2() {
   while (!fsq2_.empty()) {
     auto &info = fsq2_.front();
     auto *ray = info.ray;
@@ -330,8 +327,8 @@ void SingleThreadTracer<SceneT, ShaderT>::procFsq2() {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::procFrq2() {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::procFrq2() {
   while (!frq2_.empty()) {
     auto &info = frq2_.front();
     auto *ray = info.ray;
@@ -359,8 +356,8 @@ void SingleThreadTracer<SceneT, ShaderT>::procFrq2() {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::procCachedRq() {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::procCachedRq() {
   while (!cached_rq_.empty()) {
     auto &info = cached_rq_.front();
     auto *ray = info.ray;
@@ -379,8 +376,8 @@ void SingleThreadTracer<SceneT, ShaderT>::procCachedRq() {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::procRetireQ() {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::procRetireQ() {
   while (!retire_q_.empty()) {
     auto *ray = retire_q_.front();
     retire_q_.pop();
@@ -390,8 +387,8 @@ void SingleThreadTracer<SceneT, ShaderT>::procRetireQ() {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::retireBackground() {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::retireBackground() {
   glm::vec3 bgcolor;
   while (!bg_retire_q_.empty()) {
     auto *ray = bg_retire_q_.front();
@@ -405,8 +402,8 @@ void SingleThreadTracer<SceneT, ShaderT>::retireBackground() {
   }
 }
 
-template <typename SceneT, typename ShaderT>
-void SingleThreadTracer<SceneT, ShaderT>::trace() {
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::trace() {
   while (!tile_list_.empty()) {
     tile_list_.front(&blocking_tile_, &stripe_);
     tile_list_.pop();

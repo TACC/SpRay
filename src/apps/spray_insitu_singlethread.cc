@@ -62,13 +62,13 @@ int main(int argc, char** argv) {
 
   // ao
   typedef spray::insitu::ShaderAo<SceneT> ShaderAoT;
-  typedef spray::insitu::SingleThreadTracer<SceneT, ShaderAoT> TracerAoT;
-  typedef spray::SprayRenderer<TracerAoT, SceneT> RenderAoT;
+  typedef spray::insitu::SingleThreadTracer<ShaderAoT> TracerAoT;
+  typedef spray::SprayRenderer<TracerAoT> RenderAoT;
 
   // pt
   typedef spray::insitu::ShaderPt<SceneT> ShaderPtT;
-  typedef spray::insitu::SingleThreadTracer<SceneT, ShaderPtT> TracerPtT;
-  typedef spray::SprayRenderer<TracerPtT, SceneT> RenderPtT;
+  typedef spray::insitu::SingleThreadTracer<ShaderPtT> TracerPtT;
+  typedef spray::SprayRenderer<TracerPtT> RenderPtT;
 
   spray::Config cfg;
   if (cfg.parse(argc, argv)) {
