@@ -63,6 +63,8 @@ class MultiThreadTracer {
   typedef WorkSendMsg<Ray, MsgHeader> SendQItem;
 
  public:
+  typedef SceneT SceneType;
+
   void trace();
   void traceInOmp();
   int type() const { return TRACER_TYPE_SPRAY_INSITU_N_THREADS; }

@@ -63,12 +63,12 @@ int main(int argc, char** argv) {
   // ao
   typedef spray::baseline::ShaderAo<SceneT> ShaderAoT;
   typedef spray::baseline::InsituTracer<SceneT, ScheduleT, ShaderAoT> TracerAoT;
-  typedef spray::SprayRenderer<TracerAoT, SceneT> RenderAoT;
+  typedef spray::SprayRenderer<TracerAoT> RenderAoT;
 
   // pt
   typedef spray::baseline::ShaderPt<SceneT> ShaderPtT;
   typedef spray::baseline::InsituTracer<SceneT, ScheduleT, ShaderPtT> TracerPtT;
-  typedef spray::SprayRenderer<TracerPtT, SceneT> RenderPtT;
+  typedef spray::SprayRenderer<TracerPtT> RenderPtT;
 
   spray::Config cfg;
   cfg.parse(argc, argv);

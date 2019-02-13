@@ -53,11 +53,13 @@
 namespace spray {
 namespace insitu {
 
-template <typename SceneT, typename ShaderT>
+template <typename ShaderT>
 class SingleThreadTracer {
   typedef WorkSendMsg<Ray, MsgHeader> SendQItem;
 
  public:
+  typedef typename ShaderT::SceneType SceneType;
+
   void trace();
   void traceInOmp() {
     std::cout << "[warning] tracing in omp parallel region unsupported\n";
@@ -65,7 +67,7 @@ class SingleThreadTracer {
   int type() const { return TRACER_TYPE_SPRAY_INSITU_1_THREAD; }
 
  public:
-  void init(const Config &cfg, const Camera &camera, SceneT *scene,
+  void init(const Config &cfg, const Camera &camera, SceneType *scene,
             HdrImage *image);
 
  private:
@@ -106,9 +108,9 @@ class SingleThreadTracer {
   const spray::Camera *camera_;
   const spray::InsituPartition *partition_;
   std::vector<spray::Light *> lights_;
-  SceneT *scene_;
+  SceneType *scene_;
   spray::HdrImage *image_;
-  Isector<SceneT> isector_;
+  Isector<SceneType> isector_;
 
   spray::QVector<Ray *> rqs_;
   spray::QVector<Ray *> sqs_;

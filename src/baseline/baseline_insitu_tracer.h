@@ -64,6 +64,8 @@ namespace baseline {
 template <typename SceneT, typename ScheduleT, typename ShaderT>
 class InsituTracer {
  public:
+  typedef SceneT SceneType;
+
   virtual ~InsituTracer() {
     for (std::size_t i = 0; i < domain_locks_.size(); ++i) {
       omp_destroy_lock(&domain_locks_[i]);

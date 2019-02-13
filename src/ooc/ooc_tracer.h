@@ -52,6 +52,8 @@ namespace ooc {
 template <typename SceneT, typename ShaderT>
 class Tracer {
  public:
+  typedef SceneT SceneType;
+
   void trace();
   void traceInOmp();
   int type() const { return TRACER_TYPE_SPRAY_OOC; }

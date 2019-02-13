@@ -42,8 +42,10 @@
 
 namespace spray {
 
-template <class TracerT, class SceneT>
+template <class TracerT>
 class SprayRenderer {
+  typedef typename TracerT::SceneType SceneType;
+
  public:
   SprayRenderer() : cfg_(nullptr) {}
 
@@ -69,7 +71,7 @@ class SprayRenderer {
 
   MessageCommand msgcmd_;
 
-  SceneT scene_;
+  SceneType scene_;
   Camera camera_;
   TracerT tracer_;
   HdrImage image_;
