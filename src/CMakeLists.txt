@@ -308,9 +308,10 @@ add_subdirectory(tests)
 
 # intallation
 install (TARGETS baseline_ooc DESTINATION bin)
+install (TARGETS baseline_insitu DESTINATION bin)
 install (TARGETS spray_insitu_singlethread DESTINATION bin)
 install (TARGETS spray_insitu_multithread DESTINATION bin)
 install (TARGETS spray_ooc DESTINATION bin)
 install (TARGETS ply_header_reader DESTINATION bin)
-install (TARGETS spray DESTINATION lib)
+# install (TARGETS spray DESTINATION lib)
 
