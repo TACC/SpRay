@@ -423,13 +423,16 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
     total_num_models += domains_[id].getNumModels();
   }
 
-  std::vector<ModelInfo> model_info;
+  std::vector<ModelInfo> model_info_sendbuf;
+  std::vector<ModelInfo> model_info_recvbuf;
   if (total_num_models) {
     std::size_t num_assigned_models = total_num_models / mpi::size();
 
     if (num_assigned_models == 0) num_assigned_models = 1;
 
-    model_info.resize(num_assigned_models * mpi::size());
+    // TODO: reduce sendbuf size
+    model_info_sendbuf.resize(num_assigned_models * mpi::size());
+    model_info_recvbuf.resize(num_assigned_models * mpi::size());
 
     std::size_t begin = mpi::rank() * num_assigned_models;
 
@@ -454,7 +457,7 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
 
             PlyLoader::readLongHeader(filename, &header);
 
-            ModelInfo* info = &model_info[model_id];
+            ModelInfo* info = &model_info_sendbuf[model_id];
             info->num_vertices = header.num_vertices;
             info->num_faces = header.num_faces;
 
@@ -471,11 +474,10 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
     }
 
     // gather model info
-    if (mpi::size() > 1) {
-      std::size_t count = sizeof(ModelInfo) * num_assigned_models;
-      MPI_Allgather(&model_info[begin], count, MPI_UNSIGNED_CHAR,
-                    &model_info[0], count, MPI_UNSIGNED_CHAR, MPI_COMM_WORLD);
-    }
+    std::size_t count = sizeof(ModelInfo) * num_assigned_models;
+    MPI_Allgather(&model_info_sendbuf[begin], count, MPI_UNSIGNED_CHAR,
+                  &model_info_recvbuf[0], count, MPI_UNSIGNED_CHAR,
+                  MPI_COMM_WORLD);
   }
 
   // update domains
@@ -490,7 +492,7 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
     std::size_t num_models = domain->getNumModels();
 
     for (std::size_t m = 0; m < num_models; ++m) {
-      const ModelInfo& info = model_info[model_id];
+      const ModelInfo& info = model_info_recvbuf[model_id];
       domain->setNumVertices(m, info.num_vertices);
       domain->setNumFaces(m, info.num_faces);
       domain->setObjectBounds(m, info.obj_bounds_min, info.obj_bounds_max);
