@@ -40,7 +40,7 @@ class SurfaceModel {
         num_vertices_(0),
         num_faces_(0),
         transform_(glm::mat4(1.0f)),
-        updated_model_info_(false) {}
+        bitfields_(0) {}
   ~SurfaceModel() { delete material_; }
 
   void populateModelInfo();
@@ -62,21 +62,66 @@ class SurfaceModel {
   void setFilename(const std::string& filename) { filename_ = filename; }
   void setTransform(const glm::mat4& transform) { transform_ = transform; }
 
-  void setUpdatedModelInfoFlag() { updated_model_info_ = true; }
-  void setNumVertices(std::size_t n) { num_vertices_ = n; }
-  void setNumFaces(std::size_t n) { num_faces_ = n; }
+  void setNumVertices(std::size_t n) {
+    setNumVerticesFlag();
+    num_vertices_ = n;
+  }
+
+  void setNumFaces(std::size_t n) {
+    setNumFacesFlag();
+    num_faces_ = n;
+  }
+
   void setObjectBounds(const float aabb_min[3], const float aabb_max[3]) {
     object_aabb_.setBounds(aabb_min, aabb_max);
+  }
+
+  void setUpdatedModelInfoFlag() {
+    bitfields_ |= BIT_MASK_UPDATED_MODEL_INFO_FLAG;
+  }
+  void isUpdatedModelInfoFlagSet() {
+    return (BIT_MASK_UPDATED_MODEL_INFO_FLAG & bitfields) ==
+           BIT_MASK_UPDATED_MODEL_INFO_FLAG;
+  }
+
+  void setNumVerticesFlag() { bitfields_ |= BIT_MASK_NUM_VERTICES_FLAG; }
+  bool isNumVerticesSet() const {
+    return (BIT_MASK_NUM_VERTICES_FLAG & bitfields_) ==
+           BIT_MASK_NUM_VERTICES_FLAG;
+  }
+
+  void setNumFacesFlag() { bitfields_ |= BIT_MASK_NUM_FACES_FLAG; }
+  bool isNumFacesSet() const {
+    return (BIT_MASK_NUM_FACES_FLAG & bitfields_) == BIT_MASK_NUM_FACES_FLAG;
   }
 
  private:
   std::string filename_;
   std::size_t num_vertices_;
   std::size_t num_faces_;
+ 
+  /**
+   * [31:2] : reserved
+   * [2]    : updated model info
+   * [1]    : num_vertices_ set
+   * [0]    : num_faces_ set
+   */ 
+  uint32_t bitfields_;
   Material* material_;
   glm::mat4 transform_;
   Aabb object_aabb_;
-  bool updated_model_info_;
+
+  enum BitMask {
+    BIT_MASK_UPDATED_MODEL_INFO_FLAG = 0x00000100,
+    BIT_MASK_NUM_VERTICES_FLAG = 0x00000010,
+    BIT_MASK_NUM_FACES_FLAG = 0x00000001
+  };
+
+  enum BitPosition {
+    BIT_POS_UPDATED_MODEL_INFO_FLAG = 2,
+    BIT_POS_NUM_VERTICES_FLAG = 1,
+    BIT_POS_NUM_FACES_FLAG = 0
+  };
 };
 
 inline void SurfaceModel::populateModelInfo() {
@@ -168,6 +213,10 @@ class Domain {
     num_faces_prefix_sums_.resize(n);
   }
 
+  void setWorldBounds(const glm::vec3& min, const glm::vec3& max) {
+    world_aabb_.reset(min, max);
+  }
+
  private:
   int id_;
   std::size_t num_vertices_;
@@ -181,7 +230,7 @@ class Domain {
 };
 
 inline void Domain::updateModelInfo() {
-  glm::vec3 bounds_min, bounds_max, world_bounds_min, world_bounds_max;
+  glm::vec3 bounds_min, bounds_max;
   Aabb temp_aabb;
   num_vertices_ = 0;
   num_faces_ = 0;

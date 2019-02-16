@@ -52,6 +52,11 @@ Aabb::Aabb(const glm::vec3& v0, const glm::vec3& v1) {
   bounds[1] = fmaxf(v0, v1);
 }
 
+void Aabb::reset(const glm::vec3& v0, const glm::vec3& v1) {
+  bounds[0] = fminf(v0, v1);
+  bounds[1] = fmaxf(v0, v1);
+}
+
 std::ostream& operator<<(std::ostream& os, const Aabb& a) {
   os << std::setprecision(15);
   os << "min(" << a.bounds[0].x << "," << a.bounds[0].y << "," << a.bounds[0].z

@@ -57,18 +57,18 @@ SceneLoader::DomainTokenType SceneLoader::getTokenType(const std::string& tag) {
     type = DomainTokenType::kFile;
   } else if (tag == "material") {
     type = DomainTokenType::kMaterial;
-    // } else if (tag == "bound") {
-    //   type = DomainTokenType::kBound;
+  } else if (tag == "bounds") {
+    type = DomainTokenType::kBounds;
   } else if (tag == "scale") {
     type = DomainTokenType::kScale;
   } else if (tag == "rotate") {
     type = DomainTokenType::kRotate;
   } else if (tag == "translate") {
     type = DomainTokenType::kTranslate;
-    // } else if (tag == "face") {
-    //   type = DomainTokenType::kFace;
-    // } else if (tag == "vertex") {
-    //   type = DomainTokenType::kVertex;
+  } else if (tag == "face") {
+    type = DomainTokenType::kFace;
+  } else if (tag == "vertex") {
+    type = DomainTokenType::kVertex;
   } else if (tag == "light") {
     type = DomainTokenType::kLight;
   } else if (tag == "sphere") {
@@ -226,25 +226,21 @@ void SceneLoader::parseUnusedMaterial(const std::vector<std::string>& tokens) {
 }
 */
 
-/*
-void SceneLoader::parseBound(const std::vector<std::string>& tokens) {
-  Domain& d = currentDomain();
-
+void SceneLoader::parseDomainWorldBounds(
+    const std::vector<std::string>& tokens) {
   CHECK_EQ(tokens.size(), 7);
+  Domain& d = currentDomain();
 
   glm::vec3 min(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
                 atof(tokens[3].c_str()));
   glm::vec3 max(atof(tokens[4].c_str()), atof(tokens[5].c_str()),
                 atof(tokens[6].c_str()));
-  d.object_aabb.bounds[0] = min;
-  d.object_aabb.bounds[1] = max;
+  d.setWorldBounds(min, max);
 }
-*/
 
 void SceneLoader::parseScale(const std::vector<std::string>& tokens) {
-  SurfaceModel& m = currentModel();
-
   CHECK_EQ(tokens.size(), 4);
+  SurfaceModel& m = currentModel();
 
   m.setTransform(
       glm::scale(m.getTransform(),
@@ -253,9 +249,8 @@ void SceneLoader::parseScale(const std::vector<std::string>& tokens) {
 }
 
 void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
-  SurfaceModel& m = currentModel();
-
   CHECK_EQ(tokens.size(), 3);
+  SurfaceModel& m = currentModel();
 
   glm::vec3 axis;
   if (tokens[1] == "x") {
@@ -272,9 +267,8 @@ void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
 }
 
 void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
-  SurfaceModel& m = currentModel();
-
   CHECK_EQ(tokens.size(), 4);
+  SurfaceModel& m = currentModel();
 
   m.setTransform(
       glm::translate(m.getTransform(),
@@ -282,21 +276,17 @@ void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
                                atof(tokens[3].c_str()))));
 }
 
-// void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
-//   SurfaceModel& m = currentModel();
-// 
-//   CHECK_EQ(tokens.size(), 2);
-// 
-//   m.setNumFaces(std::stoul(tokens[1]));
-// }
+void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
+  CHECK_EQ(tokens.size(), 2);
+  SurfaceModel& m = currentModel();
+  m.setNumFaces(std::stoul(tokens[1]));
+}
 
-// void SceneLoader::parseVertex(const std::vector<std::string>& tokens) {
-//   SurfaceModel& m = currentModel();
-// 
-//   CHECK_EQ(tokens.size(), 2);
-// 
-//   m.setNumVertices(std::stoul(tokens[1]));
-// }
+void SceneLoader::parseVertex(const std::vector<std::string>& tokens) {
+  CHECK_EQ(tokens.size(), 2);
+  SurfaceModel& m = currentModel();
+  m.setNumVertices(std::stoul(tokens[1]));
+}
 
 void SceneLoader::parseLight(const std::vector<std::string>& tokens) {
   if (tokens[1] == "point") {
@@ -425,9 +415,9 @@ void SceneLoader::parseLineTokens(const std::string& ply_path,
     case DomainTokenType::kMaterial:
       parseMaterial(tokens);
       break;
-    // case DomainTokenType::kBound:
-    //   parseBound(tokens);
-    //   break;
+    case DomainTokenType::kBounds:
+      parseDomainWorldBounds(tokens);
+      break;
     case DomainTokenType::kScale:
       parseScale(tokens);
       break;
@@ -437,12 +427,12 @@ void SceneLoader::parseLineTokens(const std::string& ply_path,
     case DomainTokenType::kTranslate:
       parseTranslate(tokens);
       break;
-    // case DomainTokenType::kFace:
-    //   parseFace(tokens);
-    //   break;
-    // case DomainTokenType::kVertex:
-    //   parseVertex(tokens);
-    //   break;
+    case DomainTokenType::kFace:
+      parseFace(tokens);
+      break;
+    case DomainTokenType::kVertex:
+      parseVertex(tokens);
+      break;
     case DomainTokenType::kLight:
       parseLight(tokens);
       break;

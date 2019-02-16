@@ -419,10 +419,16 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
   std::size_t num_domains = domains_.size();
   std::size_t total_num_models = 0;
 
+  std::size_t valid_world_aabb_count = 0;
   for (std::size_t id = 0; id < num_domains; ++id) {
     total_num_models += domains_[id].getNumModels();
+    const Aabb& world_aabb = domains_[id].getWorldAabb();
+    valid_world_aabb_count += world_aabb.isValid();
   }
 
+  bool all_domain_bounds_configured = (valid_world_aabb_count == num_domains);
+
+  if (all_domain_bounds_configured)
   std::vector<ModelInfo> model_info_sendbuf;
   std::vector<ModelInfo> model_info_recvbuf;
   if (total_num_models) {
