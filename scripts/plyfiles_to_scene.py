@@ -134,12 +134,27 @@ def loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile):
     fout.write("# total vertices " + str(total_num_vertices) + "\n")
     fout.write("# total faces " + str(total_num_faces) + "\n")
 
-def generateScene(args, plyfiles, outfile):
+def generateScene(args, plyfiles, outfile, bounds_info_dict):
   for domain_id in sorted(plyfiles):
+
+    coord_str = None
+    if bounds_info_dict:
+
+      if str(domain_id) not in bounds_info_dict:
+        print("[error] unknown domain ID found:" + str(domain_id))
+        sys.exit(1)
+
+      coordinates_list = bounds_info_dict[str(domain_id)]
+      coord_str = ' '.join(coordinates_list)
+
     with open(outfile, "a") as f:
       f.write("######################\n")
       f.write("# " + str(domain_id) + "\n")
       f.write("DomainBegin\n")
+
+      if coord_str:
+        f.write("bounds " + coord_str + "\n")
+
     for ply, iso in plyfiles[domain_id]:
       # rgba = valueToColor(iso, args.contour_range[0], args.contour_range[1], args.colormap[0], args.logarithmic_colormap)
       rgba = valueToColor(iso, args.contour_range[0], args.contour_range[1], args.colormap[0])
@@ -157,8 +172,51 @@ def generateScene(args, plyfiles, outfile):
     with open(outfile, "a") as f:
       f.write("DomainEnd\n")
   
+def parseBoundsLine(line):
+  tokens = line.split() 
+
+  if len(tokens) != 8:
+    print("unknown format (not 8 elements in a line): " + line)
+    sys.exit(1)
+
+  cluster_id = tokens[0]
+  domain_id = tokens[1]
+
+  coordinates=[]
+
+  for i, v in enumerate(tokens):
+    if i > 1:
+      coordinates.append(v)
+
+  return cluster_id, domain_id, coordinates
+
+def parseBoundsFile(bounds_file):
+  # key: domain id, value: list of coordinates (x0,y0,z0,x1,y1,z1)
+  bounds={}
+  prev_cluster_id=None
+  with open(bounds_file, "r") as f:
+    for line in f:
+      if not line.startswith('#'):
+        cluster_id, domain_id, coordinates_list = parseBoundsLine(line)
+
+        if prev_cluster_id == None:
+          prev_cluster_id = cluster_id
+
+        elif prev_cluster_id != cluster_id:
+          print("unknown cluster ID found: ", line)
+          sys.exit(1)
+
+        if domain_id in bounds:
+          print("not a unique domain ID: ", line)
+          sys.exit(1)
+
+        bounds[domain_id] = coordinates_list
+
+  return bounds
+
 def main():
   parser = argparse.ArgumentParser(description='SpRay scene generator')
+  parser.add_argument('--bounds-file', nargs=1, required=False, help='.bounds file describing bounds of domains')
   parser.add_argument('--indir', nargs='+', required=True, help='a list of directories containing ply files')
   parser.add_argument('--loader', nargs=1, required=False, help='executable for ply loader')
   parser.add_argument('--out', nargs=1, default=['scene.domain'], help='output file')
@@ -177,7 +235,14 @@ def main():
   # if len(sys.argv) < 3:
   #   print("[error] no input directory found")
   #   sys.exit(1)
-  
+ 
+  bounds_file=None 
+  if args.bounds_file:
+    bounds_file = args.bounds_file[0]
+    if not os.path.isfile(bounds_file):
+      print("[error] bounds file not found: " + bounds_file)
+      sys.exit(1)
+
   # program to dump info
   if args.loader:
     loader_executable = args.loader[0]
@@ -219,11 +284,16 @@ def main():
 
   # add lights
   addLights(outfile)
+
+  bounds_info_dict=None
+  if bounds_file:
+    # key: domain id, value: list of coordinates (x0,y0,z0,x1,y1,z1)
+    bounds_info_dict = parseBoundsFile(bounds_file)
   
   if args.loader:
     loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile)
   else:
-    generateScene(args, plyfiles, outfile)
+    generateScene(args, plyfiles, outfile, bounds_info_dict)
       
   print("[info] generated a scene file in " + outfile)
 
