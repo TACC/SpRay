@@ -44,7 +44,7 @@ class SPRAY_ALIGN(16) Aabb {
 
   void invalidate();
   void reset() { invalidate(); }
-  void reset(const glm::vec3& v0, const glm::vec3& v1);
+  void setBounds(const glm::vec3& v0, const glm::vec3& v1);
 
   void merge(const glm::vec3& point);
   void merge(const Aabb& aabb);

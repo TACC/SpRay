@@ -246,7 +246,7 @@ class Domain {
   void setWorldAabb(const glm::vec3& min, const glm::vec3& max) {
     CHECK_EQ(isWorldAabbSet(), false);
     setWorldAabbFlag();
-    world_aabb_.reset(min, max);
+    world_aabb_.setBounds(min, max);
   }
 
   void setWorldAabbFlag() { bitfields_ |= BIT_MASK_WORLD_AABB_FLAG; }

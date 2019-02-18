@@ -43,7 +43,7 @@ Aabb::Aabb(const glm::vec3& v0, const glm::vec3& v1) {
   bounds[1] = fmaxf(v0, v1);
 }
 
-void Aabb::reset(const glm::vec3& v0, const glm::vec3& v1) {
+void Aabb::setBounds(const glm::vec3& v0, const glm::vec3& v1) {
   bounds[0] = fminf(v0, v1);
   bounds[1] = fmaxf(v0, v1);
 }
