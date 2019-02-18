@@ -147,6 +147,7 @@ class TContext {
   void isectRecvRad(int id, Ray* ray);
   void occlRecvShad(int id, Ray* ray);
   void isectCachedRq(int ray_depth);
+  void retireUntouched();
   void procRetireQ();
   void retireBackground();
   void sendRays(bool shadow, int id, Ray* rays);

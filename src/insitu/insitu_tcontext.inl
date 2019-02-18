@@ -357,6 +357,24 @@ void TContext<ShaderT>::processCached(int ray_depth) {
 }
 
 template <typename ShaderT>
+void TContext<ShaderT>::retireUntouched() {
+  while (!retire_q_.empty()) {
+    auto* ray = retire_q_.front();
+    retire_q_.pop();
+    image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
+  }
+  glm::vec3 bgcolor;
+  while (!bg_retire_q_.empty()) {
+    auto* ray = bg_retire_q_.front();
+    bg_retire_q_.pop();
+    int oflag = ray->occluded;
+    bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
+              spray::computeBackGroundColor(ray->dir, bg_color_);
+    image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
+  }
+}
+
+template <typename ShaderT>
 void TContext<ShaderT>::procRetireQ() {
   while (!retire_q_.empty()) {
     auto* ray = retire_q_.front();
@@ -366,6 +384,7 @@ void TContext<ShaderT>::procRetireQ() {
     }
   }
 }
+
 template <typename ShaderT>
 void TContext<ShaderT>::retireBackground() {
   glm::vec3 bgcolor;

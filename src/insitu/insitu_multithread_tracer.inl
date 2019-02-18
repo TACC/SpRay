@@ -418,10 +418,11 @@ void MultiThreadTracer<ShaderT>::trace() {
 #pragma omp single
           {
             for (auto &t : tcontexts_) {
-              t.procRetireQ();
-#ifdef SPRAY_BACKGROUND_COLOR
-              t.retireBackground();
-#endif
+              t.retireUntouched();
+              //               t.procRetireQ();
+              // #ifdef SPRAY_BACKGROUND_COLOR
+              //               t.retireBackground();
+              // #endif
             }
           }
           break;
