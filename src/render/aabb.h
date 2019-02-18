@@ -33,15 +33,14 @@ namespace spray {
 class SPRAY_ALIGN(16) Aabb {
  public:
   Aabb();
-
   Aabb(const glm::vec3& v0, const glm::vec3& v1);
 
   // create aabb given triangle vertices
   Aabb(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);
 
   friend std::ostream& operator<<(std::ostream& os, const Aabb& a);
-  bool operator==(const Aabb& other);
-  bool operator!=(const Aabb& other);
+  bool operator==(const Aabb& other) const;
+  bool operator!=(const Aabb& other) const;
 
   void invalidate();
   void reset() { invalidate(); }
@@ -64,6 +63,7 @@ class SPRAY_ALIGN(16) Aabb {
 
   bool contains(const glm::vec3& point) const;
   bool contains(const Aabb& aabb) const;
+  bool within(const Aabb& aabb) const;
 
   const glm::vec3& getMin() const { return bounds[0]; }
   const glm::vec3& getMax() const { return bounds[1]; }

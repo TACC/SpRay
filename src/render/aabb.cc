@@ -65,7 +65,7 @@ std::ostream& operator<<(std::ostream& os, const Aabb& a) {
   return os;
 }
 
-bool Aabb::operator==(const Aabb& other) {
+bool Aabb::operator==(const Aabb& other) const {
   return ((bounds[0].x == other.bounds[0].x) &&
           (bounds[0].y == other.bounds[0].y) &&
           (bounds[0].z == other.bounds[0].z) &&
@@ -74,7 +74,7 @@ bool Aabb::operator==(const Aabb& other) {
           (bounds[1].z == other.bounds[1].z));
 }
 
-bool Aabb::operator!=(const Aabb& other) {
+bool Aabb::operator!=(const Aabb& other) const {
   return !((bounds[0].x == other.bounds[0].x) &&
            (bounds[0].y == other.bounds[0].y) &&
            (bounds[0].z == other.bounds[0].z) &&
@@ -215,6 +215,10 @@ bool Aabb::contains(const glm::vec3& point) const {
 
 bool Aabb::contains(const Aabb& aabb) const {
   return contains(aabb.bounds[0]) && contains(aabb.bounds[1]);
+}
+
+bool Aabb::within(const Aabb& aabb) const {
+  return aabb.contains(this->bounds[0]) && aabb.contains(this->bounds[1]);
 }
 
 }  // namespace spray

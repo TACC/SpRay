@@ -51,8 +51,8 @@ class SceneLoader {
     kScale,
     kRotate,
     kTranslate,
-    // kFace,
-    // kVertex,
+    kFace,
+    kVertex,
     kLight,
     kSphere
   };
@@ -132,11 +132,11 @@ class SceneLoader {
 
   void nextModel() { ++model_id_; }
 
-  SurfaceModel& currentModel() {
+  SurfaceModel* currentModel() {
     Domain& domain = currentDomain();
     CHECK_GE(model_id_, 0);
     CHECK_LT(model_id_, domain.getNumModels());
-    return domain.getModel(model_id_);
+    return domain.getModelPtr(model_id_);
   }
 
  private:

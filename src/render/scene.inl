@@ -419,18 +419,14 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
   std::size_t num_domains = domains_.size();
   std::size_t total_num_models = 0;
 
-  std::size_t valid_world_aabb_count = 0;
   for (std::size_t id = 0; id < num_domains; ++id) {
     total_num_models += domains_[id].getNumModels();
-    const Aabb& world_aabb = domains_[id].getWorldAabb();
-    valid_world_aabb_count += world_aabb.isValid();
+    const Domain& domain = domains_[id];
   }
 
-  bool all_domain_bounds_configured = (valid_world_aabb_count == num_domains);
-
-  if (all_domain_bounds_configured)
   std::vector<ModelInfo> model_info_sendbuf;
   std::vector<ModelInfo> model_info_recvbuf;
+
   if (total_num_models) {
     std::size_t num_assigned_models = total_num_models / mpi::size();
 
@@ -446,7 +442,8 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
       std::size_t end = begin + num_assigned_models;
       if (end > total_num_models) end = total_num_models;
 
-      PlyLoader::LongHeader header;
+      PlyLoader::LongHeader long_header;
+      PlyLoader::Header header;
       std::string extension;
 
       std::size_t model_id = 0;
@@ -457,21 +454,39 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
 
         for (std::size_t m = 0; m < num_models; ++m) {
           if (model_id >= begin && model_id < end) {
-            const std::string& filename = domain.getFilename(m);
+            const SurfaceModel& model = domain.getModel(m);
+            const std::string& filename = model.getFilename();
+            CHECK_EQ(filename.empty(), false);
             extension = spray::util::getFileExtension(filename);
             CHECK_EQ(extension, "ply");
 
-            PlyLoader::readLongHeader(filename, &header);
+            bool model_valid_vertex_count = model.isNumVerticesSet();
+            bool model_valid_face_count = model.isNumFacesSet();
+            bool model_valid_aabb = model.isObjectAabbSet();
+            bool model_configured = model_valid_vertex_count &&
+                                    model_valid_face_count && model_valid_aabb;
 
-            ModelInfo* info = &model_info_sendbuf[model_id];
-            info->num_vertices = header.num_vertices;
-            info->num_faces = header.num_faces;
+            if (!model_configured) {
+              ModelInfo* info = &model_info_sendbuf[model_id];
 
-            for (int i = 0; i < 3; ++i) {
-              info->obj_bounds_min[i] = header.bounds.getMin()[i];
-            }
-            for (int i = 0; i < 3; ++i) {
-              info->obj_bounds_max[i] = header.bounds.getMax()[i];
+              if (!model_valid_aabb) {
+                PlyLoader::readLongHeader(filename, &long_header);
+
+                info->num_vertices = long_header.num_vertices;
+                info->num_faces = long_header.num_faces;
+
+                for (int i = 0; i < 3; ++i) {
+                  info->obj_bounds_min[i] = long_header.bounds.getMin()[i];
+                }
+                for (int i = 0; i < 3; ++i) {
+                  info->obj_bounds_max[i] = long_header.bounds.getMax()[i];
+                }
+              } else {
+                PlyLoader::quickHeaderRead(filename, &header);
+
+                info->num_vertices = long_header.num_vertices;
+                info->num_faces = long_header.num_faces;
+              }
             }
           }
           ++model_id;
@@ -498,14 +513,29 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
     std::size_t num_models = domain->getNumModels();
 
     for (std::size_t m = 0; m < num_models; ++m) {
-      const ModelInfo& info = model_info_recvbuf[model_id];
-      domain->setNumVertices(m, info.num_vertices);
-      domain->setNumFaces(m, info.num_faces);
-      domain->setObjectBounds(m, info.obj_bounds_min, info.obj_bounds_max);
-      domain->setUpdatedModelInfoFlag(m);
+      const SurfaceModel& model = domain->getModel(m);
+      bool model_valid_vertex_count = model.isNumVerticesSet();
+      bool model_valid_face_count = model.isNumFacesSet();
+      bool model_valid_aabb = model.isObjectAabbSet();
+      bool model_configured = model_valid_vertex_count &&
+                              model_valid_face_count && model_valid_aabb;
+
+      if (!model_configured) {
+        const ModelInfo& info = model_info_recvbuf[model_id];
+        if (!model_valid_vertex_count) {
+          domain->setNumVertices(m, info.num_vertices);
+        }
+        if (!model_valid_face_count) {
+          domain->setNumFaces(m, info.num_faces);
+        }
+        if (!model_valid_aabb) {
+          domain->setObjectAabb(m, info.obj_bounds_min, info.obj_bounds_max);
+        }
+      }
       ++model_id;
     }
-    domain->updateModelInfo();
+
+    domain->updateDomainInfo();
 
     CHECK_EQ(domain->getWorldAabb().isValid(), true)
         << id << "," << num_domains;

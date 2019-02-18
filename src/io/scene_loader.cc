@@ -96,35 +96,33 @@ void SceneLoader::parseDomainEnd() {
   num_domain_begins_ = 0;
 }
 
-void SceneLoader::parseModelBegin() {
-  SurfaceModel& m = currentModel();
-}
+void SceneLoader::parseModelBegin() { SurfaceModel* m = currentModel(); }
 
 void SceneLoader::parseModelEnd() {
-  SurfaceModel& m = currentModel();
-  if (!m.hasMaterial()) {
-    m.setMaterial(new Matte());
+  SurfaceModel* m = currentModel();
+  if (!m->hasMaterial()) {
+    m->setMaterial(new Matte());
   }
-  CHECK(m.hasFile());
+  CHECK(m->hasFile());
   nextModel();
 }
 
 void SceneLoader::parseFile(const std::string& ply_path,
                             const std::vector<std::string>& tokens) {
-  SurfaceModel& m = currentModel();
+  SurfaceModel* m = currentModel();
   std::size_t tokens_size = tokens.size();
 
   CHECK_GE(tokens_size, 2);
 
-  m.setFilename(ply_path.empty() ? tokens[1] : ply_path + "/" + tokens[1]);
+  m->setFilename(ply_path.empty() ? tokens[1] : ply_path + "/" + tokens[1]);
 }
 
 void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
   std::size_t tokens_size = tokens.size();
   CHECK_GT(tokens_size, 1);
 
-  SurfaceModel& model = currentModel();
-  CHECK(!model.hasMaterial())
+  SurfaceModel* model = currentModel();
+  CHECK(!model->hasMaterial())
       << "found more than one material [domain " << getDomainId() << "][model "
       << getModelId() << "]";
 
@@ -137,10 +135,10 @@ void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
       albedo[1] = atof(tokens[3].c_str());
       albedo[2] = atof(tokens[4].c_str());
 
-      model.setMaterial(new Matte(albedo));
+      model->setMaterial(new Matte(albedo));
 
     } else {
-      model.setMaterial(new Matte());
+      model->setMaterial(new Matte());
     }
 
   } else if (tokens[1] == "metal") {
@@ -154,10 +152,10 @@ void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
 
       float fuzz = atof(tokens[5].c_str());
 
-      model.setMaterial(new Metal(albedo, fuzz));
+      model->setMaterial(new Metal(albedo, fuzz));
 
     } else {
-      model.setMaterial(new Metal());
+      model->setMaterial(new Metal());
     }
 
   } else if (tokens[1] == "dielectric") {
@@ -166,10 +164,10 @@ void SceneLoader::parseMaterial(const std::vector<std::string>& tokens) {
 
       float index = atof(tokens[2].c_str());
 
-      model.setMaterial(new Dielectric(index));
+      model->setMaterial(new Dielectric(index));
 
     } else {
-      model.setMaterial(new Dielectric());
+      model->setMaterial(new Dielectric());
     }
   } else {
     CHECK(false) << "unsupported material: " << tokens[2];
@@ -240,17 +238,17 @@ void SceneLoader::parseDomainWorldBounds(
 
 void SceneLoader::parseScale(const std::vector<std::string>& tokens) {
   CHECK_EQ(tokens.size(), 4);
-  SurfaceModel& m = currentModel();
+  SurfaceModel* m = currentModel();
 
-  m.setTransform(
-      glm::scale(m.getTransform(),
+  m->setTransform(
+      glm::scale(m->getTransform(),
                  glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
                            atof(tokens[3].c_str()))));
 }
 
 void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
   CHECK_EQ(tokens.size(), 3);
-  SurfaceModel& m = currentModel();
+  SurfaceModel* m = currentModel();
 
   glm::vec3 axis;
   if (tokens[1] == "x") {
@@ -262,30 +260,30 @@ void SceneLoader::parseRotate(const std::vector<std::string>& tokens) {
   } else {
     LOG(FATAL) << "invalid axis name " << tokens[1];
   }
-  m.setTransform(glm::rotate(
-      m.getTransform(), (float)glm::radians(atof(tokens[2].c_str())), axis));
+  m->setTransform(glm::rotate(
+      m->getTransform(), (float)glm::radians(atof(tokens[2].c_str())), axis));
 }
 
 void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
   CHECK_EQ(tokens.size(), 4);
-  SurfaceModel& m = currentModel();
+  SurfaceModel* m = currentModel();
 
-  m.setTransform(
-      glm::translate(m.getTransform(),
+  m->setTransform(
+      glm::translate(m->getTransform(),
                      glm::vec3(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
                                atof(tokens[3].c_str()))));
 }
 
 void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
   CHECK_EQ(tokens.size(), 2);
-  SurfaceModel& m = currentModel();
-  m.setNumFaces(std::stoul(tokens[1]));
+  SurfaceModel* m = currentModel();
+  m->setNumFaces(std::stoul(tokens[1]));
 }
 
 void SceneLoader::parseVertex(const std::vector<std::string>& tokens) {
   CHECK_EQ(tokens.size(), 2);
-  SurfaceModel& m = currentModel();
-  m.setNumVertices(std::stoul(tokens[1]));
+  SurfaceModel* m = currentModel();
+  m->setNumVertices(std::stoul(tokens[1]));
 }
 
 void SceneLoader::parseLight(const std::vector<std::string>& tokens) {
