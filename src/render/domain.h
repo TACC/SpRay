@@ -163,7 +163,7 @@ inline void SurfaceModel::populateModelInfo() {
 
 class Domain {
  public:
-  Domain() : num_vertices_(0), num_faces_(0) {}
+  Domain() : num_vertices_(0), num_faces_(0), bitfields_(0) {}
 
   ~Domain() {
     for (std::size_t i = 0; i < shapes_.size(); ++i) {
@@ -372,11 +372,12 @@ inline void Domain::updateDomainInfo() {
   if (!isWorldAabbSet()) {
     world_aabb_ = world_aabb;
   } else {
-    CHECK_EQ(world_aabb.within(world_aabb_), true);
+    CHECK_EQ(world_aabb.within(world_aabb_), true)
+        << "world_aabb: " << world_aabb << "world_aabb_: " << world_aabb_;
   }
-
+  CHECK_EQ(world_aabb_.isValid(), true);
 #ifdef PRINT_DOMAIN_BOUNDS
-  std::cout << "scene bound (world): " << world_aabb_ << "\n";
+  std::cout << "world_aabb_: " << world_aabb_ << "\n";
 #endif
 }
 

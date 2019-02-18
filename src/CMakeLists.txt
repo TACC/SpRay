@@ -313,5 +313,6 @@ install (TARGETS spray_insitu_singlethread DESTINATION bin)
 install (TARGETS spray_insitu_multithread DESTINATION bin)
 install (TARGETS spray_ooc DESTINATION bin)
 install (TARGETS ply_header_reader DESTINATION bin)
+install (DIRECTORY ${CMAKE_SOURCE_DIR}/scripts DESTINATION ${CMAKE_INSTALL_PREFIX})
 # install (TARGETS spray DESTINATION lib)
 

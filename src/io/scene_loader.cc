@@ -409,8 +409,9 @@ void SceneLoader::parseSphere(const std::vector<std::string>& tokens) {
   d.push(new Sphere(center, radius, m));
 
   // vertices, faces
-  d.setNumVertices(0);
-  d.setNumFaces(0);
+  // should be set once by Domain::updateDomainInfo
+  // d.setNumVertices(0);
+  // d.setNumFaces(0);
 
   // object bounds
   // glm::vec3 v(radius);
