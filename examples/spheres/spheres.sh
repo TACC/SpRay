@@ -1,18 +1,18 @@
 #!/bin/bash
 
-if [ -z $SPRAY_HOME_PATH ]
+if [ -z $SPRAY_INSTALL_PATH ]
 then
-  echo "[error] SPRAY_HOME_PATH not found. Do export SPRAY_HOME_PATH=<path_to_spray_home>."
+  echo "[error] SPRAY_INSTALL_PATH not found. Do export SPRAY_INSTALL_PATH=<path>."
   return
 fi
 
-SPRAY_BIN_PATH=$SPRAY_HOME_PATH/build
-# SHAPES_APP_MULTI_THREAD_HYBRIDGEOM=$SPRAY_BIN_PATH/spray_insitu_multithread_hybridgeometry
-APP_SPRAY_INSITU_SINGLE_THREAD=$SPRAY_BIN_PATH/spray_insitu_singlethread
-APP_SPRAY_INSITU_MULTI_THREAD=$SPRAY_BIN_PATH/spray_insitu_multithread
-APP_SPRAY_OOC_MULTI_THREAD=$SPRAY_BIN_PATH/spray_ooc
-EXAMPLE_PATH=$SPRAY_HOME_PATH/examples
-SPHERES_PATH=$SPRAY_HOME_PATH/examples/spheres
+BIN_DIR=$SPRAY_INSTALL_PATH/bin
+# SHAPES_APP_MULTI_THREAD_HYBRIDGEOM=$BIN_DIR/spray_insitu_multithread_hybridgeometry
+APP_SPRAY_INSITU_SINGLE_THREAD=$BIN_DIR/spray_insitu_singlethread
+APP_SPRAY_INSITU_MULTI_THREAD=$BIN_DIR/spray_insitu_multithread
+APP_SPRAY_OOC_MULTI_THREAD=$BIN_DIR/spray_ooc
+EXAMPLE_PATH=$SPRAY_INSTALL_PATH/examples
+SPHERES_PATH=$SPRAY_INSTALL_PATH/examples/spheres
 SPHERES_DIFFUSE_LIGHT=$SPHERES_PATH/spheres-diffuse-light.spray
 SPHERES_POINT_LIGHT=$SPHERES_PATH/spheres-point-light.spray
 ONE_SPHERE_DIFFUSE_LIGHT=$SPHERES_PATH/sphere.spray
