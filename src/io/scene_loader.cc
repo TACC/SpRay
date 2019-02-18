@@ -67,10 +67,14 @@ SceneLoader::DomainTokenType SceneLoader::getTokenType(const std::string& tag) {
     type = DomainTokenType::kRotate;
   } else if (tag == "translate") {
     type = DomainTokenType::kTranslate;
-  } else if (tag == "face") {
-    type = DomainTokenType::kFace;
-  } else if (tag == "vertex") {
-    type = DomainTokenType::kVertex;
+  } else if (tag == "DomainFace") {
+    type = DomainTokenType::kDomainFace;
+  } else if (tag == "DomainVertex") {
+    type = DomainTokenType::kDomainVertex;
+  } else if (tag == "ModelFace") {
+    type = DomainTokenType::kModelFace;
+  } else if (tag == "ModelVertex") {
+    type = DomainTokenType::kModelVertex;
   } else if (tag == "light") {
     type = DomainTokenType::kLight;
   } else if (tag == "sphere") {
@@ -288,13 +292,25 @@ void SceneLoader::parseTranslate(const std::vector<std::string>& tokens) {
                                atof(tokens[3].c_str()))));
 }
 
-void SceneLoader::parseFace(const std::vector<std::string>& tokens) {
+void SceneLoader::parseDomainFace(const std::vector<std::string>& tokens) {
+  CHECK_EQ(tokens.size(), 2);
+  Domain& d = currentDomain();
+  d.setNumFaces(std::stoul(tokens[1]));
+}
+
+void SceneLoader::parseDomainVertex(const std::vector<std::string>& tokens) {
+  CHECK_EQ(tokens.size(), 2);
+  Domain& d = currentDomain();
+  d.setNumVertices(std::stoul(tokens[1]));
+}
+
+void SceneLoader::parseModelFace(const std::vector<std::string>& tokens) {
   CHECK_EQ(tokens.size(), 2);
   SurfaceModel* m = currentModel();
   m->setNumFaces(std::stoul(tokens[1]));
 }
 
-void SceneLoader::parseVertex(const std::vector<std::string>& tokens) {
+void SceneLoader::parseModelVertex(const std::vector<std::string>& tokens) {
   CHECK_EQ(tokens.size(), 2);
   SurfaceModel* m = currentModel();
   m->setNumVertices(std::stoul(tokens[1]));
@@ -442,11 +458,17 @@ void SceneLoader::parseLineTokens(const std::string& ply_path,
     case DomainTokenType::kTranslate:
       parseTranslate(tokens);
       break;
-    case DomainTokenType::kFace:
-      parseFace(tokens);
+    case DomainTokenType::kDomainFace:
+      parseDomainFace(tokens);
       break;
-    case DomainTokenType::kVertex:
-      parseVertex(tokens);
+    case DomainTokenType::kDomainVertex:
+      parseDomainVertex(tokens);
+      break;
+    case DomainTokenType::kModelFace:
+      parseModelFace(tokens);
+      break;
+    case DomainTokenType::kModelVertex:
+      parseModelVertex(tokens);
       break;
     case DomainTokenType::kLight:
       parseLight(tokens);

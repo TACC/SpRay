@@ -216,6 +216,17 @@ class Domain {
 
   const SurfaceModel& getModel(std::size_t i) const { return models_[i]; }
 
+  bool isConfigured() const {
+    bool domain_configured =
+        isNumVerticesSet() && isNumFacesSet() && isWorldAabbSet();
+    std::size_t size = 0;
+    for (std::size_t i = 0; i < models_.size(); ++i) {
+      size += models_[i].isConfigured();
+    }
+    bool models_configured = (size == models_.size());
+    return domain_configured && models_configured;
+  }
+
   // void load(float* vertices, uint32_t* faces, uint32_t* colors);
  private:
   friend class SceneLoader;
@@ -355,7 +366,7 @@ inline void Domain::updateDomainInfo() {
   if (!isNumFacesSet()) {
     setNumFaces(num_faces);
   } else {
-    CHECK_EQ(num_vertices, getNumFaces());
+    CHECK_EQ(num_faces, getNumFaces());
   }
 
   if (!isWorldAabbSet()) {

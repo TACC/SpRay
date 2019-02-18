@@ -52,8 +52,10 @@ class SceneLoader {
     kScale,
     kRotate,
     kTranslate,
-    kFace,
-    kVertex,
+    kDomainFace,
+    kDomainVertex,
+    kModelFace,
+    kModelVertex,
     kLight,
     kSphere
   };
@@ -103,9 +105,13 @@ class SceneLoader {
 
   void parseTranslate(const std::vector<std::string>& tokens);
 
-  void parseFace(const std::vector<std::string>& tokens);
+  void parseDomainFace(const std::vector<std::string>& tokens);
 
-  void parseVertex(const std::vector<std::string>& tokens);
+  void parseDomainVertex(const std::vector<std::string>& tokens);
+
+  void parseModelFace(const std::vector<std::string>& tokens);
+
+  void parseModelVertex(const std::vector<std::string>& tokens);
 
   void parseLight(const std::vector<std::string>& tokens);
 

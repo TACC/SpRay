@@ -180,18 +180,23 @@ def loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile, bou
           fout.write("ModelBounds " + ply_bounds_str + "\n")
       
         fout.write("material matte " + rgb_str + "\n")
-        fout.write("# number of vertices: " + str(num_vertices)  + "\n")
-        fout.write("# number of faces: " + str(num_faces)  + "\n")
+        # fout.write("# number of vertices: " + str(num_vertices)  + "\n")
+        fout.write("ModelVertex " + str(num_vertices)  + "\n")
+        # fout.write("# number of faces: " + str(num_faces)  + "\n")
+        fout.write("ModelFace " + str(num_faces)  + "\n")
         fout.write("ModelEnd\n")
 
     with open(outfile, "a") as fout:
       if not domain_bounds_str: 
         if len(model_bounds_list) == num_ply_models:
           domain_bounds_list = mergeBounds(model_bounds_list) 
-          f.write("DomainBounds " + ' '.join(domain_bounds_list) + "\n")
+          domain_bounds_str_list = [str(i) for i in domain_bounds_list]
+          fout.write("DomainBounds " + ' '.join(domain_bounds_str_list) + "\n")
 
-      fout.write("# [domain " + str(domain_id) + "] number of vertices: " + str(domain_num_vertices)  + "\n")
-      fout.write("# [domain " + str(domain_id) + "] number of faces: " + str(domain_num_faces)  + "\n")
+      # fout.write("# [domain " + str(domain_id) + "] number of vertices: " + str(domain_num_vertices)  + "\n")
+      fout.write("DomainVertex " + str(domain_num_vertices)  + "\n")
+      # fout.write("# [domain " + str(domain_id) + "] number of faces: " + str(domain_num_faces)  + "\n")
+      fout.write("DomainFace " + str(domain_num_faces)  + "\n")
       fout.write("DomainEnd\n")
 
   with open(outfile, "a") as fout:
