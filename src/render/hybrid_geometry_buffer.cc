@@ -55,7 +55,8 @@ HybridGeometryBuffer::HybridGeometryBuffer()
 
 HybridGeometryBuffer::~HybridGeometryBuffer() { cleanup(); }
 
-void HybridGeometryBuffer::init(int max_cache_size_ndomains,
+void HybridGeometryBuffer::init(bool use_spray_color,
+                                int max_cache_size_ndomains,
                                 std::size_t max_nvertices,
                                 std::size_t max_nfaces) {
   // cleanup
@@ -70,7 +71,7 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   CHECK_GT(cache_size, 0);
 
   // vertices
-  std::size_t vertex_buffer_size_ = 3 * max_nvertices * cache_size;
+  vertex_buffer_size_ = 3 * max_nvertices * cache_size;
   if (vertex_buffer_size_) {
     vertices_ = arena_.Alloc<float>(vertex_buffer_size_ * 3, false);
     CHECK_NOTNULL(vertices_);
@@ -83,17 +84,22 @@ void HybridGeometryBuffer::init(int max_cache_size_ndomains,
   }
 
   // faces
-  std::size_t face_buffer_size_ = 3 * max_nfaces * cache_size;
+  face_buffer_size_ = 3 * max_nfaces * cache_size;
   if (face_buffer_size_) {
     faces_ = arena_.Alloc<uint32_t>(face_buffer_size_, false);
     CHECK_NOTNULL(faces_);
   }
 
   // colors
-  std::size_t color_buffer_size_ = max_nvertices * cache_size;
-  if (color_buffer_size_) {
-    colors_ = arena_.Alloc<uint32_t>(color_buffer_size_, false);
-    CHECK_NOTNULL(colors_);
+  if (use_spray_color) {
+    color_buffer_size_ = 0;
+    colors_ = nullptr;
+  } else {
+    color_buffer_size_ = max_nvertices * cache_size;
+    if (color_buffer_size_) {
+      colors_ = arena_.Alloc<uint32_t>(color_buffer_size_, false);
+      CHECK_NOTNULL(colors_);
+    }
   }
 
   // domains
@@ -465,6 +471,40 @@ void HybridGeometryBuffer::updateTriangleIntersection(
   uint32_t b = (rgb[2] * w) + (rgb[5] * u) + (rgb[8] * v);
 
   isect->color = util::pack(r, g, b);
+
+  // material
+  isect->material = getTriMeshMaterial(cache_block, geom_id);
+
+  // shading normal
+
+  float ns[9];
+  getNormalTuple(domain, cache_block, geom_id, prim_id, ns);
+
+  isect->Ns[0] = (ns[0] * w) + (ns[3] * u) + (ns[6] * v);
+  isect->Ns[1] = (ns[1] * w) + (ns[4] * u) + (ns[7] * v);
+  isect->Ns[2] = (ns[2] * w) + (ns[5] * u) + (ns[8] * v);
+}
+
+void HybridGeometryBuffer::updateTriangleIntersectionNoColor(
+    int cache_block, RTCRayIntersection* isect) const {
+  //
+  const Domain& domain = *(domains_[cache_block]);
+
+  // cache_block pointing to the current cache block in the mesh buffer
+  // isect->primID, the current primitive intersected
+  // colors: per-vertex colors
+
+  unsigned int prim_id = isect->primID;
+  unsigned int geom_id = isect->geomID;
+
+  uint32_t colors[3];
+  getColorTuple(domain, cache_block, geom_id, prim_id, colors);
+
+  // interploate color tuple and update isect->color
+  float u = isect->u;
+  float v = isect->v;
+
+  float w = 1.f - u - v;
 
   // material
   isect->material = getTriMeshMaterial(cache_block, geom_id);

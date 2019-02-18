@@ -126,7 +126,8 @@ void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
     cache_.init(domains_.size(), cache_size, insitu_mode);
 
     // initialize mesh buffer
-    surface_buf_.init(cache_.getCacheSize(), max_num_vertices, max_num_faces);
+    surface_buf_.init(cfg.use_spray_color, cache_.getCacheSize(),
+                      max_num_vertices, max_num_faces);
 
     // warm up cache
     if (view_mode == VIEW_MODE_FILM || view_mode == VIEW_MODE_GLFW) {

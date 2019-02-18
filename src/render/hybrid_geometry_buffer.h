@@ -48,8 +48,8 @@ class HybridGeometryBuffer {
   ~HybridGeometryBuffer();
 
  public:
-  void init(int max_cache_size_ndomains, std::size_t max_nvertices,
-            std::size_t max_nfaces);
+  void init(bool use_spray_color, int max_cache_size_ndomains,
+            std::size_t max_nvertices, std::size_t max_nfaces);
 
   RTCScene load(int cache_block, Domain& domain);
 
@@ -68,6 +68,8 @@ class HybridGeometryBuffer {
     // #endif
     if (isect->geomID == shape_geom_ids_[cache_block]) {
       updateShapeIntersection(cache_block, isect);
+    } else if (!colors_) {
+      updateTriangleIntersectionNoColor(cache_block, isect);
     } else {
       updateTriangleIntersection(cache_block, isect);
     }
@@ -144,6 +146,8 @@ class HybridGeometryBuffer {
 
   void updateTriangleIntersection(int cache_block,
                                   RTCRayIntersection* isect) const;
+  void updateTriangleIntersectionNoColor(int cache_block,
+                                         RTCRayIntersection* isect) const;
 
   void updateShapeIntersection(int cache_block,
                                RTCRayIntersection* isect) const {

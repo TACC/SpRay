@@ -43,8 +43,8 @@ class ShapeBuffer {
   ~ShapeBuffer();
 
  public:
-  void init(int max_cache_size_ndomains, std::size_t max_nvertices,
-            std::size_t max_nfaces);
+  void init(bool use_spray_color, int max_cache_size_ndomains,
+            std::size_t max_nvertices, std::size_t max_nfaces);
 
   RTCScene load(int cache_block, Domain& domain);
 
