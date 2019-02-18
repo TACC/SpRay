@@ -232,7 +232,8 @@ class Domain {
 
   // world aabb
 
-  void setWorldBounds(const glm::vec3& min, const glm::vec3& max) {
+  void setWorldAabb(const glm::vec3& min, const glm::vec3& max) {
+    CHECK_EQ(isWorldAabbSet(), false);
     setWorldAabbFlag();
     world_aabb_.reset(min, max);
   }
@@ -246,6 +247,7 @@ class Domain {
   // vertices
 
   void setNumVertices(std::size_t n) {
+    CHECK_EQ(isNumVerticesSet(), false);
     setNumVerticesFlag();
     num_vertices_ = n;
   }
@@ -260,6 +262,7 @@ class Domain {
   // faces
 
   void setNumFaces(std::size_t n) {
+    CHECK_EQ(isNumFacesSet(), false);
     setNumFacesFlag();
     num_faces_ = n;
   }

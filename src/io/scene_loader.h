@@ -47,7 +47,8 @@ class SceneLoader {
     kModelEnd,
     kFile,
     kMaterial,
-    kBounds,
+    kDomainBounds,
+    kModelBounds,
     kScale,
     kRotate,
     kTranslate,
@@ -94,6 +95,7 @@ class SceneLoader {
   void parseMaterial(const std::vector<std::string>& tokens);
 
   void parseDomainWorldBounds(const std::vector<std::string>& tokens);
+  void parseModelWorldBounds(const std::vector<std::string>& tokens);
 
   void parseScale(const std::vector<std::string>& tokens);
 

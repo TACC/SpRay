@@ -49,6 +49,28 @@ def valueToColor(value, value_min, value_max, colormap_name):
   rgba = mapper.to_rgba(value)
   return rgba
 
+def getMinPoint(a, b):
+  x = min(a[0], b[0])
+  y = min(a[1], b[1])
+  z = min(a[2], b[2])
+  return [x, y, z]
+
+def getMaxPoint(a, b):
+  x = max(a[0], b[0])
+  y = max(a[1], b[1])
+  z = max(a[2], b[2])
+  return [x, y, z]
+
+def mergeBounds(model_bounds_list):
+  min_point = model_bounds_list[0][0:3]
+  max_point = model_bounds_list[0][3:6]
+
+  for bounds_list in model_bounds_list:
+    min_point = getMinPoint(bounds_list[0:3], min_point)
+    max_point = getMaxPoint(bounds_list[3:6], max_point)
+
+  return min_point + max_point
+
 def addLights(outfile):
   with open(outfile, "w") as fout:
     fout.write("light diffuse-sphere .1 .1 .1\n")
@@ -63,19 +85,36 @@ def getIsoValue(filename):
   found = re.search('_iso([0-9.]+).ply', filename)
   return float(found.group(1))
 
-def loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile):
+def loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile, bounds_info_dict):
   total_num_faces = 0 
   total_num_vertices = 0 
 
   for domain_id in sorted(plyfiles):
+
+    model_bounds_list = []
+    domain_bounds_str = None # domain bounds
+
+    if bounds_info_dict:
+
+      if str(domain_id) not in bounds_info_dict:
+        print("[error] unknown domain ID found:" + str(domain_id))
+        sys.exit(1)
+
+      coordinates_list = bounds_info_dict[str(domain_id)]
+      domain_bounds_str = ' '.join(coordinates_list)
 
     with open(outfile, "a") as fout:
       fout.write("######################\n")
       fout.write("# " + str(domain_id) + "\n")
       fout.write("DomainBegin\n")
 
+      if domain_bounds_str:
+        fout.write("DomainBounds " + domain_bounds_str + "\n")
+
     domain_num_faces = 0 
     domain_num_vertices = 0
+
+    num_ply_models = len(plyfiles[domain_id])
 
     for ply, iso in plyfiles[domain_id]:
       # rgba = valueToColor(iso, args.contour_range[0], args.contour_range[1], args.colormap[0], args.logarithmic_colormap)
@@ -95,16 +134,34 @@ def loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile):
 
       num_faces = 0 
       num_vertices = 0
+      ply_bounds_str = None
 
       for line in lines:
-        if "face" in line:
+        if line.startswith("face"):
           num_faces = int(line.split()[1])
           total_num_faces += num_faces
           domain_num_faces += num_faces
-        if "vertex" in line:
+
+        elif line.startswith("vertex"):
           num_vertices = int(line.split()[1])
           total_num_vertices += num_vertices
           domain_num_vertices += num_vertices
+
+        elif line.startswith("bounds"):
+          bounds = line.split()[1:]
+          model_bounds_list.append([float(i) for i in bounds])
+          ply_bounds_str = ' '.join(bounds)
+
+        elif line.startswith('#'):
+          pass
+
+        elif line.startswith('file'):
+          pass
+
+        else:
+          print("identifier not found in line: " + line)
+          sys.exit(1)
+
         # if (not args.abspath) and ("file" in line):
         #   filename_only = os.path.basename(line.split()[1])
         #   ftemp.write("file " + filename_only + "\n")
@@ -113,11 +170,14 @@ def loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile):
 
       with open(outfile, "a") as fout:
         fout.write("ModelBegin\n")
-      
+
         if args.abspath:
           fout.write("file " + ply + "\n")
         else:
           fout.write("file " + os.path.basename(ply) + "\n")
+      
+        if ply_bounds_str:
+          fout.write("ModelBounds " + ply_bounds_str + "\n")
       
         fout.write("material matte " + rgb_str + "\n")
         fout.write("# number of vertices: " + str(num_vertices)  + "\n")
@@ -125,6 +185,11 @@ def loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile):
         fout.write("ModelEnd\n")
 
     with open(outfile, "a") as fout:
+      if not domain_bounds_str: 
+        if len(model_bounds_list) == num_ply_models:
+          domain_bounds_list = mergeBounds(model_bounds_list) 
+          f.write("DomainBounds " + ' '.join(domain_bounds_list) + "\n")
+
       fout.write("# [domain " + str(domain_id) + "] number of vertices: " + str(domain_num_vertices)  + "\n")
       fout.write("# [domain " + str(domain_id) + "] number of faces: " + str(domain_num_faces)  + "\n")
       fout.write("DomainEnd\n")
@@ -136,8 +201,8 @@ def loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile):
 
 def generateScene(args, plyfiles, outfile, bounds_info_dict):
   for domain_id in sorted(plyfiles):
-
-    coord_str = None
+    
+    domain_bounds_str = None # domain bounds
     if bounds_info_dict:
 
       if str(domain_id) not in bounds_info_dict:
@@ -145,15 +210,15 @@ def generateScene(args, plyfiles, outfile, bounds_info_dict):
         sys.exit(1)
 
       coordinates_list = bounds_info_dict[str(domain_id)]
-      coord_str = ' '.join(coordinates_list)
+      domain_bounds_str = ' '.join(coordinates_list)
 
     with open(outfile, "a") as f:
       f.write("######################\n")
       f.write("# " + str(domain_id) + "\n")
       f.write("DomainBegin\n")
 
-      if coord_str:
-        f.write("bounds " + coord_str + "\n")
+      if domain_bounds_str:
+        f.write("DomainBounds " + domain_bounds_str + "\n")
 
     for ply, iso in plyfiles[domain_id]:
       # rgba = valueToColor(iso, args.contour_range[0], args.contour_range[1], args.colormap[0], args.logarithmic_colormap)
@@ -169,6 +234,7 @@ def generateScene(args, plyfiles, outfile, bounds_info_dict):
     
         f.write("material matte " + rgb_str + "\n")
         f.write("ModelEnd\n")
+
     with open(outfile, "a") as f:
       f.write("DomainEnd\n")
   
@@ -224,7 +290,6 @@ def main():
   # parser.add_argument('--logarithmic-colormap', action='store_true', help='Use logarithmic normalization for color mapping')
   parser.add_argument('--contour-range', nargs=2, required=False, default=[0.0, 2.0], help='minimum and maximum contour values')
   parser.add_argument('--colormap', nargs=1, required=False, default=['coolwarm'], help='colormap name. See the list of colormap names in the link: https://matplotlib.org/examples/color/colormaps_reference.html')
-  
   
   # parser.add_argument('--scale', nargs=3, type=float, help='scaling factor (x,y,z)')
   # parser.add_argument('--gap', nargs=1, type=float, default=[1.0], help='gap factor (between domains)')
@@ -291,7 +356,7 @@ def main():
     bounds_info_dict = parseBoundsFile(bounds_file)
   
   if args.loader:
-    loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile)
+    loadPlyFilesAndGenerateScene(args, plyfiles, loader_executable, outfile, bounds_info_dict)
   else:
     generateScene(args, plyfiles, outfile, bounds_info_dict)
       

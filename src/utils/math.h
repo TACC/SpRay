@@ -93,5 +93,15 @@ inline float squaredLength(const glm::vec3& v) {
   return v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
 }
 
+inline glm::vec3 fminf(const glm::vec3& a, const glm::vec3& b) {
+  return glm::vec3(std::fminf(a[0], b[0]), std::fminf(a[1], b[1]),
+                   std::fminf(a[2], b[2]));
+}
+
+inline glm::vec3 fmaxf(const glm::vec3& a, const glm::vec3& b) {
+  return glm::vec3(std::fmaxf(a[0], b[0]), std::fmaxf(a[1], b[1]),
+                   std::fmaxf(a[2], b[2]));
+}
+
 }  // namespace spray
 

@@ -484,8 +484,8 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
               } else {
                 PlyLoader::quickHeaderRead(filename, &header);
 
-                info->num_vertices = long_header.num_vertices;
-                info->num_faces = long_header.num_faces;
+                info->num_vertices = header.num_vertices;
+                info->num_faces = header.num_faces;
               }
             }
           }

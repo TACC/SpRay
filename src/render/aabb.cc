@@ -27,18 +27,9 @@
 
 #include "display/opengl.h"
 #include "render/spray.h"
+#include "utils/math.h"
 
 namespace spray {
-
-glm::vec3 fminf(const glm::vec3& a, const glm::vec3& b) {
-  return glm::vec3(std::fminf(a[0], b[0]), std::fminf(a[1], b[1]),
-                   std::fminf(a[2], b[2]));
-}
-
-glm::vec3 fmaxf(const glm::vec3& a, const glm::vec3& b) {
-  return glm::vec3(std::fmaxf(a[0], b[0]), std::fmaxf(a[1], b[1]),
-                   std::fmaxf(a[2], b[2]));
-}
 
 Aabb::Aabb() { invalidate(); }
 

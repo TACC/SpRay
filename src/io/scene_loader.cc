@@ -57,8 +57,10 @@ SceneLoader::DomainTokenType SceneLoader::getTokenType(const std::string& tag) {
     type = DomainTokenType::kFile;
   } else if (tag == "material") {
     type = DomainTokenType::kMaterial;
-  } else if (tag == "bounds") {
-    type = DomainTokenType::kBounds;
+  } else if (tag == "DomainBounds") {
+    type = DomainTokenType::kDomainBounds;
+  } else if (tag == "ModelBounds") {
+    type = DomainTokenType::kModelBounds;
   } else if (tag == "scale") {
     type = DomainTokenType::kScale;
   } else if (tag == "rotate") {
@@ -233,7 +235,19 @@ void SceneLoader::parseDomainWorldBounds(
                 atof(tokens[3].c_str()));
   glm::vec3 max(atof(tokens[4].c_str()), atof(tokens[5].c_str()),
                 atof(tokens[6].c_str()));
-  d.setWorldBounds(min, max);
+  d.setWorldAabb(min, max);
+}
+
+void SceneLoader::parseModelWorldBounds(
+    const std::vector<std::string>& tokens) {
+  CHECK_EQ(tokens.size(), 7);
+  SurfaceModel* m = currentModel();
+
+  glm::vec3 min(atof(tokens[1].c_str()), atof(tokens[2].c_str()),
+                atof(tokens[3].c_str()));
+  glm::vec3 max(atof(tokens[4].c_str()), atof(tokens[5].c_str()),
+                atof(tokens[6].c_str()));
+  m->setObjectAabb(&min[0], &max[0]);
 }
 
 void SceneLoader::parseScale(const std::vector<std::string>& tokens) {
@@ -413,8 +427,11 @@ void SceneLoader::parseLineTokens(const std::string& ply_path,
     case DomainTokenType::kMaterial:
       parseMaterial(tokens);
       break;
-    case DomainTokenType::kBounds:
+    case DomainTokenType::kDomainBounds:
       parseDomainWorldBounds(tokens);
+      break;
+    case DomainTokenType::kModelBounds:
+      parseModelWorldBounds(tokens);
       break;
     case DomainTokenType::kScale:
       parseScale(tokens);
