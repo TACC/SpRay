@@ -25,6 +25,7 @@
 #include <iostream>
 
 #include "embree/random_sampler.h"
+#include "embree/sampling.h"
 #include "glm/glm.hpp"
 #include "glog/logging.h"
 
@@ -129,9 +130,13 @@ inline bool Matte::sample(const glm::vec3& albedo, const glm::vec3& wo,
                           const glm::vec3& normal, RandomSampler& sampler,
                           glm::vec3* wi, glm::vec3* color, float* pdf) const {
   glm::vec2 u = RandomSampler_get2D(sampler);
-  getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
+  // getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
 
-  if (*pdf > 0.0f) {
+  Sample3f sample = cosineSampleHemisphere(u.x, u.y, normal);
+  *wi = glm::normalize(sample.v);
+  *pdf = sample.pdf;
+
+  if (sample.pdf > 0.0f) {
     float l_dot_n = glm::dot(*wi, normal);
 
     if (l_dot_n > 0.0f) {
