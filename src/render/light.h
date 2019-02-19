@@ -21,6 +21,7 @@
 #pragma once
 
 #include "embree/random_sampler.h"
+#include "embree/sampling.h"
 #include "glm/glm.hpp"
 #include "glog/logging.h"
 
@@ -97,7 +98,10 @@ class DiffuseHemisphereLight : public Light {
                        glm::vec3* wi, float* pdf) const override {
     CHECK(false);
     glm::vec2 u = RandomSampler_get2D(sampler);
-    getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
+    // getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
+    Sample3f sample = cosineSampleHemisphere(u.x, u.y, normal);
+    *wi = glm::normalize(sample.v);
+    *pdf = sample.pdf;
     return radiance_;
   }
 
@@ -105,7 +109,10 @@ class DiffuseHemisphereLight : public Light {
                     const glm::vec3& normal, glm::vec3* wi,
                     float* pdf) const override {
     glm::vec2 u = RandomSampler_get2D(sampler);
-    getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
+    // getCosineHemisphereSample(u.x, u.y, normal, wi, pdf);
+    Sample3f sample = cosineSampleHemisphere(u.x, u.y, normal);
+    *wi = glm::normalize(sample.v);
+    *pdf = sample.pdf;
     return radiance_;
   }
 
