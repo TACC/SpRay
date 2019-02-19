@@ -277,6 +277,8 @@ void MultiThreadTracer<ShaderT>::assignRecvRaysToThreads(
 #pragma omp barrier
   }
 
+#pragma omp barrier
+
   while (1) {
 #pragma omp single
     {
@@ -432,12 +434,10 @@ void MultiThreadTracer<ShaderT>::traceInOmp() {
 #pragma omp master
       {
         if (ray_depth < nbounces && nranks > 1) {
-          // vbuf_.compositeTBuf();
           thread_vbufs_[0].compositeTbuf();
         }
 
         if (ray_depth > 0 && nranks > 1) {
-          // vbuf_.compositeOBuf();
           thread_vbufs_[0].compositeObuf();
         }
 
