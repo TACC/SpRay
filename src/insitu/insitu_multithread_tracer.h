@@ -64,7 +64,10 @@ class MultiThreadTracer {
  public:
   typedef typename ShaderT::SceneType SceneType;
 
-  void trace();
+  void trace() {
+#pragma omp parallel
+    traceInOmp();
+  }
   void traceInOmp();
   int type() const { return TRACER_TYPE_SPRAY_INSITU_N_THREADS; }
 
