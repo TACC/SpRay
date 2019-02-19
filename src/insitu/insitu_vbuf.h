@@ -56,6 +56,110 @@ class VBuf {
     FreeAligned(obuf_);
   }
 
+  void resize(const spray::Tile& tile, int num_pixel_samples,
+              int total_num_light_samples);
+
+  std::size_t tbufSize(const Tile& tile, int num_pixel_samples) {
+    return (std::size_t)tile.w * tile.h * num_pixel_samples;
+  }
+
+  std::size_t obufSize(std::size_t tbuf_size,
+                       int total_num_light_samples) const {
+    return (tbuf_size * total_num_light_samples + 31) / 32;
+  }
+
+  std::size_t getTbufSize() const { return tbuf_size_; }
+  std::size_t getObufSize() const { return obuf_size_; }
+
+  void resetTbufIn() {
+    for (std::size_t i = 0; i < tbuf_size_; ++i) tbuf_in_[i] = SPRAY_FLOAT_INF;
+  }
+
+  void resetTbufOut() {
+    for (std::size_t i = 0; i < tbuf_size_; ++i) tbuf_out_[i] = SPRAY_FLOAT_INF;
+  }
+
+  void resetObuf() {
+    for (std::size_t i = 0; i < obuf_size_; ++i) obuf_[i] = (uint32_t)0;
+  }
+
+  void swapTbufs() { std::swap(tbuf_in_, tbuf_out_); }
+
+  void colorTbuf(spray::HdrImage* image);
+
+  bool correct(int samid, float t) const {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(samid, tbuf_size_);
+    CHECK_LE(tbuf_in_[samid], t);
+#endif
+    return (t == tbuf_in_[samid]);
+  }
+
+  bool tbufOutMiss(int samid) const {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(samid, tbuf_size_);
+#endif
+    return std::isinf(tbuf_out_[samid]);
+  }
+
+  void setObuf(int samid, int light);
+
+  bool occluded(int samid, int light) const;
+
+  void compositeTbuf() {
+#ifdef SPRAY_TIMING
+    spray::tStartMPI(spray::TIMER_SYNC_VBUF);
+#endif
+    MPI_Allreduce(MPI_IN_PLACE, tbuf_out_, tbuf_size_, MPI_FLOAT, MPI_MIN,
+                  MPI_COMM_WORLD);
+#ifdef SPRAY_TIMING
+    spray::tStop(spray::TIMER_SYNC_VBUF);
+#endif
+  }
+
+  void compositeObuf() {
+#ifdef SPRAY_TIMING
+    spray::tStartMPI(spray::TIMER_SYNC_VBUF);
+#endif
+    MPI_Allreduce(MPI_IN_PLACE, obuf_, obuf_size_, MPI_UINT32_T, MPI_BOR,
+                  MPI_COMM_WORLD);
+#ifdef SPRAY_TIMING
+    spray::tStop(spray::TIMER_SYNC_VBUF);
+#endif
+  }
+
+  float getTbufOut(int samid) const { return tbuf_out_[samid]; }
+  void setTbufOut(int samid, float t) { tbuf_out_[samid] = t; }
+
+  uint32_t getObuf(std::size_t index) const { return obuf_[index]; }
+  void setObufByIndex(std::size_t index, uint32_t value) {
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(index, obuf_size_);
+#endif
+    obuf_[index] = value;
+  }
+
+  bool equalToTbufOut(int samid, float t) { return (tbuf_out_[samid] == t); }
+
+  bool updateTbufOut(float t_new, Ray* ray) {
+    auto& t_old = tbuf_out_[ray->samid];
+    if (t_new < t_old) {
+      t_old = t_new;
+      ray->t = t_new;
+      return true;
+    }
+    return false;
+  }
+
+ private:
+  void reset() {
+    for (std::size_t i = 0; i < tbuf_size_; ++i) tbuf_in_[i] = SPRAY_FLOAT_INF;
+    for (std::size_t i = 0; i < tbuf_size_; ++i) tbuf_out_[i] = SPRAY_FLOAT_INF;
+    for (std::size_t i = 0; i < obuf_size_; ++i) obuf_[i] = (uint32_t)0;
+  }
+
+  std::size_t obufIndex(int samid, int light, std::size_t* bit) const;
+
  private:
   float* tbuf_0_;
   float* tbuf_1_;
@@ -73,100 +177,6 @@ class VBuf {
   spray::Tile tile_;
   int num_pixel_samples_;
   int total_num_light_samples_;
-
- public:
-  void resize(const spray::Tile& tile, int num_pixel_samples,
-              int total_num_light_samples);
-
-  std::size_t tbufSize(const Tile& tile, int num_pixel_samples) {
-    return (std::size_t)tile.w * tile.h * num_pixel_samples;
-  }
-
-  std::size_t obufSize(std::size_t tbuf_size,
-                       int total_num_light_samples) const {
-    return (tbuf_size * total_num_light_samples + 31) / 32;
-  }
-
- private:
-  void reset() {
-    for (std::size_t i = 0; i < tbuf_size_; ++i) tbuf_in_[i] = SPRAY_FLOAT_INF;
-    for (std::size_t i = 0; i < tbuf_size_; ++i) tbuf_out_[i] = SPRAY_FLOAT_INF;
-    for (std::size_t i = 0; i < obuf_size_; ++i) obuf_[i] = (uint32_t)0;
-  }
-
- public:
-  void resetTBufIn() {
-    for (std::size_t i = 0; i < tbuf_size_; ++i) tbuf_in_[i] = SPRAY_FLOAT_INF;
-  }
-  void resetTBufOut() {
-    for (std::size_t i = 0; i < tbuf_size_; ++i) tbuf_out_[i] = SPRAY_FLOAT_INF;
-  }
-
- public:
-  void resetOBuf() {
-    for (std::size_t i = 0; i < obuf_size_; ++i) obuf_[i] = (uint32_t)0;
-  }
-
-  void swapTBufs() { std::swap(tbuf_in_, tbuf_out_); }
-
- public:
-  void colorTBuf(spray::HdrImage* image);
-
- public:
-  bool correct(int samid, float t) {
-#ifdef SPRAY_GLOG_CHECK
-    CHECK_LE(tbuf_in_[samid], t);
-#endif
-    return (t == tbuf_in_[samid]);
-  }
-
-  void setOBuf(int samid, int light);
-
- private:
-  std::size_t obufIndex(int samid, int light, std::size_t* bit) const;
-
- public:
-  bool occluded(int samid, int light) const;
-
- public:
-  void compositeTBuf() {
-#ifdef SPRAY_TIMING
-    spray::tStartMPI(spray::TIMER_SYNC_VBUF);
-#endif
-    MPI_Allreduce(MPI_IN_PLACE, tbuf_out_, tbuf_size_, MPI_FLOAT, MPI_MIN,
-                  MPI_COMM_WORLD);
-#ifdef SPRAY_TIMING
-    spray::tStop(spray::TIMER_SYNC_VBUF);
-#endif
-  }
-
-  void compositeOBuf() {
-#ifdef SPRAY_TIMING
-    spray::tStartMPI(spray::TIMER_SYNC_VBUF);
-#endif
-    MPI_Allreduce(MPI_IN_PLACE, obuf_, obuf_size_, MPI_UINT32_T, MPI_BOR,
-                  MPI_COMM_WORLD);
-#ifdef SPRAY_TIMING
-    spray::tStop(spray::TIMER_SYNC_VBUF);
-#endif
-  }
-
- public:
-  float getTBufOutT(int samid) const {
-    return tbuf_out_[samid];
-  }
-
-  bool equalToTbufOut(int samid, float t) { return (tbuf_out_[samid] == t); }
-
-  bool updateTBufOutT(float t_new, Ray* ray) const {
-    auto& t_old = tbuf_out_[ray->samid];
-    if (t_new < t_old) {
-      t_old = t_new;
-      ray->t = t_new;
-      return true;
-    }
-    return false;
-  }
 };
 
 }  // namespace insitu

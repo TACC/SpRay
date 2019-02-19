@@ -92,13 +92,20 @@ void MultiThreadTracer<ShaderT>::init(const Config &cfg, const Camera &camera,
 
   work_stats_.resize(nranks, cfg.nthreads, ndomains);
 
-  vbuf_.resize(tile_list_.getLargestBlockingTile(), cfg.pixel_samples,
-               total_num_light_samples);
+  // vbuf_.resize(tile_list_.getLargestBlockingTile(), cfg.pixel_samples,
+  //              total_num_light_samples);
 
   tcontexts_.resize(cfg.nthreads);
-  for (auto &t : tcontexts_) {
-    t.init(cfg, ndomains, partition_, scene_, &vbuf_, image);
+  thread_vbufs_.resize(cfg.nthreads);
+
+  for (std::size_t i = 0; i < tcontexts_.size(); ++i) {
+    thread_vbufs_[i].resize(tile_list_.getLargestBlockingTile(),
+                            cfg.pixel_samples, total_num_light_samples);
+
+    tcontexts_[i].init(cfg, ndomains, partition_, scene_, &thread_vbufs_[i],
+                       image);
   }
+
   thread_status_.resize(cfg.nthreads);
   scan_.resize(cfg.nthreads);
 }
@@ -188,44 +195,26 @@ void MultiThreadTracer<ShaderT>::send(bool shadow, int tid, int domain_id,
 }
 
 template <typename ShaderT>
-void MultiThreadTracer<ShaderT>::procLocalQs(int tid, int ray_depth,
-                                             TContextType *tcontext) {
-  const auto &ids = partition_->getDomains(rank_);
-
-  for (auto id : ids) {
-    bool empty = tcontext->isLocalQsEmpty(id);
-    if (empty) {
-      thread_status_.clear(tid);
-    } else {
-      thread_status_.set(tid);
-    }
-
-#pragma omp barrier
-
-    bool nonempty = thread_status_.isAnySet();
-    if (nonempty) {
-#pragma omp single
-      { scene_->load(id, &sinfo_); }
-
-      tcontext->processRays(id, sinfo_);
-
-#pragma omp barrier
-
-#pragma omp single
-      {
-        for (auto &t : tcontexts_) {
-          t.updateVisBuf();
-        }
-      }
-      tcontext->genRays(id, ray_depth);
-    }
-#pragma omp barrier
+void MultiThreadTracer<ShaderT>::assignRecvRadianceRaysToThreads(
+    int id, Ray *rays, int64_t count, TContextType *tcontext) {
+#pragma omp for schedule(static, 1)
+  for (auto i = 0; i < count; ++i) {
+    tcontext->pushRadianceRay(id, &rays[i]);
   }
 }
 
 template <typename ShaderT>
-void MultiThreadTracer<ShaderT>::procRecvQs(int ray_depth,
-                                            TContextType *tcontext) {
+void MultiThreadTracer<ShaderT>::assignRecvShadowRaysToThreads(
+    int id, Ray *rays, int64_t count, TContextType *tcontext) {
+#pragma omp for schedule(static, 1)
+  for (auto i = 0; i < count; ++i) {
+    tcontext->pushShadowRay(id, &rays[i]);
+  }
+}
+
+template <typename ShaderT>
+void MultiThreadTracer<ShaderT>::assignRecvRaysToThreads(
+    TContextType *tcontext) {
   MsgHeader *header;
   Ray *payload;
 
@@ -247,12 +236,10 @@ void MultiThreadTracer<ShaderT>::procRecvQs(int ray_depth,
     WorkRecvMsg<Ray, MsgHeader>::decode(recv_message_, &header, &payload);
     CHECK_NOTNULL(payload);
 
-    procRecvRads(ray_depth, header->domain_id, payload, header->payload_count,
-                 tcontext);
+    assignRecvRadianceRaysToThreads(header->domain_id, payload,
+                                    header->payload_count, tcontext);
 #pragma omp barrier
   }
-
-#pragma omp barrier
 
   while (1) {
 #pragma omp single
@@ -272,289 +259,77 @@ void MultiThreadTracer<ShaderT>::procRecvQs(int ray_depth,
     WorkRecvMsg<Ray, MsgHeader>::decode(recv_message_, &header, &payload);
     CHECK_NOTNULL(payload);
 
-    procRecvShads(header->domain_id, payload, header->payload_count, tcontext);
+    assignRecvShadowRaysToThreads(header->domain_id, payload,
+                                  header->payload_count, tcontext);
 #pragma omp barrier
   }
 }
 
 template <typename ShaderT>
-void MultiThreadTracer<ShaderT>::procCachedRq(int ray_depth,
-                                              TContextType *tcontext) {
-#pragma omp single
+void MultiThreadTracer<ShaderT>::createTileWork(TContextType *tcontext) {
+#pragma omp master
   {
-    for (auto &t : tcontexts_) {
-      t.updateTBufWithCached();
+    tile_list_.front(&blocking_tile_, &stripe_);
+    tile_list_.pop();
+
+    shared_eyes_.num =
+        (std::size_t)(stripe_.w * stripe_.h) * num_pixel_samples_;
+    if (shared_eyes_.num) {
+      shared_eyes_.rays = tcontext->allocMemIn(shared_eyes_.num);
+    } else {
+      shared_eyes_.rays = nullptr;
     }
+    done_ = 0;
   }
-  tcontext->processCached(ray_depth);
-}
+#pragma omp barrier
 
-template <typename ShaderT>
-void MultiThreadTracer<ShaderT>::procRecvRads(int ray_depth, int id, Ray *rays,
-                                              int64_t count,
-                                              TContextType *tcontext) {
-#pragma omp single
-  { scene_->load(id, &sinfo_); }
+  // generate eye rays
+  if (shared_eyes_.num) {
+    glm::vec3 cam_pos = camera_->getPosition();
+    if (num_pixel_samples_ > 1) {  // multi samples
+      spray::insitu::genMultiSampleEyeRays(
+          *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
+          num_pixel_samples_, blocking_tile_, stripe_, &shared_eyes_);
 
-  tcontext->setSceneInfo(sinfo_);
-
-#pragma omp for schedule(static, 1)
-  for (auto i = 0; i < count; ++i) {
-    auto *ray = &rays[i];
-    tcontext->isectRecvRad(id, ray);
-  }
-
-#pragma omp single
-  {
-    for (auto &t : tcontexts_) {
-      t.updateTBuf();
+    } else {  // single sample
+      spray::insitu::genSingleSampleEyeRays(
+          *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
+          blocking_tile_, stripe_, &shared_eyes_);
     }
-  }
+#pragma omp barrier
 
-  tcontext->genRays(id, ray_depth);
-}
-
-template <typename ShaderT>
-void MultiThreadTracer<ShaderT>::procRecvShads(int id, Ray *rays, int64_t count,
-                                               TContextType *tcontext) {
-#pragma omp single
-  { scene_->load(id, &sinfo_); }
-
-  tcontext->setSceneInfo(sinfo_);
-
+    // isect domains for eyes on shared variables the eyes buffer
 #pragma omp for schedule(static, 1)
-  for (auto i = 0; i < count; ++i) {
-    auto *ray = &rays[i];
-    tcontext->occlRecvShad(id, ray);
-  }
-
-#pragma omp single
-  {
-    for (auto &t : tcontexts_) {
-      t.updateOBuf();
+    for (std::size_t i = 0; i < shared_eyes_.num; ++i) {
+      tcontext->isectDomains(&shared_eyes_.rays[i]);
     }
+
+    populateRadWorkStats(tcontext);
   }
-}
-
-template <typename ShaderT>
-void MultiThreadTracer<ShaderT>::trace() {
-#pragma omp parallel
-  {
-    int nranks = num_ranks_;
-    int nbounces = num_bounces_;
-    int image_w = image_w_;
-    int num_pixel_samples = num_pixel_samples_;
-
-    while (!tile_list_.empty()) {
-#pragma omp barrier
-#pragma omp master
-      {
-        tile_list_.front(&blocking_tile_, &stripe_);
-        tile_list_.pop();
-
-        vbuf_.resetTBufOut();
-        vbuf_.resetOBuf();
-
-        for (auto &tc : tcontexts_) {
-          tc.resetMems();
-        }
-
-        shared_eyes_.num =
-            (std::size_t)(stripe_.w * stripe_.h) * num_pixel_samples;
-        if (shared_eyes_.num) {
-          shared_eyes_.rays = tcontexts_[0].allocMemIn(shared_eyes_.num);
-        }
-
-        done_ = 0;
-      }
-#pragma omp barrier
-
-      int tid = omp_get_thread_num();
-      TContextType *tcontext = &tcontexts_[tid];
-
-      // generate eye rays
-      if (shared_eyes_.num) {
-        glm::vec3 cam_pos = camera_->getPosition();
-        if (num_pixel_samples > 1) {  // multi samples
-          spray::insitu::genMultiSampleEyeRays(
-              *camera_, image_w, cam_pos[0], cam_pos[1], cam_pos[2],
-              num_pixel_samples, blocking_tile_, stripe_, &shared_eyes_);
-
-        } else {  // single sample
-          spray::insitu::genSingleSampleEyeRays(
-              *camera_, image_w, cam_pos[0], cam_pos[1], cam_pos[2],
-              blocking_tile_, stripe_, &shared_eyes_);
-        }
-#pragma omp barrier
-
-        // isect domains for eyes on shared variables the eyes buffer
-#pragma omp for schedule(static, 1)
-        for (std::size_t i = 0; i < shared_eyes_.num; ++i) {
-          Ray *ray = &shared_eyes_.rays[i];
-          tcontext->isectDomains(ray);
-        }
-
-        populateRadWorkStats(tcontext);
-      }
-
-      int ray_depth = 0;
-
-      while (1) {
-#pragma omp barrier
-
-#pragma omp master
-        {
-          work_stats_.reduce();
-
-          if (work_stats_.allDone()) {
-            done_ = 1;
-            comm_.waitForSend();
-          }
-        }
-
-#pragma omp barrier
-
-        if (done_) {
-#pragma omp single
-          {
-            for (auto &t : tcontexts_) {
-              t.procRetireQ(num_pixel_samples);
-            }
-          }
-          break;
-        }
-
-#ifdef SPRAY_GLOG_CHECK
-        CHECK_LT(ray_depth, nbounces + 1);
-#pragma omp barrier
-#endif
-
-        // send rays (transfer WorkSendMsg's to the comm q)
-        if (nranks > 1) {
-#ifdef SPRAY_GLOG_CHECK
-          CHECK(comm_.emptySendQ());
-#endif
-          sendRays(tid, tcontext);
-
-#pragma omp barrier
-#pragma omp master
-          {
-            comm_.waitForSend();
-            auto *memin = tcontext->getMemIn();
-            comm_.run(work_stats_, memin, &comm_recv_);
-          }
-#pragma omp barrier
-        }
-
-        procCachedRq(ray_depth, tcontext);
-#pragma omp barrier
-
-        procLocalQs(tid, ray_depth, tcontext);
-#pragma omp barrier
-
-        if (nranks > 1) {
-          procRecvQs(ray_depth, tcontext);
-#pragma omp barrier
-        }
-
-#pragma omp master
-        {
-          if (ray_depth < nbounces && nranks > 1) {
-            vbuf_.compositeTBuf();
-          }
-
-          if (ray_depth > 0 && nranks > 1) {
-            vbuf_.compositeOBuf();
-          }
-
-          if (ray_depth > 0) {
-            for (auto &t : tcontexts_) {
-              t.procRetireQ(num_pixel_samples);
-            }
-            vbuf_.resetOBuf();
-          }
-
-          vbuf_.resetTBufIn();
-          vbuf_.swapTBufs();
-        }
-#pragma omp barrier
-
-        // refer to tbuf input for correctness
-        tcontext->processRays2();
-
-#pragma omp barrier
-
-        populateWorkStats(tcontext);
-
-        tcontext->resetAndSwapMems();
-
-        ++ray_depth;
-
-#pragma omp barrier
-      }  // while (1)
-    }    // while (!tile_list_.empty())
-  }      // # pragma omp parallel
-  tile_list_.reset();
 }
 
 template <typename ShaderT>
 void MultiThreadTracer<ShaderT>::traceInOmp() {
+  const int rank = rank_;
+  const int nranks = num_ranks_;
+  const int nbounces = num_bounces_;
+  const int tid = omp_get_thread_num();
+  const int num_threads = omp_get_num_threads();
+#ifdef SPRAY_GLOG_CHECK
+  CHECK_LT(tid, tcontexts_.size());
+  CHECK_EQ(num_threads, tcontexts_.size());
+#endif
+  TContextType *tcontext = &tcontexts_[tid];
+  VBuf *vbuf = &thread_vbufs_[tid];
+
   while (!tile_list_.empty()) {
 #pragma omp barrier
-#pragma omp master
-    {
-      tile_list_.front(&blocking_tile_, &stripe_);
-      tile_list_.pop();
 
-      vbuf_.resetTBufOut();
-      vbuf_.resetOBuf();
+    tcontext->resetMems();
+    vbuf->resetTbufOut();
+    vbuf->resetObuf();
 
-      for (auto &tc : tcontexts_) {
-        tc.resetMems();
-      }
-
-      shared_eyes_.num =
-          (std::size_t)(stripe_.w * stripe_.h) * num_pixel_samples_;
-      if (shared_eyes_.num) {
-        shared_eyes_.rays = tcontexts_[0].allocMemIn(shared_eyes_.num);
-      } else {
-        shared_eyes_.rays = nullptr;
-      }
-    }
-#pragma omp barrier
-
-    const int nranks = num_ranks_;
-    const int nbounces = num_bounces_;
-#pragma omp single
-    done_ = 0;
-
-    int tid = omp_get_thread_num();
-    TContextType *tcontext = &tcontexts_[tid];
-
-    // generate eye rays
-    if (shared_eyes_.num) {
-      glm::vec3 cam_pos = camera_->getPosition();
-      if (num_pixel_samples_ > 1) {  // multi samples
-        spray::insitu::genMultiSampleEyeRays(
-            *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-            num_pixel_samples_, blocking_tile_, stripe_, &shared_eyes_);
-
-      } else {  // single sample
-        spray::insitu::genSingleSampleEyeRays(
-            *camera_, image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-            blocking_tile_, stripe_, &shared_eyes_);
-      }
-#pragma omp barrier
-
-      // isect domains for eyes on shared variables the eyes buffer
-#pragma omp for schedule(static, 1)
-      for (std::size_t i = 0; i < shared_eyes_.num; ++i) {
-        Ray *ray = &shared_eyes_.rays[i];
-        tcontext->isectDomains(ray);
-      }
-
-      populateRadWorkStats(tcontext);
-    }
+    createTileWork(tcontext);
 
     int ray_depth = 0;
 
@@ -577,7 +352,7 @@ void MultiThreadTracer<ShaderT>::traceInOmp() {
 #pragma omp single
         {
           for (auto &t : tcontexts_) {
-            t.procRetireQ(num_pixel_samples_);
+            t.retireUntouched();
           }
         }
         break;
@@ -598,48 +373,54 @@ void MultiThreadTracer<ShaderT>::traceInOmp() {
 #pragma omp barrier
 #pragma omp master
         {
-          comm_.waitForSend();
           auto *memin = tcontext->getMemIn();
+          comm_.waitForSend();
           comm_.run(work_stats_, memin, &comm_recv_);
         }
 #pragma omp barrier
       }
 
-      procCachedRq(ray_depth, tcontext);
+      if (nranks > 1) assignRecvRaysToThreads(tcontext);
+      tcontext->processRays(rank, ray_depth);
+
 #pragma omp barrier
 
-      procLocalQs(tid, ray_depth, tcontext);
-#pragma omp barrier
-
-      if (nranks > 1) {
-        procRecvQs(ray_depth, tcontext);
-#pragma omp barrier
+      if (num_threads > 1) {
+        tcontext->compositeThreadTbufs(tid, &thread_vbufs_);
+        if (ray_depth > 0) {
+          tcontext->compositeThreadObufs(tid, &thread_vbufs_);
+        }
       }
 
+#pragma omp barrier
 #pragma omp master
       {
         if (ray_depth < nbounces && nranks > 1) {
-          vbuf_.compositeTBuf();
+          thread_vbufs_[0].compositeTbuf();
         }
 
         if (ray_depth > 0 && nranks > 1) {
-          vbuf_.compositeOBuf();
+          thread_vbufs_[0].compositeObuf();
         }
 
         if (ray_depth > 0) {
           for (auto &t : tcontexts_) {
-            t.procRetireQ(num_pixel_samples_);
+            t.retireShadows(thread_vbufs_[0]);
           }
-          vbuf_.resetOBuf();
         }
-
-        vbuf_.resetTBufIn();
-        vbuf_.swapTBufs();
       }
 #pragma omp barrier
 
+      if (ray_depth > 0) {
+        vbuf->resetObuf();
+      }
+
+      vbuf->resetTbufIn();
+      vbuf->swapTbufs();
+#pragma omp barrier
+
       // refer to tbuf input for correctness
-      tcontext->processRays2();
+      tcontext->resolveSecondaryRays(thread_vbufs_[0]);
 
 #pragma omp barrier
 

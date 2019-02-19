@@ -40,6 +40,8 @@ void TContext<ShaderT>::init(const Config& cfg, int ndomains,
   sqs_.resize(ndomains);
 
   shader_.init(cfg, scene);
+
+  one_over_num_pixel_samples_ = 1.0 / (double)cfg.pixel_samples;
   isector_.init(ndomains);
 }
 
@@ -72,235 +74,129 @@ void TContext<ShaderT>::populateWorkStats() {
   work_stats_.registerCachedRayBlock(has_cached_block);
 }
 
-// template <typename ShaderT>
-// void TContext<ShaderT>::populateRadWorkStats() {
-//   work_stats_.reset();
-//   for (int id = 0; id < num_domains_; ++id) {
-//     int dest = partition_->rank(id);
-//     if (!rqs_.empty(id)) {
-//       work_stats_.addNumDomains(dest, 1);
-//     }
-//   }
-// }
-
-// template <typename ShaderT>
-// void TContext<ShaderT>::populateWorkStats(int rank) {
-//   work_stats_.reset();
-//
-//   int n = 0;
-//   n += (!cached_rq_.empty());
-//
-//   work_stats_.addNumDomains(rank, n);
-//
-//   for (int id = 0; id < num_domains_; ++id) {
-//     int dest = partition_->rank(id);
-//     n = 0;
-//     n += (!rqs_.empty(id));
-//     n += (!sqs_.empty(id));
-//     if (n) {
-//       work_stats_.addNumDomains(dest, n);
-//     }
-//   }
-// }
-
 template <typename ShaderT>
-void TContext<ShaderT>::processRays(int id, SceneInfo& sinfo) {
-  sinfo_ = sinfo;
-
-  auto* rq = rqs_.getQ(id);
-
-  while (!rq->empty()) {
-    auto* ray = rq->front();
-    auto* isect = mem_out_->Alloc<spray::RTCRayIntersection>(1, false);
-
-    bool is_hit = scene_->intersect(sinfo_.rtc_scene, sinfo_.cache_block,
-                                    ray->org, ray->dir, isect);
-    if (is_hit) {
-      isect_.ray = ray;
-      isect_.isect = isect;
-      isects_.push(isect_);
-    }
-    rq->pop();
-  }
-
-  auto* sq = sqs_.getQ(id);
-
-  while (!sq->empty()) {
-    auto* ray = sq->front();
-
-    if (!vbuf_->occluded(ray->samid, ray->light)) {
-      bool is_occluded =
-          scene_->occluded(sinfo_.rtc_scene, ray->org, ray->dir, &rtc_ray_);
-
-      if (is_occluded) {
-        occl_.samid = ray->samid;
-        occl_.light = ray->light;
-        occls_.push(occl_);
-      }
-    }
-    sq->pop();
-  }
-}
-
-template <typename ShaderT>
-void TContext<ShaderT>::updateVisBuf() {
-  while (!isects_.empty()) {
-    IsectInfo& info = isects_.front();
-    if (vbuf_->updateTBufOutT(info.isect->tfar, info.ray)) {
-      reduced_isects_.push(info);
-    }
-    isects_.pop();
-  }
-
-  while (!occls_.empty()) {
-    OcclInfo& o = occls_.front();
-    vbuf_->setOBuf(o.samid, o.light);
-    occls_.pop();
-  }
-}
-
-template <typename ShaderT>
-void TContext<ShaderT>::updateTBuf() {
-  while (!isects_.empty()) {
-    IsectInfo& info = isects_.front();
-    if (vbuf_->updateTBufOutT(info.isect->tfar, info.ray)) {
-      reduced_isects_.push(info);
-    }
-    isects_.pop();
-  }
-}
-
-template <typename ShaderT>
-void TContext<ShaderT>::updateOBuf() {
-  while (!occls_.empty()) {
-    OcclInfo& o = occls_.front();
-    vbuf_->setOBuf(o.samid, o.light);
-    occls_.pop();
-  }
-}
-
-template <typename ShaderT>
-void TContext<ShaderT>::genRays(int id, int ray_depth) {
-  while (!reduced_isects_.empty()) {
-    IsectInfo& info = reduced_isects_.front();
-
+void TContext<ShaderT>::processRays(int rank, int ray_depth) {
+  // cached
+  while (!cached_rq_.empty()) {
+    auto& info = cached_rq_.front();
     auto* ray = info.ray;
+
     auto* isect = info.isect;
 
-    if (vbuf_->equalToTbufOut(ray->samid, isect->tfar)) {
-      shader_(id, *ray, *isect, mem_out_, &sq2_, &rq2_, ray_depth);
+    if (vbuf_->updateTbufOut(isect->tfar, ray)) {
+      shader_(info.domain_id, *ray, *isect, mem_out_, &sq2_, &rq2_, ray_depth);
+
+      scene_->load(info.domain_id, &sinfo_);
+      filterSq2(info.domain_id);
+      filterRq2(info.domain_id);
+    }
+
+    cached_rq_.pop();
+  }
+
+  // local
+  const auto& ids = partition_->getDomains(rank);
+
+  for (auto id : ids) {
+    auto* rq = rqs_.getQ(id);
+    auto* sq = sqs_.getQ(id);
+
+    bool rq_empty = rq->empty();
+    bool sq_empty = sq->empty();
+
+    if (!(rq_empty && sq_empty)) {
+      scene_->load(id, &sinfo_);
+
+      while (!rq->empty()) {
+        auto* ray = rq->front();
+        rq->pop();
+        processRadiance(id, ray_depth, ray);
+      }
+
+      while (!sq->empty()) {
+        auto* ray = sq->front();
+        sq->pop();
+        processShadow(id, ray);
+      }
+    }
+  }
+}
+
+template <typename ShaderT>
+void TContext<ShaderT>::processRadiance(int id, int ray_depth, Ray* ray) {
+  bool is_hit = scene_->intersect(sinfo_.rtc_scene, sinfo_.cache_block,
+                                  ray->org, ray->dir, &rtc_isect_);
+  if (is_hit) {
+    if (vbuf_->updateTbufOut(rtc_isect_.tfar, ray)) {
+      shader_(id, *ray, rtc_isect_, mem_out_, &sq2_, &rq2_, ray_depth);
       filterSq2(id);
       filterRq2(id);
     }
-    reduced_isects_.pop();
+  }
+}
+
+template <typename ShaderT>
+void TContext<ShaderT>::processShadow(int id, Ray* ray) {
+  if (!vbuf_->occluded(ray->samid, ray->light)) {
+    bool is_occluded =
+        scene_->occluded(sinfo_.rtc_scene, ray->org, ray->dir, &rtc_ray_);
+
+    if (is_occluded) {
+      vbuf_->setObuf(ray->samid, ray->light);
+    }
   }
 }
 
 template <typename ShaderT>
 void TContext<ShaderT>::filterSq2(int id) {
-  ocache_item_.domain_id = id;
-  RTCScene rtc_scene = sinfo_.rtc_scene;
-
+  OcclInfo info;
+  info.domain_id = id;
   while (!sq2_.empty()) {
     auto* ray = sq2_.front();
     sq2_.pop();
 
     bool is_occluded =
-        scene_->occluded(rtc_scene, ray->org, ray->dir, &rtc_ray_);
+        scene_->occluded(sinfo_.rtc_scene, ray->org, ray->dir, &rtc_ray_);
 
     if (is_occluded) {
       ray->occluded = 1;
     }
-    ocache_item_.ray = ray;
-    fsq2_.push(ocache_item_);
+    info.ray = ray;
+    fsq2_.push(info);
   }
 }
 
 template <typename ShaderT>
 void TContext<ShaderT>::filterRq2(int id) {
-  icache_item_.domain_id = id;
-
-  RTCScene rtc_scene = sinfo_.rtc_scene;
-  int cache_block = sinfo_.cache_block;
+  IsectInfo info;
+  info.domain_id = id;
 
   while (!rq2_.empty()) {
     auto* ray = rq2_.front();
     rq2_.pop();
     auto* isect = mem_out_->Alloc<spray::RTCRayIntersection>(1, false);
     isect->tfar = SPRAY_FLOAT_INF;
-    bool is_hit =
-        scene_->intersect(rtc_scene, cache_block, ray->org, ray->dir, isect);
-    icache_item_.isect = isect;
-    icache_item_.ray = ray;
+    bool is_hit = scene_->intersect(sinfo_.rtc_scene, sinfo_.cache_block,
+                                    ray->org, ray->dir, isect);
+    info.isect = isect;
+    info.ray = ray;
 
-    frq2_.push(icache_item_);
+    frq2_.push(info);
   }
 }
 
 template <typename ShaderT>
-void TContext<ShaderT>::isectRecvRad(int id, Ray* ray) {
-  //
-  auto* isect = mem_out_->Alloc<spray::RTCRayIntersection>(1, false);
-  //
-  bool is_hit = scene_->intersect(sinfo_.rtc_scene, sinfo_.cache_block,
-                                  ray->org, ray->dir, isect);
-
-  if (is_hit) {
-    isect_.ray = ray;
-    isect_.isect = isect;
-    isects_.push(isect_);
-  }
-}
-
-template <typename ShaderT>
-void TContext<ShaderT>::occlRecvShad(int id, Ray* ray) {
-  int samid = ray->samid;
-  int light = ray->light;
-
-  if (!vbuf_->occluded(samid, light)) {
-    bool is_occluded =
-        scene_->occluded(sinfo_.rtc_scene, ray->org, ray->dir, &rtc_ray_);
-
-    if (is_occluded) {
-      occl_.samid = samid;
-      occl_.light = light;
-      occls_.push(occl_);
-    }
-  }
-}
-
-template <typename ShaderT>
-void TContext<ShaderT>::procFsq2() {
-  while (!fsq2_.empty()) {
-    auto& item = fsq2_.front();
-    auto* ray = item.ray;
-    int samid = ray->samid;
-    if (vbuf_->correct(samid, ray->t)) {
-      if (ray->occluded) {  // set obuf
-        vbuf_->setOBuf(samid, ray->light);
-      } else {  // to retire q, isect domains exluding its domain
-        retire_q_.push(ray);
-        isector_.intersect(item.domain_id, scene_, ray, &sqs_);
-      }
-    }
-    fsq2_.pop();
-  }
-}
-
-template <typename ShaderT>
-void TContext<ShaderT>::procFrq2() {
+void TContext<ShaderT>::resolveRadiances(const VBuf& vbuf) {
   while (!frq2_.empty()) {
-    auto& item = frq2_.front();
-    auto* ray = item.ray;
-    auto* isect = item.isect;
-    if (vbuf_->correct(ray->samid, ray->t)) {
-      auto* isect = item.isect;
-
+    auto& info = frq2_.front();
+    auto* ray = info.ray;
+    if (vbuf.correct(ray->samid, ray->t)) {
+      auto* isect = info.isect;
       if (!std::isinf(isect->tfar)) {  // hit
-        cached_rq_.push(item);
-        isector_.intersect(item.domain_id, isect->tfar, scene_, ray, &rqs_);
+        cached_rq_.push(info);
+        isector_.intersect(info.domain_id, isect->tfar, scene_, ray, &rqs_);
       } else {
-        isector_.intersect(item.domain_id, scene_, ray, &rqs_);
+        isector_.intersect(info.domain_id, scene_, ray, &rqs_);
       }
     }
     frq2_.pop();
@@ -308,49 +204,38 @@ void TContext<ShaderT>::procFrq2() {
 }
 
 template <typename ShaderT>
-void TContext<ShaderT>::updateTBufWithCached() {
-  while (!cached_rq_.empty()) {
-    auto& item = cached_rq_.front();
-    auto* ray = item.ray;
-
-    // supposed to be correct since it is not speculative
-    auto* isect = item.isect;
-
-    if (vbuf_->updateTBufOutT(isect->tfar, ray)) {
-      reduced_cached_rq_.push(item);
+void TContext<ShaderT>::resolveShadows(const VBuf& vbuf) {
+  while (!fsq2_.empty()) {
+    auto& info = fsq2_.front();
+    auto* ray = info.ray;
+    if (vbuf.correct(ray->samid, ray->t)) {
+      if (ray->occluded) {
+        vbuf_->setObuf(ray->samid, ray->light);
+      } else {  // to retire q, isect domains exluding its domain
+        retire_q_.push(ray);
+        isector_.intersect(info.domain_id, scene_, ray, &sqs_);
+      }
     }
-    cached_rq_.pop();
+    fsq2_.pop();
   }
 }
 
 template <typename ShaderT>
-void TContext<ShaderT>::processCached(int ray_depth) {
-  while (!reduced_cached_rq_.empty()) {
-    auto& item = reduced_cached_rq_.front();
-    auto* ray = item.ray;
-
-    // supposed to be correct since it is not speculative
-    auto* isect = item.isect;
-
-    shader_(item.domain_id, *ray, *isect, mem_out_, &sq2_, &rq2_, ray_depth);
-
-    scene_->load(item.domain_id, &sinfo_);
-    filterSq2(item.domain_id);
-    filterRq2(item.domain_id);
-
-    reduced_cached_rq_.pop();
-  }
-}
-
-template <typename ShaderT>
-void TContext<ShaderT>::procRetireQ(int num_pixel_samples) {
-  double scale = 1.0 / (double)num_pixel_samples;
+void TContext<ShaderT>::retireUntouched() {
   while (!retire_q_.empty()) {
     auto* ray = retire_q_.front();
     retire_q_.pop();
+    image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
+  }
+}
 
-    if (!vbuf_->occluded(ray->samid, ray->light)) {
-      image_->add(ray->pixid, ray->w, scale);
+template <typename ShaderT>
+void TContext<ShaderT>::retireShadows(const VBuf& vbuf) {
+  while (!retire_q_.empty()) {
+    auto* ray = retire_q_.front();
+    retire_q_.pop();
+    if (!vbuf.occluded(ray->samid, ray->light)) {
+      image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
     }
   }
 }
@@ -372,6 +257,64 @@ void TContext<ShaderT>::sendRays(bool shadow, int id, Ray* rays) {
     memcpy(&rays[target], ray, sizeof(Ray));
     ++target;
     q->pop();
+  }
+}
+
+template <typename ShaderT>
+void TContext<ShaderT>::compositeThreadTbufs(int tid,
+                                             std::vector<VBuf>* vbufs) {
+  //
+  VBuf* dest_buf = &((*vbufs)[0]);
+
+  std::size_t tbuf_size = dest_buf->getTbufSize();
+  std::size_t num_threads = vbufs->size();
+
+  std::size_t step = num_threads << 4;
+
+  for (std::size_t i = 0; i < tbuf_size; i += step) {
+    std::size_t base = (tid << 4) + i;
+
+    for (std::size_t j = 0; j < 16; ++j) {
+      std::size_t index = base + j;
+
+      if (index < tbuf_size) {
+        float min = dest_buf->getTbufOut(index);
+        for (std::size_t k = 1; k < num_threads; ++k) {
+          float t = (*vbufs)[k].getTbufOut(index);
+          if (t < min) min = t;
+        }
+        dest_buf->setTbufOut(index, min);
+      }
+    }
+  }
+}
+
+template <typename ShaderT>
+void TContext<ShaderT>::compositeThreadObufs(int tid,
+                                             std::vector<VBuf>* vbufs) {
+  //
+  VBuf* dest_buf = &((*vbufs)[0]);
+
+  std::size_t obuf_size = dest_buf->getObufSize();
+  std::size_t num_threads = vbufs->size();
+
+  std::size_t step = num_threads << 4;
+
+  for (std::size_t i = 0; i < obuf_size; i += step) {
+    std::size_t base = (tid << 4) + i;
+
+    for (std::size_t j = 0; j < 16; ++j) {
+      std::size_t index = base + j;
+
+      if (index < obuf_size) {
+        uint32_t reduced_ovalue = dest_buf->getObuf(index);
+        for (std::size_t k = 1; k < num_threads; ++k) {
+          uint32_t ovalue = (*vbufs)[k].getObuf(index);
+          reduced_ovalue |= ovalue;
+        }
+        dest_buf->setObufByIndex(index, reduced_ovalue);
+      }
+    }
   }
 }
 

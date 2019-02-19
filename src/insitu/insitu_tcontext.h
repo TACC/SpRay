@@ -60,6 +60,9 @@ class ThreadWorkStats {
 
 template <typename ShaderT>
 class TContext {
+  typedef std::queue<Ray*> RayQ;
+  typedef spray::QVector<Ray*> Qvector;
+
  public:
   typedef typename ShaderT::SceneType SceneType;
 
@@ -69,7 +72,6 @@ class TContext {
   }
   ~TContext() { resetMems(); }
 
- public:
   void init(const Config& cfg, int ndomains,
             const spray::InsituPartition* partition, SceneType* scene,
             VBuf* vbuf, spray::HdrImage* image);
@@ -94,25 +96,20 @@ class TContext {
 
   spray::MemoryArena* getMemIn() { return mem_in_; }
 
- private:
-  spray::MemoryArena* mem_in_;   // rays being processed
-  spray::MemoryArena* mem_out_;  // rays being generated
-  spray::MemoryArena mem_0_;
-  spray::MemoryArena mem_1_;
-
-  const spray::InsituPartition* partition_;
-  SceneType* scene_;  // TODO: use const
-  VBuf* vbuf_;
-  spray::HdrImage* image_;
-
-  int num_domains_;
-
- public:
   void isectDomains(Ray* ray) {
-    isector_.intersect(num_domains_, scene_, ray, &rqs_);
+#ifdef SPRAY_GLOG_CHECK
+    CHECK_LT(ray->pixid, image_->w * image_->h);
+#endif
+    isector_.intersect(scene_, ray, &rqs_);
   }
 
- public:
+  void processRays(int rank, int ray_depth);
+  void pushRadianceRay(int id, Ray* ray) { rqs_.push(id, ray); }
+  void pushShadowRay(int id, Ray* ray) { sqs_.push(id, ray); }
+
+  void compositeThreadTbufs(int tid, std::vector<VBuf>* vbufs);
+  void compositeThreadObufs(int tid, std::vector<VBuf>* vbufs);
+
   void populateRadWorkStats();
   void populateWorkStats();
   std::queue<int>* getRadianceBlockIds() {
@@ -123,69 +120,16 @@ class TContext {
   }
   bool hasCachedBlock() const { return work_stats_.hasCachedBlock(); }
 
- private:
-  ThreadWorkStats work_stats_;  // number of domain blocks to process
-
- public:
-  void setSceneInfo(SceneInfo& sinfo) { sinfo_ = sinfo; }
-  void processRays(int id, SceneInfo& sinfo);
-  void processRays2() {
-    procFrq2();
-    procFsq2();
+  void resolveSecondaryRays(const VBuf& vbuf) {
+    resolveRadiances(vbuf);
+    resolveShadows(vbuf);
   }
-  void updateVisBuf();
-  void updateTBuf();
-  void updateOBuf();
-  void genRays(int id, int ray_depth);
-  void isectRecvRad(int id, Ray* ray);
-  void occlRecvShad(int id, Ray* ray);
-  void isectCachedRq(int ray_depth);
-  void procRetireQ(int num_pixel_samples);
+
+  void retireUntouched();
+  void retireShadows(const VBuf& vbuf);
+
   void sendRays(bool shadow, int id, Ray* rays);
-  void updateTBufWithCached();
-  void processCached(int ray_depth);
 
- private:
-  void filterSq2(int id);
-  void filterRq2(int id);
-  void procFsq2();
-  void procFrq2();
-
- private:
-  struct IsectInfo {
-    Ray* ray;
-    spray::RTCRayIntersection* isect;
-  };
-
-  struct OcclInfo {
-    int samid;
-    int light;
-  };
-
-  struct IsectCacheItem {
-    int domain_id;
-    spray::RTCRayIntersection* isect;
-    Ray* ray;
-  };
-
-  struct OcclCacheItem {
-    int domain_id;
-    Ray* ray;
-  };
-
-  IsectInfo isect_;
-  std::queue<IsectInfo> isects_;
-  std::queue<IsectInfo> reduced_isects_;
-
-  OcclInfo occl_;
-  std::queue<OcclInfo> occls_;
-
-  SceneInfo sinfo_;
-
-  IsectCacheItem icache_item_;
-  OcclCacheItem ocache_item_;
-
- public:
   bool isLocalQsEmpty(int id) const {
     return (rqs_.empty(id) && sqs_.empty(id));
   }
@@ -193,13 +137,55 @@ class TContext {
   std::size_t getRqSize(int id) const { return rqs_.size(id); }
   std::size_t getSqSize(int id) const { return sqs_.size(id); }
 
- public:
   // debug
   void flushRqs() { rqs_.flush(); }
 
+  void checkQs() const {
+    CHECK(rqs_.empty());
+    CHECK(sqs_.empty());
+    CHECK(rq2_.empty());
+    CHECK(sq2_.empty());
+    CHECK(frq2_.empty());
+    CHECK(fsq2_.empty());
+    CHECK(retire_q_.empty());
+    CHECK(cached_rq_.empty());
+  }
+
  private:
-  OcclInfo occl_info_;
-  IsectInfo isect_info_;
+  void processRadiance(int id, int ray_depth, Ray* ray);
+  void processShadow(int id, Ray* ray);
+
+  void filterSq2(int id);
+  void filterRq2(int id);
+
+  void resolveRadiances(const VBuf& vbuf);
+  void resolveShadows(const VBuf& vbuf);
+
+ private:
+  struct IsectInfo {
+    int domain_id;
+    spray::RTCRayIntersection* isect;
+    Ray* ray;
+  };
+
+  struct OcclInfo {
+    int domain_id;
+    Ray* ray;
+  };
+
+  spray::MemoryArena* mem_in_;   // rays being processed
+  spray::MemoryArena* mem_out_;  // rays being generated
+  spray::MemoryArena mem_0_;
+  spray::MemoryArena mem_1_;
+
+  const spray::InsituPartition* partition_;
+  SceneType* scene_;
+  VBuf* vbuf_;
+  spray::HdrImage* image_;
+
+  SceneInfo sinfo_;
+
+  ThreadWorkStats work_stats_;  // number of domain blocks to process
 
   ShaderT shader_;
 
@@ -207,19 +193,21 @@ class TContext {
   spray::RTCRayIntersection rtc_isect_;
   RTCRay rtc_ray_;
 
-  spray::QVector<Ray*> rqs_;
-  spray::QVector<Ray*> sqs_;
+  Qvector rqs_;
+  Qvector sqs_;
 
-  std::queue<Ray*> rq2_;
-  std::queue<Ray*> sq2_;
+  RayQ rq2_;
+  RayQ sq2_;
 
-  std::queue<IsectCacheItem> frq2_;  // filtered
-  std::queue<OcclCacheItem> fsq2_;   // filtered
+  RayQ retire_q_;     ///< Retire queue for foreground colors.
 
-  std::queue<Ray*> retire_q_;
+  std::queue<IsectInfo> cached_rq_;
+  std::queue<IsectInfo> frq2_;
+  std::queue<OcclInfo> fsq2_;
 
-  std::queue<IsectCacheItem> cached_rq_;
-  std::queue<IsectCacheItem> reduced_cached_rq_;
+  double one_over_num_pixel_samples_;
+
+  int num_domains_;
 };
 
 }  // namespace insitu

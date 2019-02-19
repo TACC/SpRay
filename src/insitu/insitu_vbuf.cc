@@ -78,14 +78,16 @@ std::size_t VBuf::obufIndex(int samid, int light, std::size_t* bit) const {
   std::size_t obuf_index = id >> 5;  // id / 32
   *bit = id - (obuf_index << 5);     // id % 32 (bit index)
 #ifdef SPRAY_GLOG_CHECK
-  CHECK_LT(obuf_index, obuf_size_);
+  CHECK_LT(obuf_index, obuf_size_)
+      << "[samid " << samid << "][total_num_light_samples "
+      << total_num_light_samples_ << "][light id " << light << "]";
   CHECK_LT(*bit, 32);
   CHECK_GE(*bit, 0);
 #endif
   return obuf_index;
 }
 
-void VBuf::setOBuf(int samid, int light) {
+void VBuf::setObuf(int samid, int light) {
   std::size_t bit;
   std::size_t i = obufIndex(samid, light, &bit);
   uint32_t o = obuf_[i];
@@ -99,7 +101,7 @@ bool VBuf::occluded(int samid, int light) const {
   return ((o >> bit) & 1);
 }
 
-void VBuf::colorTBuf(spray::HdrImage* image) {
+void VBuf::colorTbuf(spray::HdrImage* image) {
   float color[3];
   color[0] = color[1] = color[2] = 0.5f;
   for (int y = tile_.y; y < tile_.y + tile_.h; ++y) {

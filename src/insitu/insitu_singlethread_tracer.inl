@@ -252,7 +252,7 @@ void SingleThreadTracer<ShaderT>::procRad(int id, Ray *ray) {
                                   ray->org, ray->dir, &rtc_isect_);
 
   if (is_hit) {
-    if (vbuf_.updateTBufOutT(rtc_isect_.tfar, ray)) {
+    if (vbuf_.updateTbufOut(rtc_isect_.tfar, ray)) {
       shader_(id, *ray, rtc_isect_, mem_out_, &sq2_, &rq2_, ray_depth_);
       filterSq2(id);
       filterRq2(id);
@@ -267,7 +267,7 @@ void SingleThreadTracer<ShaderT>::procShad(int id, Ray *ray) {
         scene_->occluded(sinfo_.rtc_scene, ray->org, ray->dir, &rtc_ray_);
 
     if (is_occluded) {
-      vbuf_.setOBuf(ray->samid, ray->light);
+      vbuf_.setObuf(ray->samid, ray->light);
     }
   }
 }
@@ -317,7 +317,7 @@ void SingleThreadTracer<ShaderT>::procFsq2() {
     auto *ray = info.ray;
     if (vbuf_.correct(ray->samid, ray->t)) {
       if (ray->occluded) {
-        vbuf_.setOBuf(ray->samid, ray->light);
+        vbuf_.setObuf(ray->samid, ray->light);
       } else {  // to retire q, isect domains exluding its domain
         retire_q_.push(ray);
         isector_.intersect(info.domain_id, scene_, ray, &sqs_);
@@ -354,7 +354,7 @@ void SingleThreadTracer<ShaderT>::procCachedRq() {
 
     auto *isect = info.isect;
 
-    if (vbuf_.updateTBufOutT(isect->tfar, ray)) {
+    if (vbuf_.updateTbufOut(isect->tfar, ray)) {
       shader_(info.domain_id, *ray, *isect, mem_out_, &sq2_, &rq2_, ray_depth_);
 
       scene_->load(info.domain_id, &sinfo_);
@@ -384,8 +384,8 @@ void SingleThreadTracer<ShaderT>::trace() {
     tile_list_.front(&blocking_tile_, &stripe_);
     tile_list_.pop();
 
-    vbuf_.resetTBufOut();
-    vbuf_.resetOBuf();
+    vbuf_.resetTbufOut();
+    vbuf_.resetObuf();
 
     shared_eyes_.num =
         (std::size_t)(stripe_.w * stripe_.h) * num_pixel_samples_;
@@ -436,20 +436,20 @@ void SingleThreadTracer<ShaderT>::trace() {
       procRecvQs();
 
       if (ray_depth_ < num_bounces_ && num_ranks_ > 1) {
-        vbuf_.compositeTBuf();
+        vbuf_.compositeTbuf();
       }
 
       if (ray_depth_ > 0 && num_ranks_ > 1) {
-        vbuf_.compositeOBuf();
+        vbuf_.compositeObuf();
       }
 
       if (ray_depth_ > 0) {
         procRetireQ();
-        vbuf_.resetOBuf();
+        vbuf_.resetObuf();
       }
 
-      vbuf_.resetTBufIn();
-      vbuf_.swapTBufs();
+      vbuf_.resetTbufIn();
+      vbuf_.swapTbufs();
 
       procFrq2();
       procFsq2();
