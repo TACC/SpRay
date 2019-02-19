@@ -241,6 +241,8 @@ void MultiThreadTracer<ShaderT>::assignRecvRaysToThreads(
 #pragma omp barrier
   }
 
+#pragma omp barrier
+
   while (1) {
 #pragma omp single
     {
