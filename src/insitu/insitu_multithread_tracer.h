@@ -79,7 +79,8 @@ class MultiThreadTracer {
 
   ShaderT shader_;
   Comm<DefaultReceiver> comm_;
-  VBuf vbuf_;
+  // VBuf vbuf_;
+  std::vector<VBuf> thread_vbufs_;
 
   SceneInfo sinfo_;
   spray::RTCRayIntersection rtc_isect_;
@@ -91,16 +92,25 @@ class MultiThreadTracer {
   void sendRays(int tid, TContextType *tcontext);
   void send(bool shadow, int tid, int domain_id, int dest, std::size_t num_rays,
             TContextType *tcontext);
-  void procLocalQs(int tid, int ray_depth, TContextType *tcontext);
-  void procRecvQs(int ray_depth, TContextType *tcontext);
-  void procRecvRads(int ray_depth, int id, Ray *rays, int64_t count,
-                    TContextType *tcontext);
-  void procRecvShads(int id, Ray *rays, int64_t count, TContextType *tcontext);
+  // void procLocalQs(int tid, int ray_depth, TContextType *tcontext);
+  // void procRecvQs(int ray_depth, TContextType *tcontext);
+  // void procRecvRads(int ray_depth, int id, Ray *rays, int64_t count,
+  //                   TContextType *tcontext);
+  // void procRecvShads(int id, Ray *rays, int64_t count, TContextType
+  // *tcontext);
 
-  void procCachedRq(int ray_depth, TContextType *tcontext);
+  // void procCachedRq(int ray_depth, TContextType *tcontext);
 
   void populateRadWorkStats(TContextType *tcontext);
   void populateWorkStats(TContextType *tcontext);
+
+  void createTileWork(TContextType *tcontext);
+
+  void assignRecvRaysToThreads(TContextType *tcontext);
+  void assignRecvRadianceRaysToThreads(int id, Ray *rays, int64_t count,
+                                       TContextType *tcontext);
+  void assignRecvShadowRaysToThreads(int id, Ray *rays, int64_t count,
+                                     TContextType *tcontext);
 
  private:
   const spray::Camera *camera_;

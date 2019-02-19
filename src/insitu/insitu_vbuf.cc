@@ -87,7 +87,7 @@ std::size_t VBuf::obufIndex(int samid, int light, std::size_t* bit) const {
   return obuf_index;
 }
 
-void VBuf::setOBuf(int samid, int light) {
+void VBuf::setObuf(int samid, int light) {
   std::size_t bit;
   std::size_t i = obufIndex(samid, light, &bit);
   uint32_t o = obuf_[i];
@@ -101,7 +101,7 @@ bool VBuf::occluded(int samid, int light) const {
   return ((o >> bit) & 1);
 }
 
-void VBuf::colorTBuf(spray::HdrImage* image) {
+void VBuf::colorTbuf(spray::HdrImage* image) {
   float color[3];
   color[0] = color[1] = color[2] = 0.5f;
   for (int y = tile_.y; y < tile_.y + tile_.h; ++y) {
