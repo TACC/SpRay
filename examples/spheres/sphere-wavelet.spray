@@ -1,4 +1,5 @@
-light diffuse-sphere .05 .05 .05 
+# light diffuse-sphere .05 .05 .05 
+light diffuse .05 .05 .05 
 
 DomainBegin
 # greenish matte ball
