@@ -73,7 +73,7 @@ def mergeBounds(model_bounds_list):
 
 def addLights(outfile):
   with open(outfile, "w") as fout:
-    fout.write("light diffuse .05 .05 .05\n")
+    fout.write("light diffuse-hemisphere .05 .05 .05\n")
     # fout.write("light diffuse-sphere .05 .05 .05\n")
 
 def getDomainId(filename):

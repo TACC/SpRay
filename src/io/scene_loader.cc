@@ -331,7 +331,7 @@ void SceneLoader::parseLight(const std::vector<std::string>& tokens) {
 
     addLight(new PointLight(position, radiance));
 
-  } else if (tokens[1] == "diffuse") {
+  } else if (tokens[1] == "diffuse-hemisphere") {
     CHECK_EQ(tokens.size(), 5);
     glm::vec3 position, radiance;
 

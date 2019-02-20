@@ -1,5 +1,5 @@
 light point -20 20 20 .2 .2 .2 
-light diffuse .1 .1 .1 
+light diffuse-hemisphere .1 .1 .1 
 
 ######################
 # 0
