@@ -294,7 +294,7 @@ def main():
   parser.add_argument('--out', nargs=1, default=['scene.domain'], help='output file')
   parser.add_argument('--abspath', action='store_true', help='use absoulte path for ply files')
   # parser.add_argument('--logarithmic-colormap', action='store_true', help='Use logarithmic normalization for color mapping')
-  parser.add_argument('--contour-range', nargs=2, required=False, default=[0.0, 2.0], help='minimum and maximum contour values')
+  parser.add_argument('--contour-range', nargs=2, type=float, required=False, default=[0.0, 2.0], help='minimum and maximum contour values')
   parser.add_argument('--colormap', nargs=1, required=False, default=['coolwarm'], help='colormap name. See the list of colormap names in the link: https://matplotlib.org/examples/color/colormaps_reference.html')
   
   # parser.add_argument('--scale', nargs=3, type=float, help='scaling factor (x,y,z)')
