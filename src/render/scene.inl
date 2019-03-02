@@ -420,6 +420,7 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
   std::size_t num_domains = domains_.size();
   std::size_t total_num_models = 0;
 
+  // count the number of configured domains and the total number of models
   std::size_t num_configured_domains = 0;
   for (std::size_t id = 0; id < num_domains; ++id) {
     total_num_models += domains_[id].getNumModels();
@@ -427,88 +428,91 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
     num_configured_domains += domain.isConfigured();
   }
 
-  bool all_domains_configured = (num_configured_domains == num_domains);
-  // CHECK_EQ(all_domains_configured, true);
+  // if not all domains are configured and there are geometric model files (i.e.
+  // ply files), configure those not configured
 
+  bool all_domains_configured = (num_configured_domains == num_domains);
   std::vector<ModelInfo> model_info_recvbuf;
 
-  if (!all_domains_configured) {
+  if (!all_domains_configured && total_num_models) {
     std::vector<ModelInfo> model_info_sendbuf;
 
-    if (total_num_models) {
-      std::size_t num_assigned_models = total_num_models / mpi::size();
+    // assign models to mpi tasks
+    std::size_t num_assigned_models = total_num_models / mpi::size();
 
-      if (num_assigned_models == 0) num_assigned_models = 1;
+    // if no models are assigned, just assume it has one model assigned for a
+    // place hodler.
+    if (num_assigned_models == 0) num_assigned_models = 1;
 
-      // TODO: reduce sendbuf size
-      model_info_sendbuf.resize(num_assigned_models * mpi::size());
-      model_info_recvbuf.resize(num_assigned_models * mpi::size());
+    // TODO: reduce sendbuf size
+    model_info_sendbuf.resize(num_assigned_models * mpi::size());
+    model_info_recvbuf.resize(num_assigned_models * mpi::size());
 
-      std::size_t begin = mpi::rank() * num_assigned_models;
+    std::size_t begin = mpi::rank() * num_assigned_models;
 
-      if (begin < total_num_models) {
-        std::size_t end = begin + num_assigned_models;
-        if (end > total_num_models) end = total_num_models;
+    // read model file if my assigned models are in the valid range
+    if (begin < total_num_models) {
+      std::size_t end = begin + num_assigned_models;
+      if (end > total_num_models) end = total_num_models;
 
-        PlyLoader::LongHeader long_header;
-        PlyLoader::Header header;
-        std::string extension;
+      PlyLoader::LongHeader long_header;
+      PlyLoader::Header header;
+      std::string extension;
 
-        std::size_t model_id = 0;
+      std::size_t model_id = 0;
 
-        for (std::size_t id = 0; id < num_domains; ++id) {
-          const Domain& domain = domains_[id];
-          std::size_t num_models = domain.getNumModels();
+      for (std::size_t id = 0; id < num_domains; ++id) {
+        const Domain& domain = domains_[id];
+        std::size_t num_models = domain.getNumModels();
 
-          for (std::size_t m = 0; m < num_models; ++m) {
-            if (model_id >= begin && model_id < end) {
-              const SurfaceModel& model = domain.getModel(m);
-              const std::string& filename = model.getFilename();
-              CHECK_EQ(filename.empty(), false);
-              extension = spray::util::getFileExtension(filename);
-              CHECK_EQ(extension, "ply");
+        for (std::size_t m = 0; m < num_models; ++m) {
+          // load assigned models only
+          if (model_id >= begin && model_id < end) {
+            const SurfaceModel& model = domain.getModel(m);
+            const std::string& filename = model.getFilename();
+            CHECK_EQ(filename.empty(), false);
+            extension = spray::util::getFileExtension(filename);
+            CHECK_EQ(extension, "ply");
 
-              bool model_valid_vertex_count = model.isNumVerticesSet();
-              bool model_valid_face_count = model.isNumFacesSet();
-              bool model_valid_aabb = model.isObjectAabbSet();
-              bool model_configured = model_valid_vertex_count &&
-                                      model_valid_face_count &&
-                                      model_valid_aabb;
+            bool model_valid_vertex_count = model.isNumVerticesSet();
+            bool model_valid_face_count = model.isNumFacesSet();
+            bool model_valid_aabb = model.isObjectAabbSet();
+            bool model_configured = model_valid_vertex_count &&
+                                    model_valid_face_count && model_valid_aabb;
 
-              if (!model_configured) {
-                ModelInfo* info = &model_info_sendbuf[model_id];
+            if (!model_configured) {
+              ModelInfo* info = &model_info_sendbuf[model_id];
 
-                if (!model_valid_aabb) {
-                  PlyLoader::readLongHeader(filename, &long_header);
+              if (!model_valid_aabb) {
+                PlyLoader::readLongHeader(filename, &long_header);
 
-                  info->num_vertices = long_header.num_vertices;
-                  info->num_faces = long_header.num_faces;
+                info->num_vertices = long_header.num_vertices;
+                info->num_faces = long_header.num_faces;
 
-                  for (int i = 0; i < 3; ++i) {
-                    info->obj_bounds_min[i] = long_header.bounds.getMin()[i];
-                  }
-                  for (int i = 0; i < 3; ++i) {
-                    info->obj_bounds_max[i] = long_header.bounds.getMax()[i];
-                  }
-                } else {
-                  PlyLoader::quickHeaderRead(filename, &header);
-
-                  info->num_vertices = header.num_vertices;
-                  info->num_faces = header.num_faces;
+                for (int i = 0; i < 3; ++i) {
+                  info->obj_bounds_min[i] = long_header.bounds.getMin()[i];
                 }
+                for (int i = 0; i < 3; ++i) {
+                  info->obj_bounds_max[i] = long_header.bounds.getMax()[i];
+                }
+              } else {
+                PlyLoader::quickHeaderRead(filename, &header);
+
+                info->num_vertices = header.num_vertices;
+                info->num_faces = header.num_faces;
               }
             }
-            ++model_id;
           }
+          ++model_id;
         }
       }
-
-      // gather model info
-      std::size_t count = sizeof(ModelInfo) * num_assigned_models;
-      MPI_Allgather(&model_info_sendbuf[begin], count, MPI_UNSIGNED_CHAR,
-                    &model_info_recvbuf[0], count, MPI_UNSIGNED_CHAR,
-                    MPI_COMM_WORLD);
     }
+
+    // gather model info
+    std::size_t count = sizeof(ModelInfo) * num_assigned_models;
+    MPI_Allgather(&model_info_sendbuf[begin], count, MPI_UNSIGNED_CHAR,
+                  &model_info_recvbuf[0], count, MPI_UNSIGNED_CHAR,
+                  MPI_COMM_WORLD);
   }
 
   // update domains
