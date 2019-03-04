@@ -48,7 +48,7 @@ class HybridGeometryBuffer {
   ~HybridGeometryBuffer();
 
  public:
-  void init(bool use_spray_color, int max_cache_size_ndomains,
+  void init(bool use_spray_color, std::size_t cache_size,
             std::size_t max_nvertices, std::size_t max_nfaces);
 
   RTCScene load(int cache_block, Domain& domain);
@@ -162,7 +162,7 @@ class HybridGeometryBuffer {
   enum MeshStatus { CREATED = -1, DESTROYED = 0 };
 
  private:
-  int max_cache_size_;  // in number of domains
+  std::size_t cache_size_;
   std::size_t max_nvertices_;
   std::size_t max_nfaces_;
 

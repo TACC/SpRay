@@ -22,41 +22,29 @@
 #error An implementation of Scene
 #endif
 
-#define DEBUG_SPRAY_SCENE
-#undef DEBUG_SPRAY_SCENE
-
 namespace spray {
 
-#ifdef DEBUG_SPRAY_SCENE
-template <typename SurfaceBufT>
-inline bool intersect(SurfaceBufT& sbuf, RTCScene rtc_scene, int cache_block,
-                      RTCRayIntersection* isect, std::vector<Domain>& domains) {
-  rtcIntersect(rtc_scene, (RTCRay&)(*isect));
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::getAssignedGeometrySizes(
+    std::size_t* max_num_vertices, std::size_t* max_num_faces) {
+  const auto& ids = partition_.getDomains(mpi::rank());
 
-  if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-    sbuf.updateIntersection(cache_block, isect);
-    return true;
-  }
-  return false;
-}
+  std::size_t nvertices = 0;
+  std::size_t nfaces = 0;
 
-template <>
-inline bool intersect<ShapeBuffer>(ShapeBuffer& sbuf, RTCScene rtc_scene,
-                                   int cache_block, RTCRayIntersection* isect,
-                                   std::vector<Domain>& domains) {
-  std::vector<Shape*>& shapes = domains[0].shapes;
-
-  for (std::size_t i = 0; i < shapes.size(); ++i) {
-    Sphere* s = (Sphere*)shapes[i];
-    ShapeBuffer::intersect(s, (RTCRay&)(*isect));
-    if (isect->geomID != RTC_INVALID_GEOMETRY_ID) {
-      isect->material = s->material;
-      return true;
+  for (auto id : ids) {
+    const Domain& domain = domains_[id];
+    if (domain.getNumVertices() > nvertices) {
+      nvertices = domain.getNumVertices();
+    }
+    if (domain.getNumFaces() > nfaces) {
+      nfaces = domain.getNumFaces();
     }
   }
-  return false;
+
+  *max_num_vertices = nvertices;
+  *max_num_faces = nfaces;
 }
-#endif
 
 template <typename CacheT, typename SurfaceBufT>
 void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
@@ -107,8 +95,6 @@ void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
       LOG(INFO) << "rank " << mpi::rank() << " domain " << r;
     }
 #endif
-    // NOTE: override cache size
-    cache_size = partition_.getNumDomains(mpi::rank());
   }
 
   // TODO: enable this
@@ -123,19 +109,38 @@ void Scene<CacheT, SurfaceBufT>::init(const Config& cfg) {
 
   // initialize cache
   if (!(view_mode == VIEW_MODE_DOMAIN || view_mode == VIEW_MODE_PARTITION)) {
-    cache_.init(domains_.size(), cache_size, insitu_mode);
+    std::size_t sf_cache_size;
+    if (insitu_mode) {
+      sf_cache_size = partition_.getNumDomains(mpi::rank());
 
-    // initialize mesh buffer
-    surface_buf_.init(cfg.use_spray_color, cache_.getCacheSize(),
-                      max_num_vertices, max_num_faces);
+      // override max_num_vertices and max_num_faces
+      // max number of vertices/faces assigned to this task
+      getAssignedGeometrySizes(&max_num_vertices, &max_num_faces);
+
+    } else if (cache_size < 0 || cache_size > domains_.size()) {
+      sf_cache_size = domains_.size();
+
+    } else {
+      sf_cache_size = cache_size;
+    }
+
+    cache_.init(domains_.size(),
+                sf_cache_size /*unused for InsituCache and InfiniteCache*/);
+
+    surface_buf_.init(cfg.use_spray_color, sf_cache_size, max_num_vertices,
+                      max_num_faces);
 
     // warm up cache
     if (view_mode == VIEW_MODE_FILM || view_mode == VIEW_MODE_GLFW) {
       if (insitu_mode) {
         const std::list<int>& domains = partition_.getDomains(mpi::rank());
-        for (int id : domains) load(id);
+        for (int id : domains) {
+          load(id);
+        }
       } else if (cache_size < 0) {
-        for (std::size_t id = 0; id < domains_.size(); ++id) load(id);
+        for (std::size_t id = 0; id < domains_.size(); ++id) {
+          load(id);
+        }
       }
     }
   }
@@ -182,21 +187,9 @@ template <typename CacheT, typename SurfaceBufT>
 void Scene<CacheT, SurfaceBufT>::load(int id) {
   int cache_block;
   if (cache_.load(id, &cache_block)) {
-#ifdef DEBUG_SPRAY_SCENE
-    LOG(INFO) << "loading cached domain " << id << " cache block "
-              << cache_block << " $size " << cache_.getSize() << " $capacity "
-              << cache_.getCacheSize();
-#endif
     scene_ = surface_buf_.get(cache_block);
   } else {
-#ifdef DEBUG_SPRAY_SCENE
-    LOG(INFO) << "loading uncached domain " << id << " cache block "
-              << cache_block << " $size " << cache_.getSize() << " $capacity "
-              << cache_.getCacheSize();
-#endif
     scene_ = surface_buf_.load(cache_block, domains_[id]);
-
-    // cache_.setLoaded(cache_block);
   }
   cache_block_ = cache_block;
 }
@@ -205,34 +198,13 @@ template <typename CacheT, typename SurfaceBufT>
 void Scene<CacheT, SurfaceBufT>::load(int id, SceneInfo* sinfo) {
   int cache_block;
   if (cache_.load(id, &cache_block)) {
-#ifdef DEBUG_SPRAY_SCENE
-    LOG(INFO) << "loading cached domain " << id << " cache block "
-              << cache_block << " $size " << cache_.getSize() << " $capacity "
-              << cache_.getCacheSize();
-#endif
     scene_ = surface_buf_.get(cache_block);
   } else {
-#ifdef DEBUG_SPRAY_SCENE
-    LOG(INFO) << "loading uncached domain " << id << " cache block "
-              << cache_block << " $size " << cache_.getSize() << " $capacity "
-              << cache_.getCacheSize();
-#endif
     scene_ = surface_buf_.load(cache_block, domains_[id]);
-
-    // cache_.setLoaded(cache_block);
   }
   sinfo->rtc_scene = scene_;
   sinfo->cache_block = cache_block;
 }
-
-#ifdef DEBUG_SPRAY_SCENE
-template <typename CacheT, typename SurfaceBufT>
-bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
-                                           RTCRayIntersection* isect) {
-  return spray::intersect(surface_buf_, rtc_scene, cache_block, isect,
-                          domains_);
-}
-#endif
 
 template <typename CacheT, typename SurfaceBufT>
 bool Scene<CacheT, SurfaceBufT>::intersect(RTCScene rtc_scene, int cache_block,
@@ -415,114 +387,101 @@ void Scene<CacheT, SurfaceBufT>::drawPartitions() {
 }
 
 template <typename CacheT, typename SurfaceBufT>
-void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
-    std::size_t* max_num_vertices, std::size_t* max_num_faces) {
-  std::size_t num_domains = domains_.size();
-  std::size_t total_num_models = 0;
+void Scene<CacheT, SurfaceBufT>::getModelInfo(
+    std::size_t total_num_models, std::vector<ModelInfo>* model_info_recvbuf) {
+  std::vector<ModelInfo> model_info_sendbuf;
 
-  // count the number of configured domains and the total number of models
-  std::size_t num_configured_domains = 0;
-  for (std::size_t id = 0; id < num_domains; ++id) {
-    total_num_models += domains_[id].getNumModels();
-    const Domain& domain = domains_[id];
-    num_configured_domains += domain.isConfigured();
-  }
+  // assign models to mpi tasks
+  std::size_t num_assigned_models = total_num_models / mpi::size();
 
-  // if not all domains are configured and there are geometric model files (i.e.
-  // ply files), configure those not configured
+  // if no models are assigned, just assume it has one model assigned for a
+  // place hodler.
+  if (num_assigned_models == 0) num_assigned_models = 1;
 
-  bool all_domains_configured = (num_configured_domains == num_domains);
-  std::vector<ModelInfo> model_info_recvbuf;
+  model_info_sendbuf.resize(num_assigned_models * mpi::size());
+  model_info_recvbuf->resize(num_assigned_models * mpi::size());
 
-  if (!all_domains_configured && total_num_models) {
-    std::vector<ModelInfo> model_info_sendbuf;
+  std::size_t begin = mpi::rank() * num_assigned_models;
 
-    // assign models to mpi tasks
-    std::size_t num_assigned_models = total_num_models / mpi::size();
+  // read model file if my assigned models are in the valid range
+  if (begin < total_num_models) {
+    std::size_t end = begin + num_assigned_models;
+    if (end > total_num_models) end = total_num_models;
 
-    // if no models are assigned, just assume it has one model assigned for a
-    // place hodler.
-    if (num_assigned_models == 0) num_assigned_models = 1;
+    PlyLoader::LongHeader long_header;
+    PlyLoader::Header header;
+    std::string extension;
 
-    // TODO: reduce sendbuf size
-    model_info_sendbuf.resize(num_assigned_models * mpi::size());
-    model_info_recvbuf.resize(num_assigned_models * mpi::size());
+    std::size_t model_id = 0;
 
-    std::size_t begin = mpi::rank() * num_assigned_models;
+    for (std::size_t id = 0; id < domains_.size(); ++id) {
+      const Domain& domain = domains_[id];
+      std::size_t num_models = domain.getNumModels();
 
-    // read model file if my assigned models are in the valid range
-    if (begin < total_num_models) {
-      std::size_t end = begin + num_assigned_models;
-      if (end > total_num_models) end = total_num_models;
+      for (std::size_t m = 0; m < num_models; ++m) {
+        // load assigned models only
+        if (model_id >= begin && model_id < end) {
+          const SurfaceModel& model = domain.getModel(m);
+          const std::string& filename = model.getFilename();
+          CHECK_EQ(filename.empty(), false);
+          extension = spray::util::getFileExtension(filename);
+          CHECK_EQ(extension, "ply");
 
-      PlyLoader::LongHeader long_header;
-      PlyLoader::Header header;
-      std::string extension;
+          bool model_valid_vertex_count = model.isNumVerticesSet();
+          bool model_valid_face_count = model.isNumFacesSet();
+          bool model_valid_aabb = model.isObjectAabbSet();
+          bool model_configured = model_valid_vertex_count &&
+                                  model_valid_face_count && model_valid_aabb;
 
-      std::size_t model_id = 0;
+          if (!model_configured) {
+            ModelInfo* info = &model_info_sendbuf[model_id];
 
-      for (std::size_t id = 0; id < num_domains; ++id) {
-        const Domain& domain = domains_[id];
-        std::size_t num_models = domain.getNumModels();
+            if (!model_valid_aabb) {
+              PlyLoader::readLongHeader(filename, &long_header);
 
-        for (std::size_t m = 0; m < num_models; ++m) {
-          // load assigned models only
-          if (model_id >= begin && model_id < end) {
-            const SurfaceModel& model = domain.getModel(m);
-            const std::string& filename = model.getFilename();
-            CHECK_EQ(filename.empty(), false);
-            extension = spray::util::getFileExtension(filename);
-            CHECK_EQ(extension, "ply");
+              info->num_vertices = long_header.num_vertices;
+              info->num_faces = long_header.num_faces;
 
-            bool model_valid_vertex_count = model.isNumVerticesSet();
-            bool model_valid_face_count = model.isNumFacesSet();
-            bool model_valid_aabb = model.isObjectAabbSet();
-            bool model_configured = model_valid_vertex_count &&
-                                    model_valid_face_count && model_valid_aabb;
-
-            if (!model_configured) {
-              ModelInfo* info = &model_info_sendbuf[model_id];
-
-              if (!model_valid_aabb) {
-                PlyLoader::readLongHeader(filename, &long_header);
-
-                info->num_vertices = long_header.num_vertices;
-                info->num_faces = long_header.num_faces;
-
-                for (int i = 0; i < 3; ++i) {
-                  info->obj_bounds_min[i] = long_header.bounds.getMin()[i];
-                }
-                for (int i = 0; i < 3; ++i) {
-                  info->obj_bounds_max[i] = long_header.bounds.getMax()[i];
-                }
-              } else {
-                PlyLoader::quickHeaderRead(filename, &header);
-
-                info->num_vertices = header.num_vertices;
-                info->num_faces = header.num_faces;
+              for (int i = 0; i < 3; ++i) {
+                info->obj_bounds_min[i] = long_header.bounds.getMin()[i];
               }
+              for (int i = 0; i < 3; ++i) {
+                info->obj_bounds_max[i] = long_header.bounds.getMax()[i];
+              }
+            } else {
+              PlyLoader::quickHeaderRead(filename, &header);
+
+              info->num_vertices = header.num_vertices;
+              info->num_faces = header.num_faces;
             }
           }
-          ++model_id;
         }
+        ++model_id;
       }
     }
-
-    // gather model info
-    std::size_t count = sizeof(ModelInfo) * num_assigned_models;
-    MPI_Allgather(&model_info_sendbuf[begin], count, MPI_UNSIGNED_CHAR,
-                  &model_info_recvbuf[0], count, MPI_UNSIGNED_CHAR,
-                  MPI_COMM_WORLD);
   }
 
-  // update domains
+  // gather model info
+  std::size_t count = sizeof(ModelInfo) * num_assigned_models;
+
+  MPI_Allgather(&model_info_sendbuf[begin], count, MPI_UNSIGNED_CHAR,
+                &(*model_info_recvbuf)[0], count, MPI_UNSIGNED_CHAR,
+                MPI_COMM_WORLD);
+}
+
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::updateDomains(
+    bool all_domains_configured,
+    const std::vector<ModelInfo>& model_info_recvbuf,
+    std::size_t* max_num_vertices, std::size_t* max_num_faces) {
   std::size_t model_id = 0;
   std::size_t max_nvertices = 0, max_nfaces = 0;
+  std::size_t nvertices = 0, nfaces = 0;
   std::size_t total_num_faces = 0;
 
   world_aabb_.reset();
 
-  for (std::size_t id = 0; id < num_domains; ++id) {
+  for (std::size_t id = 0; id < domains_.size(); ++id) {
     Domain* domain = &domains_[id];
 
     if (!all_domains_configured) {
@@ -530,24 +489,16 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
 
       for (std::size_t m = 0; m < num_models; ++m) {
         const SurfaceModel& model = domain->getModel(m);
-        bool model_valid_vertex_count = model.isNumVerticesSet();
-        bool model_valid_face_count = model.isNumFacesSet();
-        bool model_valid_aabb = model.isObjectAabbSet();
-        bool model_configured = model_valid_vertex_count &&
-                                model_valid_face_count && model_valid_aabb;
+        const ModelInfo& info = model_info_recvbuf[model_id];
 
-        if (!model_configured) {
-          const ModelInfo& info = model_info_recvbuf[model_id];
-
-          if (!model_valid_vertex_count) {
-            domain->setNumVertices(m, info.num_vertices);
-          }
-          if (!model_valid_face_count) {
-            domain->setNumFaces(m, info.num_faces);
-          }
-          if (!model_valid_aabb) {
-            domain->setObjectAabb(m, info.obj_bounds_min, info.obj_bounds_max);
-          }
+        if (!model.isNumVerticesSet()) {
+          domain->setNumVertices(m, info.num_vertices);
+        }
+        if (!model.isNumFacesSet()) {
+          domain->setNumFaces(m, info.num_faces);
+        }
+        if (!model.isObjectAabbSet()) {
+          domain->setObjectAabb(m, info.obj_bounds_min, info.obj_bounds_max);
         }
         ++model_id;
       }
@@ -556,7 +507,8 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
     domain->updateDomainInfo();
 
     CHECK_EQ(domain->getWorldAabb().isValid(), true)
-        << id << "," << num_domains;
+        << id << "," << domains_.size();
+
     if (!domain->hasShapes()) {
       CHECK_GT(domain->getNumVertices(), 0);
       CHECK_GT(domain->getNumFaces(), 0);
@@ -591,6 +543,34 @@ void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
     std::cout << "[INFO] total face count: " << total_num_faces << std::endl;
     std::cout << "[INFO] scene bounds: " << world_aabb_ << std::endl;
   }
+}
+
+template <typename CacheT, typename SurfaceBufT>
+void Scene<CacheT, SurfaceBufT>::loadAndPopulateDomainInfo(
+    std::size_t* max_num_vertices, std::size_t* max_num_faces) {
+  std::size_t num_domains = domains_.size();
+  std::size_t total_num_models = 0;
+
+  // count the number of configured domains and the total number of models
+  std::size_t num_configured_domains = 0;
+  for (std::size_t id = 0; id < num_domains; ++id) {
+    total_num_models += domains_[id].getNumModels();
+    const Domain& domain = domains_[id];
+    num_configured_domains += domain.isConfigured();
+  }
+
+  // if not all domains are configured and there are geometric model files (i.e.
+  // ply files), configure those not configured
+
+  bool all_domains_configured = (num_configured_domains == num_domains);
+  std::vector<ModelInfo> model_info_recvbuf;
+
+  if (!all_domains_configured && total_num_models) {
+    getModelInfo(total_num_models, &model_info_recvbuf);
+  }
+
+  updateDomains(all_domains_configured, model_info_recvbuf, max_num_vertices,
+                max_num_faces);
 }
 
 }  // namespace spray

@@ -20,32 +20,37 @@
 
 #pragma once
 
-#include <cstddef>
-
-#include "glog/logging.h"
+#include <vector>
 
 namespace spray {
 
 class InfiniteCache {
  public:
-  InfiniteCache();
-  ~InfiniteCache();
-
-  // max_aceh_size_ndomains is a don't care
-  void init(int num_domains, int cache_size, bool insitu_mode = false);
+  void init(int num_domains, int cache_size);
 
   // returns true if hit, false if miss
   bool load(int domid, int* cache_block_id);
 
-  int getCacheSize() const { return capacity_; }
-  int getSize() const { return capacity_; }
+  std::size_t getCacheSize() const { return status_.size(); }
 
  private:
   enum Status { HIT = -1, MISS = 0 };
 
- private:
-  int capacity_;  ///< unit in number of domains
-  int* status_;   ///< per-cache-entry status (-1: loaded, 0: not loaded)
+  /** per-cache-entry status (-1: loaded, 0: not loaded) */
+  std::vector<int> status_;
 };
+
+inline void InfiniteCache::init(int num_domains, int cache_size) {
+  status_.resize(num_domains, MISS);
+}
+
+inline bool InfiniteCache::load(int domid, int* cache_block_id) {
+  *cache_block_id = domid;
+  if (status_[domid] == HIT) {
+    return true;
+  }
+  status_[domid] = HIT;
+  return false;
+}
 
 }  // namespace spray

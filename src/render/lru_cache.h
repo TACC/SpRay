@@ -41,7 +41,7 @@ class LruCache {
  public:
   LruCache();
   // max_aceh_size_ndomains is a don't care
-  void init(int num_domains, int cache_size, bool insitu_mode = false);
+  void init(int num_domains, int cache_size);
 
   // returns true if hit, false if miss
   bool load(int domid, int* cache_block_id);

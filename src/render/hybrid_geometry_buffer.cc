@@ -40,7 +40,7 @@
 namespace spray {
 
 HybridGeometryBuffer::HybridGeometryBuffer()
-    : max_cache_size_(0),
+    : cache_size_(0),
       max_nvertices_(0),
       max_nfaces_(0),
       vertices_(nullptr),
@@ -55,19 +55,17 @@ HybridGeometryBuffer::HybridGeometryBuffer()
 
 HybridGeometryBuffer::~HybridGeometryBuffer() { cleanup(); }
 
-void HybridGeometryBuffer::init(bool use_spray_color,
-                                int max_cache_size_ndomains,
+void HybridGeometryBuffer::init(bool use_spray_color, std::size_t cache_size,
                                 std::size_t max_nvertices,
                                 std::size_t max_nfaces) {
   // cleanup
   cleanup();
 
   // sizes
-  max_cache_size_ = max_cache_size_ndomains;
+  cache_size_ = cache_size;
   max_nvertices_ = max_nvertices;
   max_nfaces_ = max_nfaces;
 
-  std::size_t cache_size = static_cast<std::size_t>(max_cache_size_ndomains);
   CHECK_GT(cache_size, 0);
 
   // vertices
@@ -287,7 +285,7 @@ void HybridGeometryBuffer::loadShapes(const std::vector<Shape*>& shapes,
 
 void HybridGeometryBuffer::cleanup() {
   // embree scenes
-  for (int i = 0; i < max_cache_size_; ++i) {
+  for (std::size_t i = 0; i < cache_size_; ++i) {
     rtcDeleteScene(scenes_[i]);
   }
 
@@ -299,7 +297,7 @@ void HybridGeometryBuffer::cleanup() {
   arena_.Reset();
 
   // sizes
-  max_cache_size_ = 0;
+  cache_size_ = 0;
   max_nvertices_ = 0;
   max_nfaces_ = 0;
 }
@@ -492,13 +490,9 @@ void HybridGeometryBuffer::updateTriangleIntersectionNoColor(
 
   // cache_block pointing to the current cache block in the mesh buffer
   // isect->primID, the current primitive intersected
-  // colors: per-vertex colors
 
   unsigned int prim_id = isect->primID;
   unsigned int geom_id = isect->geomID;
-
-  uint32_t colors[3];
-  getColorTuple(domain, cache_block, geom_id, prim_id, colors);
 
   // interploate color tuple and update isect->color
   float u = isect->u;

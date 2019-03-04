@@ -18,44 +18,44 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "render/infinite_cache.h"
+#pragma once
 
-#include "glog/logging.h"
-#include "pbrt/memory.h"
-
-#include "render/trimesh_buffer.h"
+#include <vector>
 
 namespace spray {
 
-InfiniteCache::InfiniteCache() : capacity_(0), status_(nullptr) {}
-InfiniteCache::~InfiniteCache() { FreeAligned(status_); }
+class InsituCache {
+ public:
+  void init(int num_domains, int cache_size);
 
-// max_aceh_size_ndomains is a don't care
-void InfiniteCache::init(int num_domains, int cache_size, bool insitu_mode) {
-  //
-  CHECK(cache_size < 0 || cache_size >= num_domains || insitu_mode);
-  capacity_ = num_domains;
+  // returns true if hit, false if miss
+  bool load(int domid, int* cache_block_id);
 
-  status_ = AllocAligned<int>(capacity_);
-  CHECK_NOTNULL(status_);
+  std::size_t getCacheSize() const { return cache_block_; }
 
-  for (int i = 0; i < capacity_; ++i) {
-    status_[i] = MISS;
-  }
+ private:
+  enum Status { MISS = -1 };
+
+  std::vector<int> domain_to_block_;
+  int cache_block_;
+};
+
+inline void InsituCache::init(int num_domains, int cache_size) {
+  domain_to_block_.resize(num_domains, MISS);
+  cache_block_ = 0;
 }
 
-bool InfiniteCache::load(int domid, int* cache_block_id) {
-#ifdef SPRAY_GLOG_CHECK
-  CHECK_LT(domid, capacity_);
-#endif
-  *cache_block_id = domid;
-  if (status_[domid] == HIT) {
+inline bool InsituCache::load(int domid, int* cache_block_id) {
+  int block = domain_to_block_[domid];
+
+  if (block != MISS) {  // hit
+    *cache_block_id = block;
     return true;
   }
-#ifdef SPRAY_GLOG_CHECK
-  CHECK_LT(domid, capacity_);
-#endif
-  status_[domid] = HIT;
+  // miss
+  domain_to_block_[domid] = cache_block_;
+  *cache_block_id = cache_block_;
+  ++cache_block_;
   return false;
 }
 

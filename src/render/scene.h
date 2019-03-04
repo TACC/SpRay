@@ -222,18 +222,27 @@ class Scene {
   std::size_t getNumLights() const { return lights_.size(); }
 
  private:
-  // void copyAllDomainsToLocalDisk(const std::string& dest_path,
-  //                                bool insitu_mode);
-  void deleteAllDomainsFromLocalDisk();
-  void loadAndPopulateDomainInfo(std::size_t* max_num_vertices,
-                                 std::size_t* max_num_faces);
-
   struct ModelInfo {
     std::size_t num_vertices;
     std::size_t num_faces;
     float obj_bounds_min[3];
     float obj_bounds_max[3];
   };
+
+  // void copyAllDomainsToLocalDisk(const std::string& dest_path,
+  //                                bool insitu_mode);
+  void deleteAllDomainsFromLocalDisk();
+  void loadAndPopulateDomainInfo(std::size_t* max_num_vertices,
+                                 std::size_t* max_num_faces);
+
+  void getModelInfo(std::size_t total_num_models,
+                    std::vector<ModelInfo>* model_info_recvbuf);
+  void updateDomains(bool all_domains_configured,
+                     const std::vector<ModelInfo>& model_info_recvbuf,
+                     std::size_t* max_num_vertices, std::size_t* max_num_faces);
+
+  void getAssignedGeometrySizes(std::size_t* max_num_vertices,
+                                std::size_t* max_num_faces);
 
  private:
   Aabb world_aabb_;  // bound of entire scene in world space

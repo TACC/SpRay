@@ -242,7 +242,6 @@ set(SPRAY_SRC_LIST
     
     # render
     render/wbvh_embree.cc
-    render/infinite_cache.cc
     render/lru_cache.cc
     render/config.cc
     render/spray.cc

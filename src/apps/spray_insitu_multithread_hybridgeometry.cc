@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
 #endif
 
   // cache
-  typedef spray::InfiniteCache CacheT;
+  typedef spray::InsituCache CacheT;
 
   // shape buffer
   typedef spray::HybridGeometryBuffer SurfaceBufT;
