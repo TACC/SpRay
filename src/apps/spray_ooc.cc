@@ -25,6 +25,8 @@
 #include "ooc/ooc_tracer.h"
 #include "render/caches.h"
 #include "render/config.h"
+#include "render/hybrid_geometry_buffer.h"
+#include "render/scene.h"
 #include "render/spray.h"
 #include "render/spray_renderer.h"
 #include "utils/comm.h"
@@ -49,13 +51,16 @@ int main(int argc, char** argv) {
             << " (world size: " << spray::mpi::worldSize() << ")";
 #endif
 
+  // surface buffer
+  typedef spray::HybridGeometryBuffer SurfaceBufT;
+
   // caches
   typedef spray::InfiniteCache InfCacheT;
   typedef spray::LruCache LruCacheT;
 
   // scenes
-  typedef spray::Scene<InfCacheT> SceneInfT;
-  typedef spray::Scene<LruCacheT> SceneLruT;
+  typedef spray::Scene<InfCacheT, SurfaceBufT> SceneInfT;
+  typedef spray::Scene<LruCacheT, SurfaceBufT> SceneLruT;
 
   // ao, infinite cache
   typedef spray::ooc::ShaderAo<SceneInfT> ShaderAoInfT;
@@ -78,7 +83,10 @@ int main(int argc, char** argv) {
   typedef spray::SprayRenderer<TracerPtLruT> RenderPtLruT;
 
   spray::Config cfg;
-  cfg.parse(argc, argv);
+  if (cfg.parse(argc, argv)) {
+    MPI_Finalize();
+    return 0;
+  }
 
   if (cfg.partition == spray::Config::IMAGE) {
     if (cfg.ao_mode) {

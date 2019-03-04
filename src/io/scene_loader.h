@@ -33,33 +33,38 @@ namespace spray {
 class Light;
 
 class SceneLoader {
- private:
-  int domain_id_;
-  int light_id_;
-  std::vector<Domain>* domains_;
-  std::vector<Light*>* lights_;
-
  public:
   void load(const std::string& filename, const std::string& ply_path,
-            std::vector<Domain>* domains_out, std::vector<Light*>* lights_out);
+            int num_light_samples, std::vector<Domain>* domains_out,
+            std::vector<Light*>* lights_out);
 
  private:
   enum class DomainTokenType {
     kComment,
-    kDomain,
+    kDomainBegin,
+    kDomainEnd,
+    kModelBegin,
+    kModelEnd,
     kFile,
     kMaterial,
-    kBound,
+    kDomainBounds,
+    kModelBounds,
     kScale,
     kRotate,
     kTranslate,
-    kFace,
-    kVertex,
-    kLight
+    kDomainFace,
+    kDomainVertex,
+    kModelFace,
+    kModelVertex,
+    kLight,
+    kSphere
   };
 
-  void reset(std::vector<Domain>* domains, std::vector<Light*>* lights) {
-    domain_id_ = -1;
+  void reset(int num_light_samples, std::vector<Domain>* domains,
+             std::vector<Light*>* lights) {
+    num_light_samples_ = num_light_samples;
+    domain_id_ = 0;
+    model_id_ = 0;
     light_id_ = 0;
 
     CHECK_NOTNULL(domains);
@@ -69,20 +74,30 @@ class SceneLoader {
 
     if (lights) CHECK(lights->size() == 0);
     lights_ = lights;
+
+    num_domain_begins_ = 0;
+    num_domain_ends_ = 0;
   }
+
+  void resetModelId() { model_id_ = 0; }
 
   void countAndAllocate(std::ifstream& infile);
 
   DomainTokenType getTokenType(const std::string& tag);
 
-  void parseDomain(const std::vector<std::string>& tokens);
+  void parseDomainBegin();
+  void parseDomainEnd();
+  void parseModelBegin();
+  void parseModelEnd();
 
   void parseFile(const std::string& ply_path,
                  const std::vector<std::string>& tokens);
 
+  // void parseUnusedMaterial(const std::vector<std::string>& tokens);
   void parseMaterial(const std::vector<std::string>& tokens);
 
-  void parseBound(const std::vector<std::string>& tokens);
+  void parseDomainWorldBounds(const std::vector<std::string>& tokens);
+  void parseModelWorldBounds(const std::vector<std::string>& tokens);
 
   void parseScale(const std::vector<std::string>& tokens);
 
@@ -90,17 +105,23 @@ class SceneLoader {
 
   void parseTranslate(const std::vector<std::string>& tokens);
 
-  void parseFace(const std::vector<std::string>& tokens);
+  void parseDomainFace(const std::vector<std::string>& tokens);
 
-  void parseVertex(const std::vector<std::string>& tokens);
+  void parseDomainVertex(const std::vector<std::string>& tokens);
+
+  void parseModelFace(const std::vector<std::string>& tokens);
+
+  void parseModelVertex(const std::vector<std::string>& tokens);
 
   void parseLight(const std::vector<std::string>& tokens);
+
+  void parseSphere(const std::vector<std::string>& tokens);
 
   void parseLineTokens(const std::string& ply_path,
                        const std::vector<std::string>& tokens);
 
   Domain& currentDomain() {
-    CHECK_GT(domain_id_, -1);
+    CHECK_GE(domain_id_, 0);
     CHECK_LT(domain_id_, domains_->size());
     return (*domains_)[domain_id_];
   }
@@ -113,6 +134,28 @@ class SceneLoader {
   }
 
   void nextDomain() { ++domain_id_; }
+
+  int getDomainId() const { return domain_id_; }
+  int getModelId() const { return model_id_; }
+
+  void nextModel() { ++model_id_; }
+
+  SurfaceModel* currentModel() {
+    Domain& domain = currentDomain();
+    CHECK_GE(model_id_, 0);
+    CHECK_LT(model_id_, domain.getNumModels());
+    return domain.getModelPtr(model_id_);
+  }
+
+ private:
+  int num_light_samples_;
+  int domain_id_;
+  int model_id_;
+  int light_id_;
+  std::vector<Domain>* domains_;
+  std::vector<Light*>* lights_;
+  int num_domain_begins_;
+  int num_domain_ends_;
 };
 
 }  // namespace spray

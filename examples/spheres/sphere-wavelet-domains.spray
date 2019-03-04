@@ -1,0 +1,34 @@
+light diffuse-hemisphere .05 .05 .05 
+
+DomainBegin
+# greenish matte ball
+sphere -15 7 20 7 matte 0.0 0.5 0.3
+DomainEnd
+
+DomainBegin
+# bluish metal
+sphere -10 10 0 10 metal 0.3 0.5 0.8 0
+DomainEnd
+
+DomainBegin
+# yellowish metal
+sphere 30 10 0 10 metal 0.8 0.5 0.3 0
+DomainEnd
+
+DomainBegin
+# greenish matte ball
+sphere 23 7 25 7 dielectric 2
+DomainEnd
+
+DomainBegin
+# ground ball
+sphere 0 -1000 0 1000 matte 1 1 1
+DomainEnd
+
+DomainBegin
+ModelBegin
+file wavelet.ply
+material matte
+translate 10 10 10
+ModelEnd
+DomainEnd

@@ -181,6 +181,29 @@ if(SPRAY_PROFILING_COUNTERS)
   add_definitions(-DSPRAY_PROFILING_COUNTERS)
 endif(SPRAY_PROFILING_COUNTERS)
 
+# background color
+option(SPRAY_BACKGROUND_COLOR "Enable background color." ON)
+if(SPRAY_BACKGROUND_COLOR)
+  add_definitions(-DSPRAY_BACKGROUND_COLOR)
+endif(SPRAY_BACKGROUND_COLOR)
+
+# set(SPRAY_BACKGROUND_COLOR "Sky" CACHE STRING "Select a background color.")
+# set_property(CACHE SPRAY_BACKGROUND_COLOR PROPERTY STRINGS "Sky" "Black" "White")
+# 
+# if (${SPRAY_BACKGROUND_COLOR} STREQUAL "Black")
+#   add_definitions(-DSPRAY_BACKGROUND_COLOR_BLACK)
+# elseif (${SPRAY_BACKGROUND_COLOR} STREQUAL "Sky")
+#   add_definitions(-DSPRAY_BACKGROUND_COLOR_SKY)
+# elseif (${SPRAY_BACKGROUND_COLOR} STREQUAL "White")
+#   add_definitions(-DSPRAY_BACKGROUND_COLOR_WHITE)
+# endif()
+
+# cosine hemisphere sampling
+option(SPRAY_COSINE_HEMISPHERE_SAMPLER "Enable cosine hemisphere random sampler." ON)
+if(SPRAY_COSINE_HEMISPHERE_SAMPLER)
+  add_definitions(-DSPRAY_COSINE_HEMISPHERE_SAMPLER)
+endif(SPRAY_COSINE_HEMISPHERE_SAMPLER)
+
 ########################################
 # intersection mode (based on embree)
 ########################################
@@ -219,7 +242,6 @@ set(SPRAY_SRC_LIST
     
     # render
     render/wbvh_embree.cc
-    render/infinite_cache.cc
     render/lru_cache.cc
     render/config.cc
     render/spray.cc
@@ -229,10 +251,13 @@ set(SPRAY_SRC_LIST
     render/block_buffer.cc
     render/tile.cc
     render/trimesh_buffer.cc
+    render/shape_buffer.cc
+    render/hybrid_geometry_buffer.cc
 
     # io
     io/ply_loader.cc
     io/scene_loader.cc
+    io/obj_loader.cc
     
     # insitu
     insitu/insitu_vbuf.cc
@@ -265,15 +290,29 @@ target_link_libraries(spray_insitu_multithread spray ${DEP_LIBS})
 add_executable(spray_ooc apps/spray_ooc.cc)
 target_link_libraries(spray_ooc spray ${DEP_LIBS})
 
+add_executable(spray_insitu_singlethread_shapes apps/spray_insitu_singlethread_shapes.cc)
+target_link_libraries(spray_insitu_singlethread_shapes spray ${DEP_LIBS})
+
+add_executable(spray_insitu_multithread_shapes apps/spray_insitu_multithread_shapes.cc)
+target_link_libraries(spray_insitu_multithread_shapes spray ${DEP_LIBS})
+
+# add_executable(spray_insitu_multithread_hybridgeometry apps/spray_insitu_multithread_hybridgeometry.cc)
+# target_link_libraries(spray_insitu_multithread_hybridgeometry spray ${DEP_LIBS})
+
 # ply info reader
 add_executable(ply_header_reader apps/ply_header_reader.cc)
 target_link_libraries(ply_header_reader spray ${PLY_HEADER_READER_LIBS})
 
+add_subdirectory(tests)
+
 # intallation
 install (TARGETS baseline_ooc DESTINATION bin)
+install (TARGETS baseline_insitu DESTINATION bin)
 install (TARGETS spray_insitu_singlethread DESTINATION bin)
 install (TARGETS spray_insitu_multithread DESTINATION bin)
 install (TARGETS spray_ooc DESTINATION bin)
 install (TARGETS ply_header_reader DESTINATION bin)
-install (TARGETS spray DESTINATION lib)
+install (DIRECTORY ${CMAKE_SOURCE_DIR}/scripts DESTINATION ${CMAKE_INSTALL_PREFIX})
+install (DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION ${CMAKE_INSTALL_PREFIX})
+# install (TARGETS spray DESTINATION lib)
 

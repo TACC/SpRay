@@ -28,9 +28,7 @@
 #include "baseline/baseline_ray.h"
 #include "render/arena_queue.h"
 #include "render/config.h"
-#include "render/light.h"
-#include "render/reflection.h"
-#include "render/scene.h"
+#include "render/material.h"
 #include "utils/util.h"
 
 namespace spray {
@@ -41,74 +39,143 @@ class ShaderAo {
  public:
   typedef SceneT SceneType;
 
-  void init(const spray::Config &cfg, const SceneT *scene) {
+  ShaderAo() { matte_material_ = new Matte; }
+  ~ShaderAo() { delete matte_material_; }
+
+  void init(const spray::Config &cfg, const SceneT &scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;
-    scene_ = scene;
-    lights_ = scene->getLights();  // copy lights
+    ao_weight_ = 1.0f / static_cast<float>(samples_);
+#ifdef SPRAY_GLOG_CHECK
+    num_pixels_ = cfg.image_w * cfg.image_h;
+#endif
   }
 
   bool isAo() { return true; }
 
   void operator()(int id, int ndomains, const DRay &rayin, RTCRay *rtc_ray,
                   RTCRayIntersection *isect, spray::ArenaQs<DRayQItem> *qs,
-                  spray::ArenaQs<DRayQItem> *sqs, spray::MemoryArena *arena,
+                  spray::ArenaQs<DRayQItem> *sqs, spray::MemoryArena *mem,
                   DomainIntersector<SceneT> *domain_isector,
-                  CommitBufferB *retire_buf, DRayQ *temp_q) {
-    // temporary variables
-    glm::vec3 pos, wi, light_radiance, Lr;
+                  CommitBufferB *retire_buf, DRayQ *temp_q);
 
-    // weight
-    glm::vec3 Lin(rayin.w[0], rayin.w[1], rayin.w[2]);
-
-    // surface radiance
-    glm::vec3 surf_radiance;
-    util::unpack(isect->color, surf_radiance);
-
-    // direct illumination
-
-    float t_hit = isect->tfar;
-    pos = RTCRayUtil::hitPosition(isect->org, isect->dir, t_hit);
-
-    float pdf, costheta;
-
-    glm::vec3 normal_ff = faceForwardFloat(isect->dir, isect->Ns);
-    normal_ff = glm::normalize(normal_ff);
-
-    const float ao_weight = 1.0f / static_cast<float>(samples_);
-    spray::RandomSampler sampler;
-    const Bsdf *bsdf = scene_->getBsdf(id);
-
-    for (int i = 0; i < samples_; ++i) {
-      RandomSampler_init(sampler, rayin.pixid * (i + 1));
-      bsdf->sampleRandom(normal_ff, &sampler, &wi, &pdf);
-
-      costheta = glm::clamp(glm::dot(normal_ff, wi), 0.f, 1.f);
-      Lr = surf_radiance * (SPRAY_ONE_OVER_PI * costheta * ao_weight / pdf);
-
-      if (hasPositive(Lr)) {
-        if (!scene_->occluded(pos, wi, rtc_ray)) {  // occluded
-          DRay *dray = arena->Alloc<DRay>(1, false);
-          DRayUtil::makeShadowRay(rayin, pos, wi, Lr, t_hit, dray);
-
-          domain_isector->intersect(id, dray, sqs);
+ private:
+  const Material *matte_material_;
+  int bounces_;
+  int samples_;
+  float ao_weight_;
 #ifdef SPRAY_GLOG_CHECK
-          CHECK(sqs->empty(id));
+  int num_pixels_;
 #endif
-          if (!DRayUtil::hasCurrentDomain(dray)) {
-            retire_buf->commit(dray->pixid, Lr);
-          }
+};
+
+template <typename SceneT>
+void ShaderAo<SceneT>::operator()(int id, int ndomains, const DRay &rayin,
+                                  RTCRay *rtc_ray, RTCRayIntersection *isect,
+                                  spray::ArenaQs<DRayQItem> *qs,
+                                  spray::ArenaQs<DRayQItem> *sqs,
+                                  spray::MemoryArena *mem,
+                                  DomainIntersector<SceneT> *domain_isector,
+                                  CommitBufferB *retire_buf, DRayQ *temp_q) {
+  glm::vec3 pos = RTCRayUtil::hitPosition(isect->org, isect->dir, isect->tfar);
+
+  bool is_shape = (isect->color == SPRAY_INVALID_COLOR);
+
+  glm::vec3 albedo;
+#define SPRAY_AO_SHOW_SURFACE_COLOR
+#ifdef SPRAY_AO_SHOW_SURFACE_COLOR
+  auto *material = isect->material;
+  if (material->type() != Material::MATTE) {
+    material = matte_material_;
+  }
+  if (is_shape) {
+    albedo = material->getAlbedo();
+  } else {
+    util::unpack(isect->color, albedo);
+  }
+#else
+  auto *material = matte_material_;
+  albedo = material->getAlbedo();
+#endif
+
+  glm::vec3 normal(isect->Ns[0], isect->Ns[1], isect->Ns[2]);
+
+  glm::vec3 wo(-rayin.dir[0], -rayin.dir[1], -rayin.dir[2]);
+  wo = glm::normalize(wo);
+
+  glm::vec3 Lin(rayin.w[0], rayin.w[1], rayin.w[2]);
+
+#ifdef SPRAY_FACE_FORWARD_OFF
+  glm::vec3 normal_ff = glm::normalize(normal);
+#else
+  glm::vec3 normal_ff;
+  if (is_shape) {
+    normal_ff = glm::normalize(normal);
+  } else {
+    float cos_theta_i = glm::dot(wo, normal);
+    bool entering = (cos_theta_i > 0.0f);
+    normal_ff = glm::normalize(entering ? normal : -normal);
+  }
+#endif
+
+  glm::vec3 wi, Lr, weight;
+  float pdf;
+
+  int next_ray_depth = rayin.depth + 1;
+
+  RandomSampler sampler;
+  RandomSampler_init(sampler, rayin.samid * next_ray_depth);
+
+  // direct illumination
+
+  for (int s = 0; s < samples_; ++s) {
+    bool valid =
+        material->sample(albedo, wo, normal_ff, sampler, &wi, &weight, &pdf);
+
+    if (valid) {
+      Lr = Lin * weight * ao_weight_ * (1.0f / pdf);
+      if (hasPositive(Lr)) {
+        // create shadow ray
+        DRay *shadow = mem->Alloc<DRay>(1, false);
+        CHECK_NOTNULL(shadow);
+
+        DRayUtil::makeShadowRay(rayin, pos, wi, Lr, isect->tfar, shadow);
+        domain_isector->intersect(id, shadow, sqs);
+#ifdef SPRAY_GLOG_CHECK
+        CHECK(sqs->empty(id));
+#endif
+        // no more domain
+        if (!DRayUtil::hasCurrentDomain(shadow)) {
+          retire_buf->commit(shadow->pixid, Lr);
         }
       }
     }
   }
 
- private:
-  const SceneT *scene_;
-  std::vector<Light *> lights_;  // copied lights
-  int bounces_;
-  int samples_;
-};
+  // indirect illumination
+
+#ifdef SPRAY_GLOG_CHECK
+  CHECK_LT(rayin.depth, bounces_);
+#endif
+
+  if (next_ray_depth < bounces_) {
+    RandomSampler_init(sampler, rayin.samid * next_ray_depth);
+    bool valid =
+        material->sample(albedo, wo, normal_ff, sampler, &wi, &weight, &pdf);
+    if (valid) {
+      Lr = Lin * weight * (1.0f / pdf);
+      if (hasPositive(Lr)) {
+        DRay *r2 = mem->Alloc<DRay>(1, false);
+        CHECK_NOTNULL(r2);
+        DRayUtil::makeRadianceRay(next_ray_depth, rayin, pos, wi, Lr, r2);
+        temp_q->push(r2);
+#ifdef SPRAY_GLOG_CHECK
+        CHECK_LT(r2->pixid, num_pixels_);
+#endif
+      }
+    }
+  }
+}
 
 }  // namespace baseline
 }  // namespace spray

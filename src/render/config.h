@@ -37,7 +37,7 @@ class Config {
  public:
   Config();
 
-  void parse(int argc, char** argv);
+  bool parse(int argc, char** argv);
 
   // image
   int image_w;
@@ -80,18 +80,17 @@ class Config {
   // pt settings
   int pixel_samples;
 
-  int maximum_num_screen_space_samples_per_rank;
+  std::size_t maximum_num_screen_space_samples_per_rank;
 
   std::string local_disk_path;
   int nthreads;
 
-  enum Shading { SPRAY_SHADING_LAMBERT, SPRAY_SHADING_BLINN };
-  int shading;
-  float shininess;
-  glm::vec3 ks;
+  bool use_spray_color;
 
   enum DevMode { DEVMODE_NORMAL, DEVMODE_DEV };
   int dev_mode;
+
+  glm::vec3 bg_color;
 };
 
 }  // namespace spray

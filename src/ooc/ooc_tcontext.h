@@ -59,16 +59,22 @@ class TContext {
 
     commit_q_ = &commit_retire_q0_;
     retire_q_ = &commit_retire_q1_;
+
+    bg_commit_q_ = &commit_bg_retire_q0_;
+    bg_retire_q_ = &commit_bg_retire_q1_;
   }
 
  public:
   void resize(int ndomains, int num_pixel_samples, const Tile& tile,
-              spray::HdrImage* image, int num_bounces);
+              spray::HdrImage* image, int num_bounces,
+              const glm::vec3& bg_color);
 
  private:
   int num_domains_;
   int num_pixel_samples_;
   int num_bounces_;
+  double one_over_num_pixel_samples_;
+  glm::vec3 bg_color_;
 
  public:
   void resetMems() {
@@ -116,7 +122,11 @@ class TContext {
 
  public:
   void enqRad(SceneT* scene, Ray* ray) {
-    isector_.intersect(scene, ray, &rqs_, &rstats_);
+#ifdef SPRAY_BACKGROUND_COLOR
+    isector_.intersect(num_domains_, scene, ray, &rqs_, &rstats_, bg_retire_q_);
+#else
+    isector_.intersect(num_domains_, scene, ray, &rqs_, &rstats_);
+#endif
   }
 
   spray::RTCRayIntersection& getRTCIsect() { return rtc_isect_; }
@@ -139,8 +149,14 @@ class TContext {
   std::queue<Ray*> commit_retire_q0_;
   std::queue<Ray*> commit_retire_q1_;
 
+  std::queue<Ray*> commit_bg_retire_q0_;
+  std::queue<Ray*> commit_bg_retire_q1_;
+
   std::queue<Ray*>* commit_q_;
   std::queue<Ray*>* retire_q_;
+
+  std::queue<Ray*>* bg_commit_q_;
+  std::queue<Ray*>* bg_retire_q_;
 
   spray::QVector<RayData> rqs_;
   spray::QVector<RayData> sqs_0_;
@@ -149,12 +165,14 @@ class TContext {
   spray::QVector<RayData>* sqs_in_;
   spray::QVector<RayData>* sqs_out_;
 
+
  public:
   bool allFilterQsEmpty() const {
     return (frq_.empty() && fsq_in_.empty() && fsq_out_.empty());
   }
 
   void retire();
+  void retireBackground();
 
   bool sqsInEmpty() const { return sqs_in_->empty(); }
   bool rqsEmpty() const { return rqs_.empty(); }
@@ -162,8 +180,21 @@ class TContext {
   bool commitQEmpty() const { return commit_q_->empty(); }
   bool pendingQEmpty() const { return pending_q_.empty(); }
 
+  bool bgRetireQEmpty() const { return bg_retire_q_->empty(); }
+  bool bgCommitQEmpty() const { return bg_commit_q_->empty(); }
+
+  void checkQs() const {
+    CHECK(sqsInEmpty());
+    CHECK(rqsEmpty());
+    CHECK(retireQEmpty());
+    CHECK(commitQEmpty());
+    CHECK(bgRetireQEmpty());
+    CHECK(bgCommitQEmpty());
+  }
+
   void swapQs() {
     std::swap(commit_q_, retire_q_);
+    std::swap(bg_commit_q_, bg_retire_q_);
     std::swap(sqs_in_, sqs_out_);
   }
 
@@ -172,7 +203,7 @@ class TContext {
 #ifdef SPRAY_GLOG_CHECK
     CHECK(frq_.empty());
     CHECK(fsq_in_.empty());
-    CHECK(fsq_out_.empty());
+    CHECK(fsq_out_.empty()) << fsq_out_.size();
 #endif
     filterRqs(id);
     filterSqs(id, sqs_in_, &fsq_in_);
@@ -210,7 +241,12 @@ class TContext {
       if (vbuf_.correct(*r)) {
         r->depth = 0;
         r->history[0] = SPRAY_FLOAT_INF;
-        isector_.intersect(scene, r, &rqs_, &rstats_);
+#ifdef SPRAY_BACKGROUND_COLOR
+        isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_,
+                           bg_retire_q_);
+#else
+        isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
+#endif
       }
     }
   }

@@ -35,8 +35,8 @@ void WbvhEmbree::init(const Aabb& bound, const std::vector<Domain>& domains) {
   Aabb aabb;
   for (std::size_t i = 0; i < domains.size(); ++i) {
     prims_[i].id = i;
-    prims_[i].nprims = domains[i].num_faces;
-    aabb = domains[i].world_aabb;
+    prims_[i].nprims = domains[i].getNumFaces();
+    aabb = domains[i].getWorldAabb();
 
     prims_[i].bounds_min = aabb.bounds[0];
     prims_[i].bounds_max = aabb.bounds[1];

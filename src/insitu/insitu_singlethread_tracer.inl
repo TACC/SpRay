@@ -50,6 +50,7 @@ void SingleThreadTracer<ShaderT>::init(const Config &cfg, const Camera &camera,
   num_threads_ = cfg.nthreads;
   image_w_ = cfg.image_w;
   image_h_ = cfg.image_h;
+  bg_color_ = cfg.bg_color;
 
   CHECK_GT(rank_, -1);
   CHECK_GT(num_ranks_, 0);
@@ -61,7 +62,7 @@ void SingleThreadTracer<ShaderT>::init(const Config &cfg, const Camera &camera,
 
   if (nranks > 0) comm_recv_.set(&recv_rq_, &recv_sq_);
 
-  shader_.init(cfg, scene);
+  shader_.init(cfg, *scene);
 
   int total_num_light_samples;
   if (shader_.isAo()) {
@@ -250,7 +251,6 @@ template <typename ShaderT>
 void SingleThreadTracer<ShaderT>::procRad(int id, Ray *ray) {
   bool is_hit = scene_->intersect(sinfo_.rtc_scene, sinfo_.cache_block,
                                   ray->org, ray->dir, &rtc_isect_);
-
   if (is_hit) {
     if (vbuf_.updateTbufOut(rtc_isect_.tfar, ray)) {
       shader_(id, *ray, rtc_isect_, mem_out_, &sq2_, &rq2_, ray_depth_);
@@ -333,14 +333,24 @@ void SingleThreadTracer<ShaderT>::procFrq2() {
     auto &info = frq2_.front();
     auto *ray = info.ray;
     if (vbuf_.correct(ray->samid, ray->t)) {
+#ifdef SPRAY_BACKGROUND_COLOR
       auto *isect = info.isect;
-
+      if (!std::isinf(isect->tfar)) {  // hit
+        cached_rq_.push(info);
+        isector_.intersect(info.domain_id, isect->tfar, scene_, ray, &rqs_,
+                           &bg_retire_q_);
+      } else {
+        isector_.intersect(info.domain_id, scene_, ray, &rqs_, &bg_retire_q_);
+      }
+#else
+      auto *isect = info.isect;
       if (!std::isinf(isect->tfar)) {  // hit
         cached_rq_.push(info);
         isector_.intersect(info.domain_id, isect->tfar, scene_, ray, &rqs_);
       } else {
         isector_.intersect(info.domain_id, scene_, ray, &rqs_);
       }
+#endif
     }
     frq2_.pop();
   }
@@ -371,9 +381,23 @@ void SingleThreadTracer<ShaderT>::procRetireQ() {
   while (!retire_q_.empty()) {
     auto *ray = retire_q_.front();
     retire_q_.pop();
-
     if (!vbuf_.occluded(ray->samid, ray->light)) {
       image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
+    }
+  }
+}
+
+template <typename ShaderT>
+void SingleThreadTracer<ShaderT>::retireBackground() {
+  glm::vec3 bgcolor;
+  while (!bg_retire_q_.empty()) {
+    auto *ray = bg_retire_q_.front();
+    bg_retire_q_.pop();
+    int oflag = ray->occluded;
+    if (vbuf_.tbufOutMiss(ray->samid)) {
+      bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
+                spray::computeBackGroundColor(ray->dir, bg_color_);
+      image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
     }
   }
 }
@@ -389,11 +413,10 @@ void SingleThreadTracer<ShaderT>::trace() {
 
     shared_eyes_.num =
         (std::size_t)(stripe_.w * stripe_.h) * num_pixel_samples_;
-    if (shared_eyes_.num) {
-      shared_eyes_.rays = mem_in_->Alloc<Ray>(shared_eyes_.num);
-    }
 
     if (shared_eyes_.num) {
+      shared_eyes_.rays = mem_in_->Alloc<Ray>(shared_eyes_.num);
+
       glm::vec3 cam_pos = camera_->getPosition();
       if (num_pixel_samples_ > 1) {  // multi samples
         spray::insitu::genMultiSampleEyeRays(
@@ -406,7 +429,11 @@ void SingleThreadTracer<ShaderT>::trace() {
             blocking_tile_, stripe_, &shared_eyes_);
       }
 
+#ifdef SPRAY_BACKGROUND_COLOR
+      isector_.intersect(scene_, shared_eyes_, &rqs_, &bg_retire_q_);
+#else
       isector_.intersect(scene_, shared_eyes_, &rqs_);
+#endif
 
       populateRadWorkStats();
     }
@@ -418,6 +445,9 @@ void SingleThreadTracer<ShaderT>::trace() {
 
       if (work_stats_.allDone()) {
         procRetireQ();
+#ifdef SPRAY_BACKGROUND_COLOR
+        retireBackground();
+#endif
         comm_.waitForSend();
         break;
       }
@@ -447,7 +477,9 @@ void SingleThreadTracer<ShaderT>::trace() {
         procRetireQ();
         vbuf_.resetObuf();
       }
-
+#ifdef SPRAY_BACKGROUND_COLOR
+      retireBackground();
+#endif
       vbuf_.resetTbufIn();
       vbuf_.swapTbufs();
 
@@ -461,8 +493,15 @@ void SingleThreadTracer<ShaderT>::trace() {
 
       ++ray_depth_;
     }
+#ifdef SPRAY_GLOG_CHECK
+    checkQs();
+#endif
   }
   tile_list_.reset();
+
+#ifdef SPRAY_GLOG_CHECK
+  checkQs();
+#endif
 }
 
 }  // namespace insitu

@@ -29,6 +29,7 @@
 
 #include "glog/logging.h"
 
+#include "render/aabb.h"
 #include "render/spray.h"
 
 namespace spray {
@@ -39,6 +40,13 @@ class PlyLoader {
     std::size_t num_vertices;  // out
     std::size_t num_faces;     // out
     bool has_color;            // out
+  };
+
+  struct LongHeader {
+    std::size_t num_vertices;  // out
+    std::size_t num_faces;     // out
+    bool has_color;            // out
+    Aabb bounds;
   };
 
   struct Data {
@@ -103,6 +111,8 @@ class PlyLoader {
   // for test purposes
   static void quickHeaderRead(const std::string &filename, Header *header);
 
+  static void readLongHeader(const std::string &filename, LongHeader *header);
+
   void load(const std::string &filename, Data *d);
 
  private:
@@ -118,10 +128,12 @@ class PlyLoader {
   void parseProperty(std::size_t elem_idx, std::istringstream &ss);
 
   int getDataType(const std::string &s) const;
-  int getFormat(const std::string &s) const;
+  static int getFormat(const std::string &s);
 
   void parseVertices(const Element &e, Data *d);
   void parseFaces(const Element &e, Data *d);
+
+  static void parseTokens(const std::vector<std::string> &tokens);
 
  private:
   int getDataSize(int type);

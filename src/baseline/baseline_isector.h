@@ -29,7 +29,6 @@
 #include "baseline/baseline_ray.h"
 #include "render/arena_queue.h"
 #include "render/data_partition.h"
-#include "render/scene.h"
 #include "render/spray.h"
 
 namespace spray {
@@ -48,20 +47,6 @@ class DomainIntersector {
   float getTnear(std::size_t i) const { return domains_.getTnear(i); }
 
   void intersect(int current_id, DRay* ray, ArenaQs<DRayQItem>* qs) {
-    //     // setup a ray
-    //     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir,
-    //     &domains_,
-    //                                              &eray_);
-    //     // ray-domain intersection tests
-    //     scene_->intersectDomains(eray_);
-    //
-    // #ifdef SPRAY_GLOG_CHECK
-    //     CHECK_LE(domains_.count, SPRAY_RAY_DOMAIN_LIST_SIZE);
-    // #endif
-    //     if (domains_.count) {
-    //       RTCRayUtil::sortDomains(domains_, hits_);
-    //     }
-
     intersectDomains(ray);
 
     // assume that ray generation and processing are done separately
@@ -82,22 +67,18 @@ class DomainIntersector {
       }
     }
 
-    // if (ray->domain_pos < domains_.count) {
     if (ray->domain_pos < domains_.getNumHits()) {
       // two domains away from current domain
       int next_pos = ray->domain_pos + 1;
       ray->next_tdom = (next_pos < domains_.getNumHits())
                            ? domains_.getTnear(next_pos)
                            : SPRAY_FLOAT_INF;
-      // (next_pos < domains_.count) ? hits_[next_pos].t : SPRAY_FLOAT_INF;
       if (qs) {
         ray_data_.ray = ray;
         qs->copy(domains_.getId(ray->domain_pos), &ray_data_);
-        // qs->copy(hits_[ray->domain_pos].id, &ray_data_);
       }
 #ifdef SPRAY_GLOG_CHECK
       CHECK_NE(domains_.getId(ray->domain_pos), current_id);
-      // CHECK_NE(hits_[ray->domain_pos].id, current_id);
 #endif
     } else {
       ray->domain_pos = INT_MAX;
@@ -118,10 +99,6 @@ class DomainIntersector {
  private:
   DomainList domains_;
   RTCRayExt eray_;
-  // private:
-  //  DomainList domains_;
-  //  DomainHit1 hits_[SPRAY_RAY_DOMAIN_LIST_SIZE];
-  // RTCRayExt eray_;
   DRayQItem ray_data_;
 
   const SceneT* scene_;

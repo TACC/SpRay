@@ -57,7 +57,7 @@ void Tracer<ShaderT>::init(const Config &cfg, const Camera &camera,
   CHECK_GT(image_w_, 0);
   CHECK_GT(image_h_, 0);
 
-  shader_.init(cfg, scene);
+  shader_.init(cfg, *scene);
 
   int num_lights;
   if (shader_.isAo()) {
@@ -77,97 +77,7 @@ void Tracer<ShaderT>::init(const Config &cfg, const Camera &camera,
   tcontexts_.resize(cfg.nthreads);
   for (auto &tc : tcontexts_) {
     tc.resize(ndomains, cfg.pixel_samples, tile_list_.getLargestBlockingTile(),
-              image_, cfg.bounces);
-  }
-}
-
-template <typename ShaderT>
-void Tracer<ShaderT>::genSingleEyes(int image_w, float orgx, float orgy,
-                                    float orgz, spray::Tile tile,
-                                    RayBuf<Ray> *ray_buf) {
-  Ray *rays = ray_buf->rays;
-#pragma omp for collapse(2) schedule(static, 1)
-  for (int y = tile.y; y < tile.y + tile.h; ++y) {
-    for (int x = tile.x; x < tile.x + tile.w; ++x) {
-      int y0 = y - tile.y;
-      int bufid_offset = y0 * tile.w;
-      int pixid_offset = y * image_w;
-      int x0 = x - tile.x;
-      int bufid = bufid_offset + x0;
-      int pixid = pixid_offset + x;
-#ifdef SPRAY_GLOG_CHECK
-      CHECK_LT(bufid, ray_buf->num);
-#endif
-      auto *ray = &rays[bufid];
-      //
-      ray->org[0] = orgx;
-      ray->org[1] = orgy;
-      ray->org[2] = orgz;
-
-      ray->pixid = pixid;
-
-      camera_->generateRay((float)x, (float)y, ray->dir);
-
-      ray->samid = bufid;
-
-      ray->w[0] = 1.f;
-      ray->w[1] = 1.f;
-      ray->w[2] = 1.f;
-
-      ray->depth = 0;
-      ray->history[0] = SPRAY_FLOAT_INF;
-      ray->committed = 0;
-    }
-  }
-}
-
-template <typename ShaderT>
-void Tracer<ShaderT>::genMultiEyes(int image_w, float orgx, float orgy,
-                                   float orgz, spray::Tile tile,
-                                   RayBuf<Ray> *ray_buf) {
-  Ray *rays = ray_buf->rays;
-
-  int nsamples = num_pixel_samples_;
-
-#pragma omp for collapse(3) schedule(static, 1)
-  for (int y = tile.y; y < tile.y + tile.h; ++y) {
-    for (int x = tile.x; x < tile.x + tile.w; ++x) {
-      for (int s = 0; s < nsamples; ++s) {
-        int x0 = x - tile.x;
-        int y0 = y - tile.y;
-        int bufid = nsamples * (y0 * tile.w + x0) + s;
-        int pixid = y * image_w + x;
-#ifdef SPRAY_GLOG_CHECK
-        CHECK_LT(bufid, ray_buf->num);
-#endif
-        Ray *ray = &rays[bufid];
-
-        ray->org[0] = orgx;
-        ray->org[1] = orgy;
-        ray->org[2] = orgz;
-
-        ray->pixid = pixid;
-
-        RandomSampler sampler;
-        RandomSampler_init(sampler, bufid);
-
-        float fx = (float)(x) + RandomSampler_get1D(sampler);
-        float fy = (float)(y) + RandomSampler_get1D(sampler);
-
-        camera_->generateRay(fx, fy, ray->dir);
-
-        ray->samid = bufid;
-
-        ray->w[0] = 1.f;
-        ray->w[1] = 1.f;
-        ray->w[2] = 1.f;
-
-        ray->depth = 0;
-
-        ray->history[0] = SPRAY_FLOAT_INF;
-        ray->committed = 0;
-      }
-    }
+              image_, cfg.bounces, cfg.bg_color);
   }
 }
 
@@ -214,12 +124,13 @@ void Tracer<ShaderT>::trace() {
       if (shared_eyes_.num) {
         glm::vec3 cam_pos = camera_->getPosition();
         if (num_pixel_samples_ > 1) {
-          genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-                       blocking_tile_, &shared_eyes_);
+          genMultiSampleEyeRays(*camera_, image_w_, cam_pos[0], cam_pos[1],
+                                cam_pos[2], num_pixel_samples_, blocking_tile_,
+                                &shared_eyes_);
 
         } else {
-          genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-                        blocking_tile_, &shared_eyes_);
+          genSingleSampleEyeRays(*camera_, image_w_, cam_pos[0], cam_pos[1],
+                                 cam_pos[2], blocking_tile_, &shared_eyes_);
         }
 
 #pragma omp barrier
@@ -231,7 +142,7 @@ void Tracer<ShaderT>::trace() {
     }
   }
   tile_list_.reset();
-}
+}  // namespace ooc
 
 template <typename ShaderT>
 void Tracer<ShaderT>::traceInOmp() {
@@ -264,12 +175,13 @@ void Tracer<ShaderT>::traceInOmp() {
     if (shared_eyes_.num) {
       glm::vec3 cam_pos = camera_->getPosition();
       if (num_pixel_samples_ > 1) {
-        genMultiEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-                     blocking_tile_, &shared_eyes_);
+        genMultiSampleEyeRays(*camera_, image_w_, cam_pos[0], cam_pos[1],
+                              cam_pos[2], num_pixel_samples_, blocking_tile_,
+                              &shared_eyes_);
 
       } else {
-        genSingleEyes(image_w_, cam_pos[0], cam_pos[1], cam_pos[2],
-                      blocking_tile_, &shared_eyes_);
+        genSingleSampleEyeRays(*camera_, image_w_, cam_pos[0], cam_pos[1],
+                               cam_pos[2], blocking_tile_, &shared_eyes_);
       }
 
 #pragma omp barrier

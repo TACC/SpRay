@@ -22,7 +22,9 @@
 
 #include <cstddef>
 #include <cstring>
+#include <fstream>
 #include <iostream>
+#include <queue>
 #include <vector>
 
 #include "glog/logging.h"
@@ -109,6 +111,115 @@ void PlyLoader::quickHeaderRead(const std::string &filename, Header *header) {
 
   // close file
   file.close();
+}
+
+void PlyLoader::readLongHeader(const std::string &filename,
+                               LongHeader *header) {
+  // open file
+  std::ifstream infile;
+  // infile.open(filename.c_str(), std::fstream::in | std::fstream::binary);
+  infile.open(filename.c_str(), std::fstream::in);
+  CHECK(infile.is_open());
+
+  char delim[] = " ";
+  std::vector<std::string> tokens;
+  tokens.reserve(20);
+
+  std::string line;
+
+  std::size_t num_vertices = 0;
+  std::size_t num_faces = 0;
+  int num_color_components = 0;
+
+  Aabb bounds;
+  int format = kUNDEFINED_FORMAT;  // ascii/little/big format
+
+  while (infile.good()) {
+    getline(infile, line);
+#ifdef SPRAY_PRINT_LINES
+    std::cout << line << "\n";
+#endif
+    char *token = std::strtok(&line[0], delim);
+    tokens.clear();
+
+    while (token != NULL) {
+      tokens.push_back(token);
+      token = std::strtok(NULL, delim);
+    }
+
+    if (!tokens.empty()) {
+      if (tokens[0] == "format") {
+        // update format
+        format = getFormat(tokens[1]);
+        // TODO: yet to test
+        CHECK_NE(format, kBIG_ENDIAN);
+
+      } else if (tokens[0] == "end_header") {
+        break;
+
+      } else if (tokens[0] == "element" && tokens[1] == "vertex") {
+        num_vertices = atoi(tokens[2].c_str());
+
+      } else if (tokens[0] == "element" && tokens[1] == "face") {
+        num_faces = atoi(tokens[2].c_str());
+
+      } else if (tokens[0] == "property" && tokens[1] == "uchar" &&
+                 ((tokens[2] == "red") || (tokens[2] == "green") ||
+                  (tokens[2] == "blue"))) {
+        ++num_color_components;
+      }
+    }
+  }
+
+  bool has_color = (num_color_components == 3);
+
+  glm::vec3 vertex;
+  if (format == kLITTLE_ENDIAN) {
+    float x;
+    for (std::size_t i = 0; i < num_vertices; ++i) {
+      infile.read((char *)&vertex[0], 4);  // assume float
+      infile.read((char *)&vertex[1], 4);
+      infile.read((char *)&vertex[2], 4);
+
+      bounds.merge(vertex);
+
+      if (has_color) {
+        infile.read((char *)&x, 3);  // assume unsigned char
+      }
+    }
+  } else if (format == kASCII) {
+    std::size_t vertex_index = 0;
+    while (infile.good()) {
+      getline(infile, line);
+      char *token = std::strtok(&line[0], delim);
+      tokens.clear();
+
+      while (token != NULL) {
+        tokens.push_back(token);
+        token = std::strtok(NULL, delim);
+      }
+
+      CHECK(!tokens.empty());
+      vertex[0] = atof(tokens[0].c_str());
+      vertex[1] = atof(tokens[1].c_str());
+      vertex[2] = atof(tokens[2].c_str());
+
+      bounds.merge(vertex);
+
+      ++vertex_index;
+      if (vertex_index == num_vertices) break;
+    }
+  } else {
+    LOG(FATAL) << "unknown format " << format;
+  }
+
+  header->num_vertices = num_vertices;
+  header->num_faces = num_faces;
+  header->has_color = has_color;
+  header->bounds = bounds;
+
+  // close file
+  infile.close();
 }
 
 void PlyLoader::parseHeader() {
@@ -437,7 +548,7 @@ void PlyLoader::parseProperty(std::size_t elem_idx, std::istringstream &ss) {
   }
 }
 
-int PlyLoader::getFormat(const std::string &s) const {
+int PlyLoader::getFormat(const std::string &s) {
   int format;
   if (s == "ascii") {
     format = kASCII;

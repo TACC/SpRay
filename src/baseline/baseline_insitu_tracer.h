@@ -51,7 +51,6 @@
 #include "render/domain.h"
 #include "render/light.h"
 #include "render/reflection.h"
-#include "render/scene.h"
 #include "render/spray.h"
 #include "render/tile.h"
 #include "utils/comm.h"

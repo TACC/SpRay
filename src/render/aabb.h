@@ -33,17 +33,18 @@ namespace spray {
 class SPRAY_ALIGN(16) Aabb {
  public:
   Aabb();
-
   Aabb(const glm::vec3& v0, const glm::vec3& v1);
 
   // create aabb given triangle vertices
   Aabb(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);
 
   friend std::ostream& operator<<(std::ostream& os, const Aabb& a);
-  bool operator==(const Aabb& other);
-  bool operator!=(const Aabb& other);
+  bool operator==(const Aabb& other) const;
+  bool operator!=(const Aabb& other) const;
 
   void invalidate();
+  void reset() { invalidate(); }
+  void setBounds(const glm::vec3& v0, const glm::vec3& v1);
 
   void merge(const glm::vec3& point);
   void merge(const Aabb& aabb);
@@ -62,12 +63,17 @@ class SPRAY_ALIGN(16) Aabb {
 
   bool contains(const glm::vec3& point) const;
   bool contains(const Aabb& aabb) const;
+  bool within(const Aabb& aabb) const;
 
   const glm::vec3& getMin() const { return bounds[0]; }
   const glm::vec3& getMax() const { return bounds[1]; }
   const glm::vec3& getBound(std::uint8_t i) const { return bounds[i]; }
   float getEdge(std::uint8_t which_bound, std::uint8_t axis) const {
     return bounds[which_bound][axis];
+  }
+  void setBounds(const float aabb_min[3], const float aabb_max[3]) {
+    for (int i = 0; i < 3; ++i) bounds[0][i] = aabb_min[i];
+    for (int i = 0; i < 3; ++i) bounds[1][i] = aabb_max[i];
   }
 
   glm::vec3 bounds[2];

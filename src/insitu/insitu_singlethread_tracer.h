@@ -45,7 +45,6 @@
 #include "render/light.h"
 #include "render/qvector.h"
 #include "render/reflection.h"
-#include "render/scene.h"
 #include "render/spray.h"
 #include "render/tile.h"
 #include "utils/profiler_util.h"
@@ -100,9 +99,24 @@ class SingleThreadTracer {
   void procFsq2();
   void procCachedRq();
   void procRetireQ();
+  void retireBackground();
 
   void populateRadWorkStats();
   void populateWorkStats();
+
+#ifdef SPRAY_GLOG_CHECK
+  void checkQs() {
+    CHECK(rqs_.empty());
+    CHECK(sqs_.empty());
+    CHECK(frq2_.empty());
+    CHECK(fsq2_.empty());
+    CHECK(cached_rq_.empty());
+    CHECK(recv_rq_.empty());
+    CHECK(recv_sq_.empty());
+    CHECK(retire_q_.empty());
+    CHECK(bg_retire_q_.empty());
+  }
+#endif
 
  private:
   const spray::Camera *camera_;
@@ -138,7 +152,8 @@ class SingleThreadTracer {
   std::queue<IsectInfo> frq2_;
   std::queue<OcclInfo> fsq2_;
 
-  std::queue<Ray *> retire_q_;
+  std::queue<Ray *> retire_q_;     ///< Retire queue for foreground colors.
+  std::queue<Ray *> bg_retire_q_;  ///< Retire queue for background colors.
 
   WorkStats work_stats_;
 
@@ -161,6 +176,7 @@ class SingleThreadTracer {
   int num_lights_;
   int image_w_;
   int image_h_;
+  glm::vec3 bg_color_;
 };
 
 }  // namespace insitu

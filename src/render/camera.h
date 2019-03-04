@@ -27,6 +27,10 @@
 
 #include "render/aabb.h"
 
+//debug
+#include "render/spray.h"
+#include "render/shape_buffer.h"
+
 namespace spray {
 
 class Camera {
@@ -100,6 +104,45 @@ class Camera {
    */
   void pan(float mouse_dx, float mouse_dy);
 
+#define DEBUG_SPRAY_CAMERA_RAYS
+#undef DEBUG_SPRAY_CAMERA_RAYS
+
+#ifdef DEBUG_SPRAY_CAMERA_RAYS
+  void print(int x, int y) {
+    float dir[3];
+    generateRay(x, image_h_ - y, dir);
+
+    RTCRay r;
+    r.org[0] = camera_pos_[0];
+    r.org[1] = camera_pos_[1];
+    r.org[2] = camera_pos_[2];
+    r.dir[0] = dir[0];
+    r.dir[1] = dir[1];
+    r.dir[2] = dir[2];
+    r.tnear = SPRAY_RAY_EPSILON;
+    r.tfar = SPRAY_FLOAT_INF;
+    r.instID = RTC_INVALID_GEOMETRY_ID;
+    r.geomID = RTC_INVALID_GEOMETRY_ID;
+    r.primID = RTC_INVALID_GEOMETRY_ID;
+    r.mask = 0xFFFFFFFF;
+    r.time = 0.0f;
+
+    glm::vec3 center(-5, 1, 0);
+    float radius = 2;
+    Sphere sphere(center, radius, nullptr);
+    sphere.setGeomId(10);
+
+    ShapeBuffer::intersect(&sphere, r);
+    if (r.geomID == 10) {
+      std::cout << "(" << x << "," << image_h_ - y << "):" << dir[0] << ","
+                << dir[1] << "," << dir[2] << " ,(hit)\n";
+    } else {
+      std::cout << "(" << x << "," << image_h_ - y << "):" << dir[0] << ","
+                << dir[1] << "," << dir[2] << " ,(miss)\n";
+    }
+  }
+#endif
+
  private:
   glm::vec3 getDirection(float u, float v) const;
 
@@ -130,8 +173,8 @@ inline void Camera::init(const glm::vec3 campos, const glm::vec3 lookat,
                          int image_h) {
   float aspect_ratio =
       static_cast<float>(image_w) / static_cast<float>(image_h);
-  float theta = vfov * M_PI / 180.0f;
-  float image_half_h = tan(theta / 2.0f);
+  float theta = glm::radians(vfov);
+  float image_half_h = glm::tan(theta * 0.5f);
   float image_half_w = aspect_ratio * image_half_h;
 
   glm::vec3 w = campos - lookat;
@@ -153,7 +196,7 @@ inline void Camera::init(const glm::vec3 campos, const glm::vec3 lookat,
   camera_lookat_ = lookat;
   camera_up_ = upvec;
   camera_vfov_degrees_ = vfov;
-  camera_vfov_radians_ = glm::radians(vfov);
+  camera_vfov_radians_ = theta;
 
   image_w_ = static_cast<float>(image_w);
   image_h_ = static_cast<float>(image_h);

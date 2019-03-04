@@ -29,9 +29,8 @@
 #include "ooc/ooc_ray.h"
 #include "render/config.h"
 #include "render/light.h"
+#include "render/material.h"
 #include "render/rays.h"
-#include "render/reflection.h"
-#include "render/scene.h"
 #include "utils/util.h"
 
 namespace spray {
@@ -42,27 +41,21 @@ class ShaderAo {
  public:
   typedef SceneT SceneType;
 
-  void init(const spray::Config &cfg, const SceneT *scene) {
+  ShaderAo() { matte_material_ = new Matte; }
+  ~ShaderAo() { delete matte_material_; }
+
+  void init(const spray::Config &cfg, const SceneT &scene) {
     bounces_ = cfg.bounces;
     samples_ = cfg.ao_samples;  // number of samples for area lights
-    ks_ = cfg.ks;
-    shininess_ = cfg.shininess;
-    scene_ = scene;
-    lights_ = scene->getLights();  // copy lights
+    ao_weight_ = 1.0f / static_cast<float>(samples_);
+#ifdef SPRAY_GLOG_CHECK
+    num_pixels_ = cfg.image_w * cfg.image_h;
+#endif
+    use_spray_color_ = cfg.use_spray_color;
   }
 
- private:
-  const SceneT *scene_;
-  std::vector<Light *> lights_;  // copied lights
-  int bounces_;
-  int samples_;
-  glm::vec3 ks_;
-  float shininess_;
-
- public:
   bool isAo() { return true; }
 
- public:
   void operator()(int domain_id, const Ray &rayin,
                   const spray::RTCRayIntersection &isect,
                   spray::MemoryArena *mem, std::queue<Ray *> *sq,
@@ -87,6 +80,16 @@ class ShaderAo {
       rq->push(r2);
     }
   }
+
+ private:
+  const Material *matte_material_;
+  int bounces_;
+  int samples_;
+  float ao_weight_;
+#ifdef SPRAY_GLOG_CHECK
+  int num_pixels_;
+#endif
+  bool use_spray_color_;
 };
 
 template <typename SceneT>
@@ -95,100 +98,87 @@ void ShaderAo<SceneT>::operator()(int domain_id, const Ray &rayin,
                                   spray::MemoryArena *mem,
                                   std::queue<Ray *> *sq, std::queue<Ray *> *rq,
                                   std::queue<Ray *> *pending_q, int ray_depth) {
-  //
   glm::vec3 pos = RTCRayUtil::hitPosition(rayin.org, rayin.dir, isect.tfar);
-  glm::vec3 surf_radiance;
-  util::unpack(isect.color, surf_radiance);
 
-  glm::vec3 normal(isect.Ns[0], isect.Ns[1], isect.Ns[2]);
-  glm::vec3 wo(-rayin.dir[0], -rayin.dir[1], -rayin.dir[2]);
-  glm::vec3 Lin(rayin.w[0], rayin.w[1], rayin.w[2]);
+  bool is_shape = (isect.color == SPRAY_INVALID_COLOR);
 
-  float cos_theta_i = glm::dot(wo, normal);
-  bool entering = (cos_theta_i > 0.0f);
-  glm::vec3 normal_ff = entering ? normal : -normal;
-  normal_ff = glm::normalize(normal_ff);
-
-  glm::vec3 wi, light_radiance, Lr;
-  float pdf, costheta;
-  int nlights = lights_.size();
-
-  std::size_t color_idx = sq->size();
-
-  const Bsdf *bsdf = scene_->getBsdf(domain_id);
-  bool delta_dist = bsdf->isDelta();
-
-  int next_virtual_depth = rayin.depth + 1;
-  int next_actual_depth = ray_depth + next_virtual_depth;
-
-#ifdef SPRAY_GLOG_CHECK
-  CHECK_LE(next_virtual_depth, SPRAY_HISTORY_SIZE);
+  glm::vec3 albedo;
+#define SPRAY_AO_SHOW_SURFACE_COLOR
+#ifdef SPRAY_AO_SHOW_SURFACE_COLOR
+  auto *material = isect.material;
+  if (material->type() != Material::MATTE) {
+    material = matte_material_;
+  }
+  if (is_shape || use_spray_color_) {
+    albedo = material->getAlbedo();
+  } else {
+    util::unpack(isect.color, albedo);
+  }
+#else
+  auto *material = matte_material_;
+  albedo = material->getAlbedo();
 #endif
 
-  const float ao_weight = 1.0f / static_cast<float>(samples_);
-  RandomSampler light_sampler;
+  glm::vec3 normal(isect.Ns[0], isect.Ns[1], isect.Ns[2]);
 
-  for (int l = 0; l < samples_; ++l) {
-    RandomSampler_init(light_sampler, rayin.pixid * (l + 1));
-    bsdf->sampleRandom(normal_ff, &light_sampler, &wi, &pdf);
+  glm::vec3 wo(-rayin.dir[0], -rayin.dir[1], -rayin.dir[2]);
+  wo = glm::normalize(wo);
 
-    costheta = glm::clamp(glm::dot(normal_ff, wi), 0.0f, 1.0f);
-    Lr = Lin * surf_radiance * (SPRAY_ONE_OVER_PI * costheta * ao_weight / pdf);
+  glm::vec3 Lin(rayin.w[0], rayin.w[1], rayin.w[2]);
 
-    if (hasPositive(Lr)) {
-      Ray *shadow = mem->Alloc<Ray>(1, false);
-      CHECK_NOTNULL(shadow);
+#ifdef SPRAY_FACE_FORWARD_OFF
+  glm::vec3 normal_ff = glm::normalize(normal);
+#else
+  glm::vec3 normal_ff;
+  if (is_shape) {
+    normal_ff = glm::normalize(normal);
+  } else {
+    float cos_theta_i = glm::dot(wo, normal);
+    bool entering = (cos_theta_i > 0.0f);
+    normal_ff = glm::normalize(entering ? normal : -normal);
+  }
+#endif
 
-      RayUtil::makeShadow(rayin, l, pos, wi, Lr, isect.tfar, shadow);
-      sq->push(shadow);
+  glm::vec3 wi, Lr, weight;
+  float pdf;
+
+  int next_virtual_depth = rayin.depth + 1;
+  int next_ray_depth = ray_depth + next_virtual_depth;
+
+  RandomSampler sampler;
+  RandomSampler_init(sampler, rayin.samid * next_ray_depth);
+
+  // direct illumination
+
+  for (int s = 0; s < samples_; ++s) {
+    bool valid =
+        material->sample(albedo, wo, normal_ff, sampler, &wi, &weight, &pdf);
+    if (valid) {
+      Lr = Lin * weight * ao_weight_ * (1.0f / pdf);
+      if (hasPositive(Lr)) {
+        // create shadow ray
+        Ray *shadow = mem->Alloc<Ray>(1, false);
+        CHECK_NOTNULL(shadow);
+
+        RayUtil::makeShadow(rayin, s, pos, wi, Lr, isect.tfar, shadow);
+
+        sq->push(shadow);
+      }
     }
   }
 
-  if (next_actual_depth < bounces_) {
-    wo = glm::normalize(wo);
+  // indirect illumination
 
-    if (delta_dist) {
-      if (cos_theta_i != 0.0f) {  // rule out 90 degree
-        cos_theta_i = glm::clamp(cos_theta_i, -1.0f, 1.0f);
-        float abs_cos_theta_i = glm::abs(cos_theta_i);
+#ifdef SPRAY_GLOG_CHECK
+  CHECK_LT(ray_depth + rayin.depth, bounces_);
+#endif
 
-        if (!entering) {  // i.e cos_theta_i < 0.0f
-          cos_theta_i = abs_cos_theta_i;
-        }
-
-        uint32_t sample_type;
-        float fr;      // prob. of reflection
-        glm::vec3 wt;  // direction of transmitted ray
-        bsdf->sampleDelta(entering, cos_theta_i, wo, normal_ff, &sample_type,
-                          &fr, &wt);
-        bool has_reflect = hasReflection(sample_type);
-
-        if (has_reflect) {
-          glm::vec3 wr = Reflect(wo, normal_ff);
-          wi = glm::normalize(wr);
-          Lr = Lin * (fr / abs_cos_theta_i);
-          if (hasPositive(Lr)) {
-            genR2(rayin, pos, wi, Lr, isect.tfar, mem, rq, pending_q);
-          }
-        }
-
-        if (hasTransmission(sample_type)) {
-          // TODO: support both reflection and refraction
-          CHECK_EQ(has_reflect, false);
-          wi = glm::normalize(wt);
-          Lr = Lin * ((1.0f - fr) / abs_cos_theta_i);
-          if (hasPositive(Lr)) {
-            genR2(rayin, pos, wi, Lr, isect.tfar, mem, rq, pending_q);
-          }
-        }
-      }
-    } else {
-      RandomSampler sampler;
-      RandomSampler_init(sampler, rayin.samid * next_actual_depth);
-
-      bsdf->sampleRandom(normal_ff, &sampler, &wi, &pdf);
-      costheta = glm::clamp(glm::dot(normal_ff, wi), 0.0f, 1.0f);
-      Lr = Lin * surf_radiance * SPRAY_ONE_OVER_PI * costheta / pdf;
+  if (next_ray_depth < bounces_) {
+    RandomSampler_init(sampler, rayin.samid * next_ray_depth);
+    bool valid =
+        material->sample(albedo, wo, normal_ff, sampler, &wi, &weight, &pdf);
+    if (valid) {
+      Lr = Lin * weight * (1.0f / pdf);
       if (hasPositive(Lr)) {
         genR2(rayin, pos, wi, Lr, isect.tfar, mem, rq, pending_q);
       }

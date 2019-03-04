@@ -25,6 +25,8 @@
 #include "insitu/insitu_shader_pt.h"
 #include "render/caches.h"
 #include "render/config.h"
+#include "render/hybrid_geometry_buffer.h"
+#include "render/scene.h"
 #include "render/spray.h"
 #include "render/spray_renderer.h"
 #include "utils/comm.h"
@@ -50,10 +52,13 @@ int main(int argc, char** argv) {
 #endif
 
   // cache
-  typedef spray::InfiniteCache CacheT;
+  typedef spray::InsituCache CacheT;
+
+  // surface buffer
+  typedef spray::HybridGeometryBuffer SurfaceBufT;
 
   // scene
-  typedef spray::Scene<CacheT> SceneT;
+  typedef spray::Scene<CacheT, SurfaceBufT> SceneT;
 
   // ao
   typedef spray::insitu::ShaderAo<SceneT> ShaderAoT;
@@ -66,7 +71,10 @@ int main(int argc, char** argv) {
   typedef spray::SprayRenderer<TracerPtT> RenderPtT;
 
   spray::Config cfg;
-  cfg.parse(argc, argv);
+  if (cfg.parse(argc, argv)) {
+    MPI_Finalize();
+    return 0;
+  }
 
   if (cfg.partition == spray::Config::INSITU) {
     if (cfg.cache_size < 0) {

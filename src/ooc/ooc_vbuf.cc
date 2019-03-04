@@ -28,11 +28,12 @@ namespace spray {
 namespace ooc {
 
 void VBuf::resize(const spray::Tile& tile, int num_pixel_samples) {
+  CHECK_GT(tile.w * tile.h, 0) << tile;
   tile_ = tile;
   num_pixel_samples_ = num_pixel_samples;
 
   std::size_t size = tbufSize(tile, num_pixel_samples);
-  CHECK_GT(size, 0);
+  CHECK_GT(size, 0) << tile;
   tbuf_.resize(size);
 
   for (auto& t : tbuf_) t = SPRAY_FLOAT_INF;
@@ -49,6 +50,20 @@ bool VBuf::correct(const Ray& ray) const {
     }
   }
   return correct;
+}
+
+bool VBuf::correctAndMiss(const Ray& ray) const {
+  const auto ray_depth = ray.depth;
+  auto offset = (std::size_t)ray.samid * SPRAY_SPECU_HISTORY_SIZE;
+  for (int i = 0; i < ray_depth; ++i) {
+    if (ray.history[i] != tbuf_[offset + i]) {
+      return false;
+    }
+  }
+#ifdef SPRAY_GLOG_CHECK
+  CHECK_LT(ray_depth, SPRAY_HISTORY_SIZE);
+#endif
+  return std::isinf(tbuf_[offset + ray_depth]);
 }
 
 bool VBuf::update(float t, Ray* ray) {

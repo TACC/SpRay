@@ -41,7 +41,6 @@
 #include "render/domain.h"
 #include "render/light.h"
 #include "render/reflection.h"
-#include "render/scene.h"
 #include "render/spray.h"
 #include "render/tile.h"
 #include "utils/profiler_util.h"
@@ -70,11 +69,6 @@ class Tracer {
   std::vector<TContextType> tcontexts_;
 
  private:
-  void genSingleEyes(int image_w, float orgx, float orgy, float orgz,
-                     spray::Tile tile, RayBuf<Ray> *ray_buf);
-  void genMultiEyes(int image_w, float orgx, float orgy, float orgz,
-                    spray::Tile tile, RayBuf<Ray> *ray_buf);
-
   void isectDomsRads(RayBuf<Ray> buf, TContextType *tc);
   void isectPrimsRads(TContextType *tc);
 

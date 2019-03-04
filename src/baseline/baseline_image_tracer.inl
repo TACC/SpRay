@@ -74,7 +74,6 @@ void ImageTracer<ScheduleT, ShaderT>::trace() {
     QStats stats;
     stats.init(ndomains);
 
-    // DomainIntersector<SceneT> domain_isector(ndomains, Base::scene_);
     DomainIntersector<SceneType> &domain_isector = Base::domain_isectors_[tid];
 
     if (num_eyerays) {

@@ -35,11 +35,12 @@ void TContext<ShaderT>::init(const Config& cfg, int ndomains,
   scene_ = scene;
   vbuf_ = vbuf;
   image_ = image;
+  bg_color_ = cfg.bg_color;
 
   rqs_.resize(ndomains);
   sqs_.resize(ndomains);
 
-  shader_.init(cfg, scene);
+  shader_.init(cfg, *scene);
 
   one_over_num_pixel_samples_ = 1.0 / (double)cfg.pixel_samples;
   isector_.init(ndomains);
@@ -191,6 +192,16 @@ void TContext<ShaderT>::resolveRadiances(const VBuf& vbuf) {
     auto& info = frq2_.front();
     auto* ray = info.ray;
     if (vbuf.correct(ray->samid, ray->t)) {
+#ifdef SPRAY_BACKGROUND_COLOR
+      auto* isect = info.isect;
+      if (!std::isinf(isect->tfar)) {  // hit
+        cached_rq_.push(info);
+        isector_.intersect(info.domain_id, isect->tfar, scene_, ray, &rqs_,
+                           &bg_retire_q_);
+      } else {
+        isector_.intersect(info.domain_id, scene_, ray, &rqs_, &bg_retire_q_);
+      }
+#else
       auto* isect = info.isect;
       if (!std::isinf(isect->tfar)) {  // hit
         cached_rq_.push(info);
@@ -198,6 +209,7 @@ void TContext<ShaderT>::resolveRadiances(const VBuf& vbuf) {
       } else {
         isector_.intersect(info.domain_id, scene_, ray, &rqs_);
       }
+#endif
     }
     frq2_.pop();
   }
@@ -227,6 +239,15 @@ void TContext<ShaderT>::retireUntouched() {
     retire_q_.pop();
     image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
   }
+  glm::vec3 bgcolor;
+  while (!bg_retire_q_.empty()) {
+    auto* ray = bg_retire_q_.front();
+    bg_retire_q_.pop();
+    int oflag = ray->occluded;
+    bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
+              spray::computeBackGroundColor(ray->dir, bg_color_);
+    image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
+  }
 }
 
 template <typename ShaderT>
@@ -236,6 +257,21 @@ void TContext<ShaderT>::retireShadows(const VBuf& vbuf) {
     retire_q_.pop();
     if (!vbuf.occluded(ray->samid, ray->light)) {
       image_->add(ray->pixid, ray->w, one_over_num_pixel_samples_);
+    }
+  }
+}
+
+template <typename ShaderT>
+void TContext<ShaderT>::retireRadiances(const VBuf& vbuf) {
+  glm::vec3 bgcolor;
+  while (!bg_retire_q_.empty()) {
+    auto* ray = bg_retire_q_.front();
+    bg_retire_q_.pop();
+    int oflag = ray->occluded;
+    if (std::isinf(vbuf.getTbufOut(ray->samid))) {
+      bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
+                spray::computeBackGroundColor(ray->dir, bg_color_);
+      image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
     }
   }
 }

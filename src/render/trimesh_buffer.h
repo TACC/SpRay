@@ -29,10 +29,14 @@
 #include "pbrt/memory.h"
 
 #include "io/ply_loader.h"
+#include "render/domain.h"
 
 #define NUM_VERTICES_PER_FACE 3  // triangle
 
 namespace spray {
+
+class Shape;
+class Material;
 
 struct RTCRayIntersection;
 
@@ -43,10 +47,10 @@ class TriMeshBuffer {
 
  public:
   void init(int max_cache_size_ndomains, std::size_t max_nvertices,
-            std::size_t max_nfaces, bool compute_normals);
+            std::size_t max_nfaces);
 
-  RTCScene load(const std::string& filename, int cache_block,
-                const glm::mat4& transform, bool apply_transform);
+  RTCScene load(int cache_block, Domain& domain);
+
   RTCScene get(int cache_block) { return scenes_[cache_block]; }
 
   void updateIntersection(int cache_block, RTCRayIntersection* isect) const;
@@ -76,10 +80,18 @@ class TriMeshBuffer {
     return (cache_block * max_nvertices_);
   }
 
+  // std::size_t materialBaseIndex(int cache_block) const {
+  //   return (cache_block * max_nvertices_);
+  // }
+
+  const Material* getMaterial(int cache_block, unsigned int geom_id) const {
+    return domains_[cache_block]->getMaterial(geom_id);
+  }
+
   void cleanup();
   void mapEmbreeBuffer(int cache_block, float* vertices,
                        std::size_t num_vertices, uint32_t* faces,
-                       std::size_t num_faces);
+                       std::size_t num_faces, std::size_t model_id);
 
  private:
   enum MeshStatus { CREATED = -1, DESTROYED = 0 };
@@ -88,11 +100,14 @@ class TriMeshBuffer {
   int max_cache_size_;  // in number of domains
   std::size_t max_nvertices_;
   std::size_t max_nfaces_;
+  std::size_t max_nmodels_;
 
   float* vertices_;  //!< per-cache-block vertices. 2d array.
   float* normals_;   //!< per-cache-block normals. unnormalized. 2d array.
   uint32_t* faces_;  //!< per-cache-block faces. 2d array.
   uint32_t* colors_;  //!< per-cache-block packed rgb colors. 2d array.
+  // HybridMaterial* materials_;
+  std::vector<const Domain*> domains_;
 
   std::size_t* num_vertices_;
   std::size_t* num_faces_;
@@ -104,8 +119,6 @@ class TriMeshBuffer {
 
   MemoryArena arena_;
   PlyLoader loader_;
-
-  bool compute_normals_;
 };
 
 }  // namespace spray

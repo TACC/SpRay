@@ -88,7 +88,7 @@ void InsituTracer<ScheduleT, ShaderT>::initCommon(const Config &cfg,
   ray_sched_.init(ndomains, scene->getInsituPartition());
 
   // shader
-  shader_.init(cfg, scene);
+  shader_.init(cfg, *scene);
 
   domain_isectors_.resize(cfg.nthreads);
   for (auto &r : domain_isectors_) {
@@ -142,7 +142,6 @@ void InsituTracer<ScheduleT, ShaderT>::trace() {
     QStats stats;
     stats.init(ndomains);
 
-    // DomainIntersector<SceneType> domain_isector(ndomains, scene_);
     DomainIntersector<SceneType> &domain_isector = domain_isectors_[tid];
 
     if (num_eyerays) {

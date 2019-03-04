@@ -68,9 +68,12 @@ void Profiler::printStats(const std::vector<Stats>& stats, int64_t nframes) {
     const auto& s = stats[i];
     std::cout << "[STATS] " << std::left << std::setw(20)
               << Profiler::timer_names[i].c_str() << ": " << std::left
-              << std::setw(12) << 1000.0 * s.min / nframes << " " << std::left
-              << std::setw(12) << 1000.0 * s.avg / nframes << " " << std::left
-              << std::setw(12) << 1000.0 * s.max / nframes << " ms/frame\n";
+              << std::setw(12) << 1000.0 * s.min << " " << std::left
+              << std::setw(12) << 1000.0 * s.avg << " " << std::left
+              << std::setw(12) << 1000.0 * s.max << " (ms)\n";
+              // << std::setw(12) << 1000.0 * s.min / nframes << " " << std::left
+              // << std::setw(12) << 1000.0 * s.avg / nframes << " " << std::left
+              // << std::setw(12) << 1000.0 * s.max / nframes << " (ms/frame)\n";
   }
 }
 
@@ -86,30 +89,35 @@ void Profiler::printCounterStats(const std::vector<CounterStats>& stats,
     const auto& s = stats[i];
     std::cout << "[STATS] " << std::left << std::setw(20)
               << Profiler::counter_names[i].c_str() << ": " << std::left
-              << std::setw(12) << s.min / nframes << " " << std::left
-              << std::setw(12) << s.avg / nframes << " " << std::left
-              << std::setw(12) << s.max / nframes << " " << std::left
-              << std::setw(12) << s.sum / nframes << " per frame\n";
+              << std::setw(12) << s.min << " " << std::left
+              << std::setw(12) << s.avg << " " << std::left
+              << std::setw(12) << s.max << " " << std::left
+              << std::setw(12) << s.sum << " (total)\n";
+              // << std::setw(12) << s.min / nframes << " " << std::left
+              // << std::setw(12) << s.avg / nframes << " " << std::left
+              // << std::setw(12) << s.max / nframes << " " << std::left
+              // << std::setw(12) << s.sum / nframes << " (per frame)\n";
   }
 }
 void Profiler::printTimers(int rank, const double* timers, int64_t nframes) {
   for (int t = 0; t < TIMER_COUNT; ++t) {
     // in seconds
     double total_time = timers[t];
-    double frame_time = total_time / nframes;
+    // double frame_time = total_time / nframes;
     std::cout << "[TIME] [PROC " << rank << "] " << std::left << std::setw(20)
               << Profiler::timer_names[t].c_str() << ": " << std::left
-              << std::setw(12) << 1000.0 * frame_time << "ms/frame\n";
+              << std::setw(12) << 1000.0 * total_time << " (ms)\n";
+              // << std::setw(12) << 1000.0 * frame_time << " (ms/frame)\n";
   }
   double total_time_r = timers[TIMER_TOTAL];
   double frame_time_r = total_time_r / nframes;
   std::cout << "[TIME] [PROC " << rank << "] " << std::left << std::setw(20)
-            << "frame rate"
+            << "frame_rate"
             << ": " << std::left << std::setw(12) << 1.0 / frame_time_r
-            << "fps\n";
+            << " (fps)\n";
   std::cout << "[TIME] [PROC " << rank << "] " << std::left << std::setw(20)
-            << "frame count"
-            << ": " << std::left << std::setw(12) << nframes << "frames\n";
+            << "frame_count"
+            << ": " << std::left << std::setw(12) << nframes << " (frames)\n";
 }
 
 void Profiler::printCounters(int rank, const uint64_t* counters,
@@ -117,13 +125,13 @@ void Profiler::printCounters(int rank, const uint64_t* counters,
   for (int t = 0; t < COUNTER_COUNT; ++t) {
     // in seconds
     double total_count = counters[t];
-    double perframe_count = total_count / nframes;
     std::cout << "[COUNT] [PROC " << rank << "] " << std::left << std::setw(20)
               << Profiler::counter_names[t].c_str() << ": " << std::left
-              << std::setw(12) << total_count << "total\n";
-    std::cout << "[COUNT] [PROC " << rank << "] " << std::left << std::setw(20)
-              << Profiler::counter_names[t].c_str() << ": " << std::left
-              << std::setw(12) << perframe_count << "per frame\n";
+              << std::setw(12) << total_count << " (total)\n";
+    // double perframe_count = total_count / nframes;
+    // std::cout << "[COUNT] [PROC " << rank << "] " << std::left << std::setw(20)
+    //           << Profiler::counter_names[t].c_str() << ": " << std::left
+    //           << std::setw(12) << perframe_count << " (per frame)\n";
   }
 }
 

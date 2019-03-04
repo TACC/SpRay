@@ -18,45 +18,56 @@
 //                                                                            //
 // ========================================================================== //
 
-#include "render/infinite_cache.h"
+#pragma once
 
+#include "glm/glm.hpp"
 #include "glog/logging.h"
-#include "pbrt/memory.h"
 
-#include "render/trimesh_buffer.h"
+#include "render/aabb.h"
+#include "render/material.h"
 
 namespace spray {
 
-InfiniteCache::InfiniteCache() : capacity_(0), status_(nullptr) {}
-InfiniteCache::~InfiniteCache() { FreeAligned(status_); }
+class Shape {
+ public:
+  enum ShapeType { UNDEFINED, SPHERE };
 
-// max_aceh_size_ndomains is a don't care
-void InfiniteCache::init(int num_domains, int cache_size, bool insitu_mode) {
-  //
-  CHECK(cache_size < 0 || cache_size >= num_domains || insitu_mode);
-  capacity_ = num_domains;
+  Shape(Material* m) : material(m) {}
+  virtual ~Shape() { delete material; }
 
-  status_ = AllocAligned<int>(capacity_);
-  CHECK_NOTNULL(status_);
-
-  for (int i = 0; i < capacity_; ++i) {
-    status_[i] = MISS;
+  virtual int type() const {
+    LOG(FATAL) << "undefined";
+    return UNDEFINED;
   }
-}
+  virtual void setGeomId(int id) { LOG(FATAL) << "undefined"; }
 
-bool InfiniteCache::load(int domid, int* cache_block_id) {
-#ifdef SPRAY_GLOG_CHECK
-  CHECK_LT(domid, capacity_);
-#endif
-  *cache_block_id = domid;
-  if (status_[domid] == HIT) {
-    return true;
-  }
-#ifdef SPRAY_GLOG_CHECK
-  CHECK_LT(domid, capacity_);
-#endif
-  status_[domid] = HIT;
-  return false;
+  virtual void getBounds(Aabb* aabb) const = 0;
+
+  Material* material;
+};
+
+class Sphere : public Shape {
+ public:
+  Sphere(const glm::vec3& center, float radius, Material* m)
+      : Shape(m), center(center), radius(radius) {}
+
+  int type() const override { return Shape::SPHERE; }
+  void setGeomId(int id) override { geom_id = id; }
+
+  void getBounds(Aabb* aabb) const override;
+
+  const glm::vec3 center;
+  const float radius;
+  unsigned int geom_id;
+};
+
+inline void Sphere::getBounds(Aabb* aabb) const {
+  aabb->bounds[0].x = center.x - radius;
+  aabb->bounds[0].y = center.y - radius;
+  aabb->bounds[0].z = center.z - radius;
+  aabb->bounds[1].x = center.x + radius;
+  aabb->bounds[1].y = center.y + radius;
+  aabb->bounds[1].z = center.z + radius;
 }
 
 }  // namespace spray

@@ -21,6 +21,7 @@
 #include "render/config.h"
 
 #include <getopt.h>
+#include <cstring>
 
 #include "glog/logging.h"
 
@@ -37,8 +38,8 @@ Config::Config() {
 
   // camera
   has_camera_config = false;
-  znear = 0.000001f;
-  zfar = 1000000.0f;
+  znear = 0.1f;
+  zfar = 100000.0f;
   fov = 90.0f;
 
   // render
@@ -67,9 +68,13 @@ Config::Config() {
 
   nthreads = 1;
 
-  shading = SPRAY_SHADING_LAMBERT;
+  use_spray_color = false;
 
   dev_mode = DEVMODE_NORMAL;
+
+  bg_color.r = 1.0f;
+  bg_color.g = 1.0f;
+  bg_color.b = 1.0f;
 }
 
 void Config::printUsage(char** argv) {
@@ -93,18 +98,24 @@ void Config::printUsage(char** argv) {
   printf("  --bounces, <number of bounces (1)>\n");
   printf("  --camera-up <upx upy upz>\n");
   printf("  --camera <posx posy posz lookx looky lookz>\n");
+  printf("  --ao-mode\n");
+  printf("      Enable ambient occlusion.\n");
   printf("  --ao-samples <number of samples in AO (8)>\n");
   printf("  --pixel-samples <number of pixel samples (4)>\n");
   printf(
       "  --max-samples-per-rank <maximum number of screen-space samples per "
       "rank (1048576)>\n");
+  printf("  --use-spray-color\n");
+  printf("      Use color defined in the scene file.\n");
+  printf("  --bg-color <white | sky>\n");
+  printf("      Background color.\n");
+  printf("  --custom-bg-color <R G B>\n");
+  printf("      Custom background color. RGB values between 0 and 1. This option overrides the bg-color option.\n");
   printf("  --nthreads <number of threads (1)>\n");
-  printf("  --shading <lambert | blinn>\n");
-  printf("  --blinn ks_r ks_g ks_b shininess\n");
   printf("  --dev-mode\n");
 }
 
-void Config::parse(int argc, char** argv) {
+bool Config::parse(int argc, char** argv) {
   struct option long_options[] = {
       {"output", required_argument, 0, 'o'},
       {"local-disk", required_argument, 0, 'l'},
@@ -124,11 +135,13 @@ void Config::parse(int argc, char** argv) {
       {"ao-samples", required_argument, 0, 400},
       {"ao-mode", no_argument, 0, 402},
       {"pixel-samples", required_argument, 0, 403},
-      {"shading", required_argument, 0, 404},
-      {"blinn", required_argument, 0, 405},
+      {"use-spray-color", no_argument, 0, 405},
       {"max-samples-per-rank", required_argument, 0, 406},
       {"ply-path", required_argument, 0, 408},
+      {"bg-color", required_argument, 0, 409},
+      {"custom-bg-color", required_argument, 0, 410},
       {"dev-mode", no_argument, 0, 1000},
+      {"help", no_argument, 0, 1001},
       {0, 0, 0, 0}};
 
   int option_index = 0;
@@ -136,6 +149,11 @@ void Config::parse(int argc, char** argv) {
   camera_up[0] = 0.f;
   camera_up[1] = 1.f;
   camera_up[2] = 0.f;
+
+  bool stop_app = false;
+
+  glm::vec3 custom_bg_color;
+  bool has_custom_bg_color = false;
 
   while ((c = getopt_long(argc, argv, "o:t:m:r:w:h:x", long_options,
                           &option_index)) != -1) {
@@ -235,34 +253,49 @@ void Config::parse(int argc, char** argv) {
         pixel_samples = atoi(optarg);
       } break;
 
-      case 404: {  // --shading
-        std::string cfg_shading = optarg;
-        if (cfg_shading == "blinn") {
-          shading = SPRAY_SHADING_BLINN;
-        } else {
-          shading = SPRAY_SHADING_LAMBERT;
-        }
-      } break;
-
-      case 405: {  // --blinn
-        float data[4];
-        util::parseTuple(argv, 4, data);
-        ks = glm::vec3(data[0], data[1], data[2]);
-        shininess = data[3];
+      case 405: {  // --use-spray-color
+        use_spray_color = true;
       } break;
 
       case 406: {  // --max-samples-per-rank
-        maximum_num_screen_space_samples_per_rank = atoi(optarg);
+        maximum_num_screen_space_samples_per_rank = atol(optarg);
       } break;
 
       case 408: {  // --ply-path
         ply_path = optarg;
       } break;
 
+      case 409: {  // --bg-color
+        if (strcmp(optarg, "white") == 0) {
+          bg_color.r = 1.0f;
+          bg_color.g = 1.0f;
+          bg_color.b = 1.0f;
+        } else if (strcmp(optarg, "sky") == 0) {
+          bg_color.r = 0.5f;
+          bg_color.g = 0.7f;
+          bg_color.b = 1.0f;
+        } else {
+          CHECK(false) << "unknown background color: " << optarg;
+        }
+      } break;
+
+      case 410: {  // --custom-bg-color
+        float data[3];
+        util::parseTuple(argv, 3, data);
+        custom_bg_color.r = data[0];
+        custom_bg_color.g = data[1];
+        custom_bg_color.b = data[2];
+        has_custom_bg_color = true;
+      } break;
+
       case 1000: {  // --dev-mode
         dev_mode = DEVMODE_DEV;
       } break;
 
+      case 1001: {  // --help
+        stop_app = true;
+        printUsage(argv);
+      } break;
 
       default:
         printUsage(argv);
@@ -271,13 +304,18 @@ void Config::parse(int argc, char** argv) {
     }
   }  // end of getopt
 
-  CHECK_NE(argc, optind) << "input file not found";
+  if (has_custom_bg_color) bg_color = custom_bg_color;
 
-  std::string filename(argv[optind]);
-  model_descriptor_filename = filename;
-
-  std::string ext = util::getFileExtension(filename);
-  CHECK_EQ(ext, std::string("spray"));
+  if (!stop_app) {
+    CHECK_NE(argc, optind) << "input file not found";
+    
+    std::string filename(argv[optind]);
+    model_descriptor_filename = filename;
+    
+    std::string ext = util::getFileExtension(filename);
+    CHECK_EQ(ext, std::string("spray")) << ext;
+  }
+  return stop_app;
 }
 
 }  // namespace spray

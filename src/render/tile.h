@@ -49,7 +49,7 @@ struct Tile {
   Tile(int xpos, int ypos, int width, int height)
       : x(xpos), y(ypos), w(width), h(height) {}
   int getArea() const { return w * h; }
-  bool isValid() const { return (w != 0); }
+  bool isValid() const { return getArea() > 0; }
   void invalidate() { w = 0; }
 
   friend std::ostream& operator<<(std::ostream& os, const Tile& t);

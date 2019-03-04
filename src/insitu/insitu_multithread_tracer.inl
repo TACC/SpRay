@@ -63,7 +63,7 @@ void MultiThreadTracer<ShaderT>::init(const Config &cfg, const Camera &camera,
   if (nranks > 0) comm_recv_.set(&recv_rq_, &recv_sq_);
 
   // shader
-  shader_.init(cfg, scene);
+  shader_.init(cfg, *scene);
 
   // process context
   int total_num_light_samples;
@@ -193,6 +193,42 @@ void MultiThreadTracer<ShaderT>::send(bool shadow, int tid, int domain_id,
 #pragma omp master
   { comm_.pushSendQ(send_q_item_); }
 }
+
+// template <typename ShaderT>
+// void MultiThreadTracer<ShaderT>::procLocalQs(int tid, int ray_depth,
+//                                              TContextType *tcontext) {
+//   const auto &ids = partition_->getDomains(rank_);
+// 
+//   for (auto id : ids) {
+//     bool empty = tcontext->isLocalQsEmpty(id);
+//     if (empty) {
+//       thread_status_.clear(tid);
+//     } else {
+//       thread_status_.set(tid);
+//     }
+// 
+// #pragma omp barrier
+// 
+//     bool nonempty = thread_status_.isAnySet();
+//     if (nonempty) {
+// #pragma omp single
+//       { scene_->load(id, &sinfo_); }
+// 
+//       tcontext->processRays(id, sinfo_);
+// 
+// #pragma omp barrier
+// 
+// #pragma omp single
+//       {
+//         for (auto &t : tcontexts_) {
+//           t.updateVisBuf();
+//         }
+//       }
+//       tcontext->genRays(id, ray_depth);
+//     }
+// #pragma omp barrier
+//   }
+// }
 
 template <typename ShaderT>
 void MultiThreadTracer<ShaderT>::assignRecvRadianceRaysToThreads(
@@ -410,6 +446,11 @@ void MultiThreadTracer<ShaderT>::traceInOmp() {
             t.retireShadows(thread_vbufs_[0]);
           }
         }
+#ifdef SPRAY_BACKGROUND_COLOR
+        for (auto &t : tcontexts_) {
+          t.retireRadiances(thread_vbufs_[0]);
+        }
+#endif
       }
 #pragma omp barrier
 

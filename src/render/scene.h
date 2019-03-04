@@ -20,23 +20,25 @@
 
 #pragma once
 
-#include <glog/logging.h>
+#include <mpi.h>
 #include <cstdlib>
 #include <string>
 #include <vector>
 
 #include "glm/glm.hpp"
+#include "glog/logging.h"
 
 #include "display/opengl.h"
 #include "io/scene_loader.h"
 #include "render/aabb.h"
 #include "render/caches.h"
+#include "render/config.h"
 #include "render/data_partition.h"
 #include "render/domain.h"
 #include "render/light.h"
 #include "render/rays.h"
+#include "render/shape_buffer.h"
 #include "render/spray.h"
-#include "render/trimesh_buffer.h"
 #include "render/wbvh_embree.h"
 #include "utils/comm.h"
 #include "utils/math.h"
@@ -59,9 +61,11 @@ struct SceneInfo {
   int cache_block;
 };
 
-template <typename CacheT, typename SurfaceBufT = TriMeshBuffer>
+template <typename CacheT, typename SurfaceBufT>
 class Scene {
  public:
+  typedef CacheT CacheType;
+
   Scene() {}
   ~Scene() {
     for (std::size_t i = 0; i < lights_.size(); ++i) {
@@ -70,18 +74,16 @@ class Scene {
     if (!storage_basepath_.empty()) deleteAllDomainsFromLocalDisk();
   }
 
-  void init(const std::string& desc_filename, const std::string& ply_path,
-            const std::string& storage_basepath, int cache_size, int view_mode,
-            bool insitu_mode, int num_virtual_ranks);
+  void init(const Config& cfg);
 
   const InsituPartition& getInsituPartition() const { return partition_; }
   bool insitu() const { return insitu_; }
 
   void buildWbvh();
 
-  Aabb getBound() const {
-    CHECK(bound_.isValid()) << "invalid scene bound";
-    return bound_;
+  Aabb getWorldAabb() const {
+    CHECK(world_aabb_.isValid()) << "invalid scene bound";
+    return world_aabb_;
   }
 
   // drawing domains
@@ -99,7 +101,7 @@ class Scene {
     CHECK_GE(glfw_domain_idx_, 0);
     CHECK_LT(glfw_domain_idx_, getNumDomains());
 #endif
-    return domains_[glfw_domain_idx_].id;
+    return domains_[glfw_domain_idx_].getId();
   }
 
   int prevDomain(int decrement) {
@@ -113,7 +115,7 @@ class Scene {
     CHECK_GE(glfw_domain_idx_, 0);
     CHECK_LT(glfw_domain_idx_, getNumDomains());
 #endif
-    return domains_[glfw_domain_idx_].id;
+    return domains_[glfw_domain_idx_].getId();
   }
 
   void setPartitionNumber(int num) { partition_num_ = num; }
@@ -140,9 +142,9 @@ class Scene {
 
     for (std::size_t i = 0; i < domains_.size(); ++i) {
       const Domain& d = domains_[i];
-      int p = domain_to_partition[d.id];
-      partition_to_vertices[p] += d.num_vertices;
-      partition_to_faces[p] += d.num_faces;
+      int p = domain_to_partition[d.getId()];
+      partition_to_vertices[p] += d.getNumVertices();
+      partition_to_faces[p] += d.getNumFaces();
     }
     for (int i = 0; i < num_partitions_; ++i) {
       std::cout << "parti[" << i << "]: v " << partition_to_vertices[i] << " f "
@@ -209,8 +211,8 @@ class Scene {
                  RTCRayIntersection* isect) const;
   bool occluded(RTCScene rtc_scene, RTCRay* ray) const;
 
- public:
-  const Bsdf* getBsdf(int id) const { return domains_[id].bsdf; }
+  // public:
+  // Bsdf* getBsdf(int id) { return domains_[id].bsdf; }
 
  public:
   std::size_t getNumDomains() const { return domains_.size(); }
@@ -220,15 +222,30 @@ class Scene {
   std::size_t getNumLights() const { return lights_.size(); }
 
  private:
-  void mergeDomainBounds(std::size_t* max_num_vertices,
-                         std::size_t* max_num_faces);
+  struct ModelInfo {
+    std::size_t num_vertices;
+    std::size_t num_faces;
+    float obj_bounds_min[3];
+    float obj_bounds_max[3];
+  };
 
-  void copyAllDomainsToLocalDisk(const std::string& dest_path,
-                                 bool insitu_mode);
+  // void copyAllDomainsToLocalDisk(const std::string& dest_path,
+  //                                bool insitu_mode);
   void deleteAllDomainsFromLocalDisk();
+  void loadAndPopulateDomainInfo(std::size_t* max_num_vertices,
+                                 std::size_t* max_num_faces);
+
+  void getModelInfo(std::size_t total_num_models,
+                    std::vector<ModelInfo>* model_info_recvbuf);
+  void updateDomains(bool all_domains_configured,
+                     const std::vector<ModelInfo>& model_info_recvbuf,
+                     std::size_t* max_num_vertices, std::size_t* max_num_faces);
+
+  void getAssignedGeometrySizes(std::size_t* max_num_vertices,
+                                std::size_t* max_num_faces);
 
  private:
-  Aabb bound_;  // bound of entire scene in world space
+  Aabb world_aabb_;  // bound of entire scene in world space
   std::vector<Domain> domains_;
   std::vector<Light*> lights_;
 

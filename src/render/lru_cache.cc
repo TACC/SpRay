@@ -38,7 +38,7 @@ void LruCache::flush() {
 }
 
 // max_aceh_size_ndomains is a don't care
-void LruCache::init(int num_domains, int cache_size, bool insitu_mode) {
+void LruCache::init(int num_domains, int cache_size) {
   flush();
   //
   CHECK_NE(cache_size, 0);

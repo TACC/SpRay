@@ -95,18 +95,24 @@ void TContext<SceneT, ShaderT>::procRads2(SceneT* scene, SceneInfo& sinfo) {
   while (!rq2_.empty()) {
     Ray* r = rq2_.front();
     rq2_.pop();
-    isector_.intersect(scene, r, &rqs_, &rstats_);
+#ifdef SPRAY_BACKGROUND_COLOR
+    isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_, bg_commit_q_);
+#else
+    isector_.intersect(num_domains_, scene, r, &rqs_, &rstats_);
+#endif
   }
 }
 
 template <typename SceneT, typename ShaderT>
 void TContext<SceneT, ShaderT>::resize(int ndomains, int num_pixel_samples,
                                        const Tile& tile, spray::HdrImage* image,
-                                       int num_bounces) {
+                                       int num_bounces,
+                                       const glm::vec3& bg_color) {
   // tid_ = tid;
   num_domains_ = ndomains;
   num_pixel_samples_ = num_pixel_samples;
   num_bounces_ = num_bounces;
+  one_over_num_pixel_samples_ = 1.0 / (double)num_pixel_samples_;
 
   vbuf_.resize(tile, num_pixel_samples);
   image_ = image;
@@ -116,20 +122,36 @@ void TContext<SceneT, ShaderT>::resize(int ndomains, int num_pixel_samples,
   sqs_out_->resize(ndomains);
 
   rstats_.resize(ndomains, true /*stats_only*/);
-
+  bg_color_ = bg_color;
   isector_.init(ndomains);
 }
 
 template <typename SceneT, typename ShaderT>
 void TContext<SceneT, ShaderT>::retire() {
-  double scale = 1.0 / (double)num_pixel_samples_;
   while (!retire_q_->empty()) {
     Ray* r = retire_q_->front();
     retire_q_->pop();
     if (!r->occluded) {
       if (vbuf_.correct(*r)) {
-        image_->add(r->pixid, r->w, scale);
+        image_->add(r->pixid, r->w, one_over_num_pixel_samples_);
       }
+    }
+  }
+#ifdef SPRAY_BACKGROUND_COLOR
+  retireBackground();
+#endif
+}
+
+template <typename SceneT, typename ShaderT>
+void TContext<SceneT, ShaderT>::retireBackground() {
+  glm::vec3 bgcolor;
+  while (!bg_retire_q_->empty()) {
+    Ray* ray = bg_retire_q_->front();
+    bg_retire_q_->pop();
+    if (vbuf_.correctAndMiss(*ray)) {
+      bgcolor = glm::vec3(ray->w[0], ray->w[1], ray->w[2]) *
+                spray::computeBackGroundColor(ray->dir, bg_color_);
+      image_->add(ray->pixid, &bgcolor[0], one_over_num_pixel_samples_);
     }
   }
 }

@@ -27,6 +27,7 @@
 #include "render/caches.h"
 #include "render/config.h"
 #include "render/data_partition.h"
+#include "render/hybrid_geometry_buffer.h"
 #include "render/spray.h"
 #include "render/spray_renderer.h"
 #include "utils/comm.h"
@@ -55,9 +56,12 @@ int main(int argc, char** argv) {
   typedef spray::InfiniteCache InfCacheT;
   typedef spray::LruCache LruCacheT;
 
+  // surface buffer
+  typedef spray::HybridGeometryBuffer SurfaceBufT;
+
   // scenes
-  typedef spray::Scene<InfCacheT> SceneInfT;
-  typedef spray::Scene<LruCacheT> SceneLruT;
+  typedef spray::Scene<InfCacheT, SurfaceBufT> SceneInfT;
+  typedef spray::Scene<LruCacheT, SurfaceBufT> SceneLruT;
 
   // schedule
   typedef spray::baseline::LoadAnyOnceImageSched ScheduleT;
@@ -83,7 +87,10 @@ int main(int argc, char** argv) {
   typedef spray::SprayRenderer<TracerPtLruT> RenderPtLruT;
 
   spray::Config cfg;
-  cfg.parse(argc, argv);
+  if (cfg.parse(argc, argv)) {
+    MPI_Finalize();
+    return 0;
+  }
 
   if (cfg.partition == spray::Config::IMAGE) {
     if (cfg.ao_mode) {

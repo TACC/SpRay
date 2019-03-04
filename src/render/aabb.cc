@@ -27,18 +27,9 @@
 
 #include "display/opengl.h"
 #include "render/spray.h"
+#include "utils/math.h"
 
 namespace spray {
-
-glm::vec3 fminf(const glm::vec3& a, const glm::vec3& b) {
-  return glm::vec3(std::fminf(a[0], b[0]), std::fminf(a[1], b[1]),
-                   std::fminf(a[2], b[2]));
-}
-
-glm::vec3 fmaxf(const glm::vec3& a, const glm::vec3& b) {
-  return glm::vec3(std::fmaxf(a[0], b[0]), std::fmaxf(a[1], b[1]),
-                   std::fmaxf(a[2], b[2]));
-}
 
 Aabb::Aabb() { invalidate(); }
 
@@ -52,6 +43,11 @@ Aabb::Aabb(const glm::vec3& v0, const glm::vec3& v1) {
   bounds[1] = fmaxf(v0, v1);
 }
 
+void Aabb::setBounds(const glm::vec3& v0, const glm::vec3& v1) {
+  bounds[0] = fminf(v0, v1);
+  bounds[1] = fmaxf(v0, v1);
+}
+
 std::ostream& operator<<(std::ostream& os, const Aabb& a) {
   os << std::setprecision(15);
   os << "min(" << a.bounds[0].x << "," << a.bounds[0].y << "," << a.bounds[0].z
@@ -60,7 +56,7 @@ std::ostream& operator<<(std::ostream& os, const Aabb& a) {
   return os;
 }
 
-bool Aabb::operator==(const Aabb& other) {
+bool Aabb::operator==(const Aabb& other) const {
   return ((bounds[0].x == other.bounds[0].x) &&
           (bounds[0].y == other.bounds[0].y) &&
           (bounds[0].z == other.bounds[0].z) &&
@@ -69,7 +65,7 @@ bool Aabb::operator==(const Aabb& other) {
           (bounds[1].z == other.bounds[1].z));
 }
 
-bool Aabb::operator!=(const Aabb& other) {
+bool Aabb::operator!=(const Aabb& other) const {
   return !((bounds[0].x == other.bounds[0].x) &&
            (bounds[0].y == other.bounds[0].y) &&
            (bounds[0].z == other.bounds[0].z) &&
@@ -144,8 +140,8 @@ float Aabb::getHalfArea() const {
 }
 
 bool Aabb::isValid() const {
-  return (bounds[0].x <= bounds[1].x && bounds[0].y <= bounds[1].y &&
-          bounds[0].z <= bounds[1].z);
+  return (bounds[0].x < bounds[1].x && bounds[0].y < bounds[1].y &&
+          bounds[0].z < bounds[1].z);
 }
 
 void Aabb::draw(const glm::vec4& color) const {
@@ -210,6 +206,10 @@ bool Aabb::contains(const glm::vec3& point) const {
 
 bool Aabb::contains(const Aabb& aabb) const {
   return contains(aabb.bounds[0]) && contains(aabb.bounds[1]);
+}
+
+bool Aabb::within(const Aabb& aabb) const {
+  return aabb.contains(this->bounds[0]) && aabb.contains(this->bounds[1]);
 }
 
 }  // namespace spray

@@ -24,6 +24,8 @@
 
 #include "glog/logging.h"
 
+#include "render/domain.h"
+#include "render/material.h"
 #include "render/rays.h"
 #include "utils/util.h"
 
@@ -40,21 +42,19 @@ TriMeshBuffer::TriMeshBuffer()
       normals_(nullptr),
       faces_(nullptr),
       colors_(nullptr),
+      // materials_(nullptr),
       num_vertices_(nullptr),
       num_faces_(nullptr),
       device_(nullptr),
       scenes_(nullptr),
-      embree_mesh_created_(nullptr),
-      compute_normals_(false) {}
+      embree_mesh_created_(nullptr) {}
 
 TriMeshBuffer::~TriMeshBuffer() { cleanup(); }
 
 void TriMeshBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
-                         std::size_t max_nfaces, bool compute_normals) {
+                         std::size_t max_nfaces) {
   // cleanup
   cleanup();
-
-  compute_normals_ = compute_normals;
 
   // sizes
   max_cache_size_ = max_cache_size_ndomains;
@@ -72,14 +72,10 @@ void TriMeshBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
   CHECK_NOTNULL(vertices_);
 
   // per-vertex normals
-  if (compute_normals) {
-    normals_ = arena_.Alloc<float>(cache_size * max_nvertices * 3, false);
-    CHECK_NOTNULL(normals_);
-  } else {
-    normals_ = nullptr;
-  }
+  normals_ = arena_.Alloc<float>(cache_size * max_nvertices * 3, false);
+  CHECK_NOTNULL(normals_);
 
-  // number of faces for each domain
+  // number of faces
   num_faces_ = arena_.Alloc<std::size_t>(cache_size, false);
   CHECK_NOTNULL(num_faces_);
 
@@ -91,6 +87,13 @@ void TriMeshBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
   // colors
   colors_ = arena_.Alloc<uint32_t>(cache_size * max_nvertices, false);
   CHECK_NOTNULL(colors_);
+
+  // materials
+  // materials_ = arena_.Alloc<HybridMaterial>(cache_size * max_nvertices,
+  // false); CHECK_NOTNULL(materials_);
+
+  // domains
+  domains_.resize(cache_size);
 
   // embree mesh created
   embree_mesh_created_ = arena_.Alloc<int>(cache_size);
@@ -108,14 +111,120 @@ void TriMeshBuffer::init(int max_cache_size_ndomains, std::size_t max_nvertices,
   scenes_ = arena_.Alloc<RTCScene>(cache_size, false);
   CHECK_NOTNULL(scenes_);
 
+  // RTCSceneFlags sflags = RTC_SCENE_STATIC; // dont use this
+  RTCSceneFlags sflags = RTC_SCENE_DYNAMIC;
+  RTCAlgorithmFlags aflags = RTC_INTERSECT1;
+
   for (std::size_t i = 0; i < cache_size; ++i) {
-    scenes_[i] = rtcDeviceNewScene(device_, RTC_SCENE_DYNAMIC, RTC_INTERSECT1);
+    scenes_[i] = rtcDeviceNewScene(device_, sflags, aflags);
     CHECK_NOTNULL(scenes_[i]);
   }
 }
 
+RTCScene TriMeshBuffer::load(int cache_block, Domain& domain) {
+  // set domain
+  domains_[cache_block] = &domain;
+
+  // setup
+  PlyLoader::Data d;
+
+  const auto& models = domain.getModels();
+
+  std::size_t sum_num_vertices = 0;
+  std::size_t sum_num_faces = 0;
+
+  float* vertices_base = &vertices_[vertexBaseIndex(cache_block)];
+  uint32_t* faces_base = &faces_[faceBaseIndex(cache_block)];
+  uint32_t* colors_base = &colors_[colorBaseIndex(cache_block)];
+
+  // load surface data
+  for (std::size_t i = 0; i < models.size(); ++i) {
+    const auto& model = models[i];
+
+    d.vertices_capacity = model.getNumVertices() * 3;
+    d.faces_capacity = model.getNumFaces() * NUM_VERTICES_PER_FACE;
+    d.colors_capacity = model.getNumVertices();
+
+    d.vertices = &vertices_base[sum_num_vertices * 3];
+    d.faces = &faces_base[sum_num_faces * 3];
+    d.colors = &colors_base[sum_num_vertices];
+
+    loader_.load(model.getFilename(), &d);
+
+    sum_num_vertices += model.getNumVertices();
+    sum_num_faces += model.getNumFaces();
+
+    CHECK_EQ(d.num_vertices, model.getNumVertices());
+    CHECK_EQ(d.num_faces, model.getNumFaces());
+  }
+
+  CHECK_EQ(sum_num_vertices, domain.getNumVertices());
+  CHECK_EQ(sum_num_faces, domain.getNumFaces());
+
+  // update surface size
+  num_vertices_[cache_block] = sum_num_vertices;
+  num_faces_[cache_block] = sum_num_faces;
+
+  // transform vertices, map embree buffers, and populate materials
+  sum_num_vertices = 0;
+  sum_num_faces = 0;
+
+  // HybridMaterial* material_base = &materials_[materialBaseIndex(cache_block)];
+
+  glm::vec4 v;
+  for (std::size_t i = 0; i < models.size(); ++i) {
+    const auto& model = models[i];
+
+    float* vertices = &vertices_base[sum_num_vertices * 3];
+    uint32_t* faces = &faces_base[sum_num_faces * 3];
+
+    // transform vertices
+    bool apply_transform = (model.getTransform() != glm::mat4(1.0));
+    if (apply_transform) {
+      const glm::mat4& x = model.getTransform();
+
+      std::size_t nverts = model.getNumVertices() * 3;
+
+      for (std::size_t n = 0; n < nverts; n += 3) {
+        v = x * glm::vec4(vertices[n], vertices[n + 1], vertices[n + 2], 1.0f);
+        vertices[n] = v.x;
+        vertices[n + 1] = v.y;
+        vertices[n + 2] = v.z;
+      }
+    }
+
+    // map buffers
+    mapEmbreeBuffer(cache_block, vertices, model.getNumVertices(), faces,
+                    model.getNumFaces(), i);
+
+    // // populate materials
+    // uint32_t* colors = &colors_base[sum_num_vertices];
+    // HybridMaterial* hybrid_materials = &material_base[sum_num_vertices];
+
+    // const Material* model_material = model.material;
+
+    // for (std::size_t i = 0; i < model.num_vertices; ++i) {
+    //   hybrid_materials[i].set(model_material, color[i]);
+    // }
+
+    // update sums
+    sum_num_vertices += model.getNumVertices();
+    sum_num_faces += model.getNumFaces();
+  }
+
+  RTCScene scene = scenes_[cache_block];
+  rtcCommit(scene);
+
+
+  computeNormals(cache_block);
+
+  return scene;
+}
+
+/*
 RTCScene TriMeshBuffer::load(const std::string& filename, int cache_block,
-                             const glm::mat4& transform, bool apply_transform) {
+                             const glm::mat4& transform, bool apply_transform,
+                             std::vector<Shape*>& shapes) {
   // setup
   PlyLoader::Data d;
   d.vertices_capacity = max_nvertices_ * 3;                // in
@@ -156,9 +265,7 @@ RTCScene TriMeshBuffer::load(const std::string& filename, int cache_block,
     // origin.z = v.z;
   }
 
-  if (compute_normals_) {
-    computeNormals(cache_block);
-  }
+  computeNormals(cache_block);
 
   // map buffers
   mapEmbreeBuffer(cache_block, d.vertices, d.num_vertices, d.faces,
@@ -167,6 +274,7 @@ RTCScene TriMeshBuffer::load(const std::string& filename, int cache_block,
   // return scene
   return scenes_[cache_block];
 }
+*/
 
 void TriMeshBuffer::cleanup() {
   // embree scenes
@@ -188,7 +296,8 @@ void TriMeshBuffer::cleanup() {
 
 void TriMeshBuffer::mapEmbreeBuffer(int cache_block, float* vertices,
                                     std::size_t num_vertices, uint32_t* faces,
-                                    std::size_t num_faces) {
+                                    std::size_t num_faces,
+                                    std::size_t model_id) {
   // select scene
   RTCScene scene = scenes_[cache_block];
 
@@ -202,7 +311,7 @@ void TriMeshBuffer::mapEmbreeBuffer(int cache_block, float* vertices,
     LOG(INFO) << "created embree triangle mesh geom ID: " << geom_id
               << " cache block " << cache_block;
 #endif
-    CHECK_EQ(geom_id, 0);
+    CHECK_EQ(geom_id, model_id);
     CHECK_NE(geom_id, RTC_INVALID_GEOMETRY_ID);
 
     embree_mesh_created_[cache_block] = CREATED;
@@ -210,18 +319,18 @@ void TriMeshBuffer::mapEmbreeBuffer(int cache_block, float* vertices,
 
   // map vertices
 
-  rtcSetBuffer2(scene, 0 /*geomID*/, RTC_VERTEX_BUFFER, vertices, 0,
+  rtcSetBuffer2(scene, model_id /*geomID*/, RTC_VERTEX_BUFFER, vertices, 0,
                 sizeof(float) * 3, num_vertices);
 
   // map faces
 
-  rtcSetBuffer2(scene, 0 /*geomID*/, RTC_INDEX_BUFFER, faces, 0,
+  rtcSetBuffer2(scene, model_id /*geomID*/, RTC_INDEX_BUFFER, faces, 0,
                 sizeof(uint32_t) * NUM_VERTICES_PER_FACE, num_faces);
 
-  rtcUpdate(scene, 0 /*geomID*/);
-  rtcEnable(scene, 0 /*geomID*/);
+  rtcUpdate(scene, model_id /*geomID*/);
+  rtcEnable(scene, model_id /*geomID*/);
 
-  rtcCommit(scene);
+  // rtcCommit(scene);
 }
 
 void TriMeshBuffer::getColorTuple(int cache_block, uint32_t primID,
@@ -348,6 +457,9 @@ void TriMeshBuffer::updateIntersection(int cache_block,
   uint32_t b = (rgb[2] * w) + (rgb[5] * u) + (rgb[8] * v);
 
   isect->color = util::pack(r, g, b);
+
+  // material
+  isect->material = getMaterial(cache_block, isect->geomID);
 
   // shading normal
 

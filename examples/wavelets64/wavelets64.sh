@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [ -z $SPRAY_HOME_PATH ]
+if [ -z $SPRAY_INSTALL_PATH ]
 then
-  echo "[error] SPRAY_HOME_PATH not found. Do export SPRAY_HOME_PATH=<path_to_spray_home>."
+  echo "[error] SPRAY_INSTALL_PATH not found. Do export SPRAY_INSTALL_PATH=<path>."
   return
 fi
 
@@ -47,9 +47,9 @@ fi
 
 NUM_PARTITIONS=1
 
-SPRAY_BIN_PATH=$SPRAY_HOME_PATH/build
-EXAMPLE_PATH=$SPRAY_HOME_PATH/examples
-WAVELET64_PATH=$SPRAY_HOME_PATH/examples/wavelets64
+BIN_DIR=$SPRAY_INSTALL_PATH/bin
+EXAMPLE_PATH=$SPRAY_INSTALL_PATH/examples
+WAVELET64_PATH=$SPRAY_INSTALL_PATH/examples/wavelets64
 SCENE=$WAVELET64_PATH/wavelets64.spray
 PLY_PATH=$EXAMPLE_PATH
 MPI_BIN="mpirun -n"
@@ -143,9 +143,8 @@ CAMERA="90.172180 84.141418 82.480225 30.000000 28.649426 30.000000"
 NUM_PIXEL_SAMPLES=1
 NUM_AO_SAMPLES=1
 NUM_BOUNCES=1
-BLINN_SPECULAR_SHININESS="0.4 0.4 0.4 10"
 
-COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN_PATH/$SPRAY_BIN \
+COMMAND="$MPI_BIN $NUM_MPI_TASKS $BIN_DIR/$SPRAY_BIN \
          --ply-path $PLY_PATH \
          --nthreads $NUM_THREADS \
          -w 512 -h 512 \
@@ -157,7 +156,6 @@ COMMAND="$MPI_BIN $NUM_MPI_TASKS $SPRAY_BIN_PATH/$SPRAY_BIN \
          --pixel-samples $NUM_PIXEL_SAMPLES \
          --ao-samples $NUM_AO_SAMPLES \
          --bounces $NUM_BOUNCES \
-         --blinn $BLINN_SPECULAR_SHININESS \
          --num-partitions $NUM_PARTITIONS \
          $DEV_MODE \
          $SCENE"

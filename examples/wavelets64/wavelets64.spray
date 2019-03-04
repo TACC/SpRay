@@ -2,578 +2,770 @@
 light point 0 500 1000 1 1 1
 
 # domain 0
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 0.000000 0.000000
+ModelEnd
+DomainEnd
 
 # domain 1
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 0.000000 0.000000
+ModelEnd
+DomainEnd
 
 # domain 2
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 0.000000 0.000000
+ModelEnd
+DomainEnd
 
 # domain 3
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 0.000000 0.000000
+ModelEnd
+DomainEnd
 
 # domain 4
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 19.324713 0.000000
+ModelEnd
+DomainEnd
 
 # domain 5
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 19.324713 0.000000
+ModelEnd
+DomainEnd
 
 # domain 6
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 19.324713 0.000000
+ModelEnd
+DomainEnd
 
 # domain 7
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 19.324713 0.000000
+ModelEnd
+DomainEnd
 
 # domain 8
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 38.649426 0.000000
+ModelEnd
+DomainEnd
 
 # domain 9
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 38.649426 0.000000
+ModelEnd
+DomainEnd
 
 # domain 10
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 38.649426 0.000000
+ModelEnd
+DomainEnd
 
 # domain 11
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 38.649426 0.000000
+ModelEnd
+DomainEnd
 
 # domain 12
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 57.974139 0.000000
+ModelEnd
+DomainEnd
 
 # domain 13
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 57.974139 0.000000
+ModelEnd
+DomainEnd
 
 # domain 14
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 57.974139 0.000000
+ModelEnd
+DomainEnd
 
 # domain 15
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 57.974139 0.000000
+ModelEnd
+DomainEnd
 
 # domain 16
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 0.000000 20.000000
+ModelEnd
+DomainEnd
 
 # domain 17
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 0.000000 20.000000
+ModelEnd
+DomainEnd
 
 # domain 18
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 0.000000 20.000000
+ModelEnd
+DomainEnd
 
 # domain 19
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 0.000000 20.000000
+ModelEnd
+DomainEnd
 
 # domain 20
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 19.324713 20.000000
+ModelEnd
+DomainEnd
 
 # domain 21
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 19.324713 20.000000
+ModelEnd
+DomainEnd
 
 # domain 22
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 19.324713 20.000000
+ModelEnd
+DomainEnd
 
 # domain 23
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 19.324713 20.000000
+ModelEnd
+DomainEnd
 
 # domain 24
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 38.649426 20.000000
+ModelEnd
+DomainEnd
 
 # domain 25
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 38.649426 20.000000
+ModelEnd
+DomainEnd
 
 # domain 26
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 38.649426 20.000000
+ModelEnd
+DomainEnd
 
 # domain 27
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 38.649426 20.000000
+ModelEnd
+DomainEnd
 
 # domain 28
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 57.974139 20.000000
+ModelEnd
+DomainEnd
 
 # domain 29
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 57.974139 20.000000
+ModelEnd
+DomainEnd
 
 # domain 30
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 57.974139 20.000000
+ModelEnd
+DomainEnd
 
 # domain 31
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 57.974139 20.000000
+ModelEnd
+DomainEnd
 
 # domain 32
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 0.000000 40.000000
+ModelEnd
+DomainEnd
 
 # domain 33
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 0.000000 40.000000
+ModelEnd
+DomainEnd
 
 # domain 34
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 0.000000 40.000000
+ModelEnd
+DomainEnd
 
 # domain 35
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 0.000000 40.000000
+ModelEnd
+DomainEnd
 
 # domain 36
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 19.324713 40.000000
+ModelEnd
+DomainEnd
 
 # domain 37
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 19.324713 40.000000
+ModelEnd
+DomainEnd
 
 # domain 38
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 19.324713 40.000000
+ModelEnd
+DomainEnd
 
 # domain 39
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 19.324713 40.000000
+ModelEnd
+DomainEnd
 
 # domain 40
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 38.649426 40.000000
+ModelEnd
+DomainEnd
 
 # domain 41
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 38.649426 40.000000
+ModelEnd
+DomainEnd
 
 # domain 42
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 38.649426 40.000000
+ModelEnd
+DomainEnd
 
 # domain 43
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 38.649426 40.000000
+ModelEnd
+DomainEnd
 
 # domain 44
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 57.974139 40.000000
+ModelEnd
+DomainEnd
 
 # domain 45
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 57.974139 40.000000
+ModelEnd
+DomainEnd
 
 # domain 46
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 57.974139 40.000000
+ModelEnd
+DomainEnd
 
 # domain 47
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 57.974139 40.000000
+ModelEnd
+DomainEnd
 
 # domain 48
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 0.000000 60.000000
+ModelEnd
+DomainEnd
 
 # domain 49
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 0.000000 60.000000
+ModelEnd
+DomainEnd
 
 # domain 50
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 0.000000 60.000000
+ModelEnd
+DomainEnd
 
 # domain 51
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 0.000000 60.000000
+ModelEnd
+DomainEnd
 
 # domain 52
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 19.324713 60.000000
+ModelEnd
+DomainEnd
 
 # domain 53
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 19.324713 60.000000
+ModelEnd
+DomainEnd
 
 # domain 54
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 19.324713 60.000000
+ModelEnd
+DomainEnd
 
 # domain 55
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 19.324713 60.000000
+ModelEnd
+DomainEnd
 
 # domain 56
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 38.649426 60.000000
+ModelEnd
+DomainEnd
 
 # domain 57
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 38.649426 60.000000
+ModelEnd
+DomainEnd
 
 # domain 58
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 38.649426 60.000000
+ModelEnd
+DomainEnd
 
 # domain 59
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 38.649426 60.000000
+ModelEnd
+DomainEnd
 
 # domain 60
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 0.000000 57.974139 60.000000
+ModelEnd
+DomainEnd
 
 # domain 61
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 20.000000 57.974139 60.000000
+ModelEnd
+DomainEnd
 
 # domain 62
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 40.000000 57.974139 60.000000
+ModelEnd
+DomainEnd
 
 # domain 63
-domain
+DomainBegin
+ModelBegin
 file wavelet.ply
-mtl diffuse 1 1 1
-bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
-face 5480
-vertex 2840
+material matte
+# bound -10.000000 -10.000000 -10.000000 10.000000 9.324713 10.000000
+# face 5480
+# vertex 2840
 translate 60.000000 57.974139 60.000000
+ModelEnd
+DomainEnd
 

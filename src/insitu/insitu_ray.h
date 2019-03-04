@@ -30,74 +30,89 @@
 #include "render/camera.h"
 #include "render/spray.h"
 #include "render/tile.h"
+#include "utils/math.h"
 
 namespace spray {
 namespace insitu {
 
 struct SPRAY_ALIGN(16) Ray {
-  float org[3];
-  int pixid;
-  float dir[3];
-  int samid;
-  float w[3];
-  float t;
-  int light;
+  float org[3];  ///< Ray origin.
+  int pixid;     ///< Pixel ID.
+  float dir[3];  ///< Ray direction.
+  int samid;     ///< Sample ID of the image plane
+  float w[3];    ///< Color weight.
+  float t;       ///< Distance to the hit point.
+  int light;     ///< Light ID.
+  /**
+   * -2: background
+   * -1: possibly background
+   *  0: unoccluded
+   *  1: occluded
+   */
   int occluded;
+#if 0
+  friend std::ostream& operator<<(std::ostream& os, const Ray& r) {
+    os << "[p " << r.pixid << "][s " << r.samid << "] [l " << r.light << "] [t "
+       << r.t << "][occl " << r.occluded << "] [org " << r.org[0] << ","
+       << r.org[1] << "," << r.org[2] << "]"
+       << "[dir " << r.dir[0] << "," << r.dir[1] << "," << r.dir[2] << "]"
+       << "[w " << r.w[0] << "," << r.w[1] << "," << r.w[2] << "]";
+    return os;
+  }
+#endif
+
+  void makeShadow(const Ray& ray, int light_id, const glm::vec3& position,
+                  const glm::vec3& direction, const glm::vec3& weight,
+                  float tvalue) {
+    org[0] = position[0];
+    org[1] = position[1];
+    org[2] = position[2];
+
+    pixid = ray.pixid;
+
+    dir[0] = direction[0];
+    dir[1] = direction[1];
+    dir[2] = direction[2];
+
+    samid = ray.samid;
+
+    w[0] = weight[0];
+    w[1] = weight[1];
+    w[2] = weight[2];
+
+    t = tvalue;
+
+    light = light_id;
+    occluded = 0;
+  }
+
+  void makeRadiance(const Ray& rayin, const glm::vec3& position,
+                    const glm::vec3& direction, const glm::vec3& weight,
+                    float tvalue) {
+    org[0] = position[0];
+    org[1] = position[1];
+    org[2] = position[2];
+
+    pixid = rayin.pixid;
+
+    dir[0] = direction[0];
+    dir[1] = direction[1];
+    dir[2] = direction[2];
+
+    samid = rayin.samid;
+
+    w[0] = weight[0];
+    w[1] = weight[1];
+    w[2] = weight[2];
+
+    t = tvalue;
+  }
 };
 
 struct RayData {
   Ray* ray;
   float tdom;
   int dom_depth;
-};
-
-struct RayUtil {
-  inline static void makeShadow(const Ray& ray, int light, const glm::vec3& pos,
-                                const glm::vec3& dir, const glm::vec3& w,
-                                float t, Ray* shadow) {
-    shadow->org[0] = pos[0];
-    shadow->org[1] = pos[1];
-    shadow->org[2] = pos[2];
-
-    shadow->pixid = ray.pixid;
-
-    shadow->dir[0] = dir[0];
-    shadow->dir[1] = dir[1];
-    shadow->dir[2] = dir[2];
-
-    shadow->samid = ray.samid;
-
-    shadow->w[0] = w[0];
-    shadow->w[1] = w[1];
-    shadow->w[2] = w[2];
-
-    shadow->t = t;
-
-    shadow->light = light;
-    shadow->occluded = 0;
-  }
-  inline static void makeRay(const Ray& rayin, const glm::vec3& pos,
-                             const glm::vec3& dir, const glm::vec3& w, float t,
-                             Ray* rayout) {
-    rayout->org[0] = pos[0];
-    rayout->org[1] = pos[1];
-    rayout->org[2] = pos[2];
-
-    rayout->pixid = rayin.pixid;
-
-    rayout->dir[0] = dir[0];
-    rayout->dir[1] = dir[1];
-    rayout->dir[2] = dir[2];
-
-    rayout->samid = rayin.samid;
-
-    rayout->w[0] = w[0];
-    rayout->w[1] = w[1];
-    rayout->w[2] = w[2];
-
-    rayout->t = t;
-  }
-
 };
 
 inline void genSingleSampleEyeRays(const Camera& camera, int image_w,

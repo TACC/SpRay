@@ -204,10 +204,10 @@ void Glfw<WbvhT, SceneT>::keyCallback(GLFWwindow* window, int key, int scancode,
         const glm::vec3& campos = camera_->getPosition();
         const glm::vec3& lookat = camera_->getLookAt();
         const glm::vec3& upvec = camera_->getUpVector();
-        const Aabb& bound = scene_->getBound();
+        const Aabb& bound = scene_->getWorldAabb();
         printf("[INFO] Camera --camera %f %f %f %f %f %f\n", campos.x, campos.y,
                campos.z, lookat.x, lookat.y, lookat.z);
-        printf("[INFO] Camera --up %f %f %f\n", upvec.x, upvec.y, upvec.z);
+        printf("[INFO] Camera --camera-up %f %f %f\n", upvec.x, upvec.y, upvec.z);
         printf("[INFO] Scene bound: min(%f %f %f), max(%f %f %f)\n",
                bound.bounds[0].x, bound.bounds[0].y, bound.bounds[0].z,
                bound.bounds[1].x, bound.bounds[1].y, bound.bounds[1].z);
@@ -320,9 +320,15 @@ void Glfw<WbvhT, SceneT>::mouseButtonCallback(GLFWwindow* window, int button,
   }
 }
 
+#define DEBUG_SPRAY_CAMERA_RAYS
+#undef DEBUG_SPRAY_CAMERA_RAYS
+
 template <class WbvhT, class SceneT>
 void Glfw<WbvhT, SceneT>::cursorPosCallback(GLFWwindow* window, double xpos,
                                             double ypos) {
+#ifdef DEBUG_SPRAY_CAMERA_RAYS
+  camera_->print(xpos, ypos);
+#endif
   if (mouse_state_.left && !mouse_state_.middle && !mouse_state_.right) {
     // left click
     float dx = rotate_pan_sensitivity_ * (xpos - mouse_state_.x);

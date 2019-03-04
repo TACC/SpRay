@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
   fout << "vertex " << h.num_vertices << "\n";
   fout << "face " << h.num_faces << "\n";
   fout << std::setprecision(std::numeric_limits<double>::digits10 + 1)
-       << "bound " << aabb.bounds[0].x << " " << aabb.bounds[0].y << " "
+       << "bounds " << aabb.bounds[0].x << " " << aabb.bounds[0].y << " "
        << aabb.bounds[0].z << " " << aabb.bounds[1].x << " " << aabb.bounds[1].y
        << " " << aabb.bounds[1].z << "\n";
 

@@ -35,6 +35,8 @@
 
 namespace spray {
 
+class Material;
+
 struct DomainHit1 {
   int id;   ///< Domain ID.
   float t;  ///< Near intersections point. tmin value.
@@ -270,7 +272,10 @@ struct SPRAY_ALIGN(16) RTCRayIntersection {
   unsigned primID;  //!< primitive ID
   unsigned instID;  //!< instance ID
 
+  /* extension*/
+ public:
   float Ns[3];
+  const Material* material;
 };
 
 struct RTCRayUtil {

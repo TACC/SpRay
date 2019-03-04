@@ -29,7 +29,7 @@
 
 #include "insitu/insitu_ray.h"
 #include "render/qvector.h"
-#include "render/scene.h"
+#include "render/rays.h"
 
 namespace spray {
 namespace insitu {
@@ -44,34 +44,15 @@ class Isector {
   void intersect(const SceneT* scene, Ray* ray, spray::QVector<Ray*>* qs) {
     isectAll(scene, ray, qs);
   }
-  // #ifdef SPRAY_GLOG_CHECK
-  //     CHECK_GT(domains_.size(), 0);
-  // #endif
-  //     domains_.reset();
-  //     // RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir,
-  //     &domains_,
-  //     //                                          &eray_);
-  //     eray_.reset(ray->org, ray->dir, &domains_);
-  //
-  //     // ray-domain intersection tests
-  //     scene->intersectDomains(eray_);
-  //
-  //     // place ray in hit domains
-  //     if (domains_.count) {
-  //       // sort hit domains
-  //       RTCRayUtil::sortDomains(domains_, hits_);
-  //
-  //       // place the ray (
-  //       for (int d = 0; d < domains_.count; ++d) {
-  //         int id = hits_[d].id;
-  // #ifdef SPRAY_GLOG_CHECK
-  //         CHECK_LT(id, ndomains);
-  // #endif
-  //         qs->push(id, ray);
-  //       }
-  //     }
-  //   }
 
+  // used for parallel ray queuing (with background support)
+  void intersect(const SceneT* scene, Ray* ray, spray::QVector<Ray*>* qs,
+                 std::queue<Ray*>* background_q) {
+    background_q->push(ray);
+    isectAll(scene, ray, qs);
+  }
+
+  // for processing eye rays
   void intersect(const SceneT* scene, RayBuf<Ray> ray_buf,
                  spray::QVector<Ray*>* qs) {
     Ray* rays = ray_buf.rays;
@@ -80,86 +61,38 @@ class Isector {
     }
   }
 
-// #ifdef SPRAY_GLOG_CHECK
-//     CHECK_GT(domains_.size(), 0);
-// #endif
-//     Ray* rays = ray_buf.rays;
-// 
-//     for (std::size_t i = 0; i < ray_buf.num; ++i) {
-//       Ray* ray = &rays[i];
-// 
-//       RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
-//                                                &eray_);
-// 
-//       scene->intersectDomains(eray_);
-// 
-//       if (domains_.count) {
-//         RTCRayUtil::sortDomains(domains_, hits_);
-// 
-//         for (int d = 0; d < domains_.count; ++d) {
-//           int id = hits_[d].id;
-// #ifdef SPRAY_GLOG_CHECK
-//           CHECK_LT(id, ndomains);
-// #endif
-//           qs->push(id, ray);
-//         }
-//       }
-//     }
-//   }
+  // for processing eye rays (with background support)
+  void intersect(const SceneT* scene, RayBuf<Ray> ray_buf,
+                 spray::QVector<Ray*>* qs, std::queue<Ray*>* background_q) {
+    Ray* rays = ray_buf.rays;
+    for (std::size_t i = 0; i < ray_buf.num; ++i) {
+      Ray* ray = &rays[i];
+      background_q->push(ray);
+      isectAll(scene, ray, qs);
+    }
+  }
 
   void intersect(int exclude_id, const SceneT* scene, Ray* ray,
                  spray::QVector<Ray*>* qs) {
     isectWithoutCurrentDomain(exclude_id, scene, ray, qs);
   }
-  // #ifdef SPRAY_GLOG_CHECK
-  //     CHECK_GT(domains_.size(), 0);
-  // #endif
-  //     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
-  //                                              &eray_);
-  //
-  //     scene->intersectDomains(eray_);
-  //
-  //     if (domains_.count) {
-  //       RTCRayUtil::sortDomains(domains_, hits_);
-  //
-  //       for (int d = 0; d < domains_.count; ++d) {
-  //         int id = hits_[d].id;
-  // #ifdef SPRAY_GLOG_CHECK
-  //         CHECK_LT(id, ndomains);
-  // #endif
-  //         if (id != exclude_id) {
-  //           qs->push(id, ray);
-  //         }
-  //       }
-  //     }
-  //   }
+
+  void intersect(int exclude_id, const SceneT* scene, Ray* ray,
+                 spray::QVector<Ray*>* qs, std::queue<Ray*>* background_q) {
+    background_q->push(ray);
+    isectWithoutCurrentDomain(exclude_id, scene, ray, qs);
+  }
 
   void intersect(int exclude_id, float t, const SceneT* scene, Ray* ray,
                  spray::QVector<Ray*>* qs) {
     isectWithoutFarDomain(exclude_id, t, scene, ray, qs);
   }
-  // #ifdef SPRAY_GLOG_CHECK
-  //     CHECK_GT(domains_.size(), 0);
-  // #endif
-  //     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
-  //                                              &eray_);
-  //
-  //     scene->intersectDomains(eray_);
-  //
-  //     if (domains_.count) {
-  //       RTCRayUtil::sortDomains(domains_, hits_);
-  //
-  //       for (int d = 0; d < domains_.count; ++d) {
-  //         int id = hits_[d].id;
-  // #ifdef SPRAY_GLOG_CHECK
-  //         CHECK_LT(id, ndomains);
-  // #endif
-  //         if (id != exclude_id && hits_[d].t < t) {
-  //           qs->push(id, ray);
-  //         }
-  //       }
-  //     }
-  //   }
+
+  void intersect(int exclude_id, float t, const SceneT* scene, Ray* ray,
+                 spray::QVector<Ray*>* qs, std::queue<Ray*>* background_q) {
+    background_q->push(ray);
+    isectWithoutFarDomain(exclude_id, t, scene, ray, qs);
+  }
 
  private:
   void isectDomains(const SceneT* scene, const Ray* ray) {
@@ -222,26 +155,6 @@ class Isector {
       }
     }
   }
-
-  //     RTCRayUtil::makeRayForDomainIntersection(ray->org, ray->dir, &domains_,
-  //                                              &eray_);
-  //
-  //     scene->intersectDomains(eray_);
-  //
-  //     if (domains_.count) {
-  //       RTCRayUtil::sortDomains(domains_, hits_);
-  //
-  //       for (int d = 0; d < domains_.count; ++d) {
-  //         int id = hits_[d].id;
-  // #ifdef SPRAY_GLOG_CHECK
-  //         CHECK_LT(id, ndomains);
-  // #endif
-  //         if (id != exclude_id) {
-  //           qs->push(id, ray);
-  //         }
-  //       }
-  //     }
-  //   }
 
  private:
   DomainList domains_;

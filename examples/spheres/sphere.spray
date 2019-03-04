@@ -1,0 +1,8 @@
+light diffuse-sphere .05 .05 .05 
+
+DomainBegin
+# big matte ball
+sphere -5 2 0 2 matte 0.8 0.8 0.8
+# ground ball
+sphere 0 -1000 0 1000 matte 1 1 1
+DomainEnd

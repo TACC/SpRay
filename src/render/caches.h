@@ -21,4 +21,5 @@
 #pragma once
 
 #include "render/infinite_cache.h"
+#include "render/insitu_cache.h"
 #include "render/lru_cache.h"

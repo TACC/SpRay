@@ -100,7 +100,11 @@ class TContext {
 #ifdef SPRAY_GLOG_CHECK
     CHECK_LT(ray->pixid, image_->w * image_->h);
 #endif
+#ifdef SPRAY_BACKGROUND_COLOR
+    isector_.intersect(scene_, ray, &rqs_, &bg_retire_q_);
+#else
     isector_.intersect(scene_, ray, &rqs_);
+#endif
   }
 
   void processRays(int rank, int ray_depth);
@@ -127,6 +131,7 @@ class TContext {
 
   void retireUntouched();
   void retireShadows(const VBuf& vbuf);
+  void retireRadiances(const VBuf& vbuf);
 
   void sendRays(bool shadow, int id, Ray* rays);
 
@@ -148,6 +153,7 @@ class TContext {
     CHECK(frq2_.empty());
     CHECK(fsq2_.empty());
     CHECK(retire_q_.empty());
+    CHECK(bg_retire_q_.empty());
     CHECK(cached_rq_.empty());
   }
 
@@ -200,12 +206,14 @@ class TContext {
   RayQ sq2_;
 
   RayQ retire_q_;     ///< Retire queue for foreground colors.
+  RayQ bg_retire_q_;  ///< Retire queue for background colors.
 
   std::queue<IsectInfo> cached_rq_;
   std::queue<IsectInfo> frq2_;
   std::queue<OcclInfo> fsq2_;
 
   double one_over_num_pixel_samples_;
+  glm::vec3 bg_color_;
 
   int num_domains_;
 };
